@@ -1,0 +1,342 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the Anti Spam for WordPress package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Anti Spam for WordPress 0.0.1\n"
+"Report-Msgid-Bugs-To: https://github.com/MatthiasReinholz/anti-spam-for-"
+"wordpress/issues\n"
+"POT-Creation-Date: 2026-03-19 23:23+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: includes/settings.php:92
+msgid "1 hour"
+msgstr ""
+
+#: includes/settings.php:93
+msgid "4 hours"
+msgstr ""
+
+#: includes/settings.php:147
+msgid "Add a 1.5 second delay before verification completes."
+msgstr ""
+
+#: integrations/gravityforms/field.php:13 integrations/elementor/field.php:20
+#: integrations/formidable.php:39
+msgid "Anti Spam Widget"
+msgstr ""
+
+#: integrations/gravityforms/field.php:55
+msgid "Anti Spam Widget placeholder"
+msgstr ""
+
+#: includes/admin.php:16 includes/admin.php:17 admin/options.php:23
+msgid "Anti Spam for WordPress"
+msgstr ""
+
+#: admin/options.php:31
+msgid ""
+"Anti Spam for WordPress is a fork of the ALTCHA WordPress plugin v1, adapted "
+"and maintained by Matthias Reinholz."
+msgstr ""
+
+#: integrations/formidable/builder-field.php:1
+msgid "Anti Spam for WordPress will be displayed here."
+msgstr ""
+
+#: admin/options.php:46
+#, php-format
+msgid ""
+"Anti Spam for WordPress, plugin version %1$s, bundled widget version %2$s"
+msgstr ""
+
+#: includes/settings.php:108
+msgid "Auto verification"
+msgstr ""
+
+#: includes/settings.php:282 includes/settings.php:322
+#: includes/settings.php:354
+msgid "Captcha"
+msgstr ""
+
+#: includes/settings.php:114
+msgid "Choose when the widget should start verification."
+msgstr ""
+
+#: includes/settings.php:187
+msgid "CoBlocks"
+msgstr ""
+
+#: includes/settings.php:313
+msgid "Comments"
+msgstr ""
+
+#: includes/settings.php:67
+msgid "Complexity"
+msgstr ""
+
+#: integrations/formidable/builder-settings.php:1
+msgid "Configure Anti Spam for WordPress in the plugin settings."
+msgstr ""
+
+#: includes/settings.php:193
+msgid "Contact Form 7"
+msgstr ""
+
+#: integrations/woocommerce.php:30 integrations/woocommerce.php:77
+#: integrations/woocommerce.php:118 integrations/gravityforms/field.php:83
+#: integrations/html-forms.php:49 integrations/wordpress.php:30
+#: integrations/wordpress.php:77 integrations/wordpress.php:118
+#: integrations/wordpress.php:170 integrations/forminator.php:36
+#: integrations/wpforms.php:29
+msgid "Could not verify you are not a robot."
+msgstr ""
+
+#: includes/settings.php:269
+msgid "Custom HTML"
+msgstr ""
+
+#: admin/options.php:73
+msgid "Customize the widget to fit your forms."
+msgstr ""
+
+#: includes/settings.php:140
+msgid "Delay"
+msgstr ""
+
+#: includes/settings.php:281 includes/settings.php:321
+#: includes/settings.php:353
+msgid "Disable"
+msgstr ""
+
+#: includes/settings.php:116
+msgid "Disabled"
+msgstr ""
+
+#: includes/settings.php:200
+msgid "Elementor Pro Forms"
+msgstr ""
+
+#: admin/options.php:87
+msgid "Enable protection for core WordPress screens."
+msgstr ""
+
+#: admin/options.php:80
+msgid "Enable protection for these plugin integrations."
+msgstr ""
+
+#: includes/settings.php:133
+msgid "Enable the widget floating UI."
+msgstr ""
+
+#: includes/settings.php:206
+msgid "Enfold Theme"
+msgstr ""
+
+#: integrations/wordpress.php:30 integrations/wordpress.php:77
+#: integrations/wordpress.php:118 integrations/wordpress.php:170
+msgid "Error"
+msgstr ""
+
+#: includes/settings.php:84
+msgid "Expiration"
+msgstr ""
+
+#: includes/settings.php:126
+msgid "Floating UI"
+msgstr ""
+
+#: includes/settings.php:214
+msgid "Formidable Forms"
+msgstr ""
+
+#: includes/settings.php:220
+msgid "Forminator"
+msgstr ""
+
+#: includes/settings.php:47
+msgid "General"
+msgstr ""
+
+#: includes/settings.php:226
+msgid "Gravity Forms"
+msgstr ""
+
+#: includes/settings.php:232
+msgid "HTML Forms"
+msgstr ""
+
+#: includes/settings.php:167
+msgid "Hide footer"
+msgstr ""
+
+#: includes/settings.php:154
+msgid "Hide logo"
+msgstr ""
+
+#: includes/settings.php:77
+msgid "High"
+msgstr ""
+
+#: includes/settings.php:90
+msgid "How long a challenge stays valid."
+msgstr ""
+
+#: includes/core.php:281
+msgid "I'm not a robot"
+msgstr ""
+
+#: includes/settings.php:180
+msgid "Integrations"
+msgstr ""
+
+#: includes/settings.php:308
+msgid "Login page"
+msgstr ""
+
+#: includes/settings.php:75
+msgid "Low"
+msgstr ""
+
+#: includes/settings.php:76
+msgid "Medium"
+msgstr ""
+
+#: includes/settings.php:94
+msgid "No expiration"
+msgstr ""
+
+#: includes/settings.php:118
+msgid "On form focus"
+msgstr ""
+
+#: includes/settings.php:119
+msgid "On form submit"
+msgstr ""
+
+#: includes/settings.php:117
+msgid "On page load"
+msgstr ""
+
+#: includes/core.php:277
+#, php-format
+msgid "Protected by %sAnti Spam for WordPress%s"
+msgstr ""
+
+#: includes/settings.php:298
+msgid "Register page"
+msgstr ""
+
+#: integrations/wpmembers.php:16
+msgid "Registration failed. Please try again later."
+msgstr ""
+
+#: includes/settings.php:303
+msgid "Reset password page"
+msgstr ""
+
+#: includes/settings.php:54
+msgid "Secret key"
+msgstr ""
+
+#: includes/settings.php:73
+msgid "Select the proof-of-work complexity for new challenges."
+msgstr ""
+
+#: admin/options.php:24
+msgid "Self-hosted spam protection for WordPress forms."
+msgstr ""
+
+#: includes/admin.php:37
+msgid "Settings"
+msgstr ""
+
+#: includes/settings.php:325
+msgid "Shortcode"
+msgstr ""
+
+#: includes/core.php:495
+msgid "This form requires JavaScript."
+msgstr ""
+
+#: admin/options.php:66
+msgid ""
+"This plugin runs fully inside your WordPress installation and does not "
+"require an external API."
+msgstr ""
+
+#: includes/settings.php:277
+#, php-format
+msgid "Use the %s shortcode anywhere in your form markup."
+msgstr ""
+
+#: includes/settings.php:60
+msgid "Used to sign and verify local proof-of-work challenges."
+msgstr ""
+
+#: integrations/formidable/AntiSpamWidgetFieldType.php:56
+#: integrations/elementor/field.php:81
+msgid "Verification failed."
+msgstr ""
+
+#: includes/core.php:274 integrations/enfold-theme.php:54
+msgid "Verification failed. Try again later."
+msgstr ""
+
+#: includes/core.php:282
+msgid "Verified"
+msgstr ""
+
+#: includes/core.php:283
+msgid "Verifying..."
+msgstr ""
+
+#: includes/core.php:284
+msgid "Verifying... please wait."
+msgstr ""
+
+#: admin/options.php:55
+msgid "View the source on GitHub"
+msgstr ""
+
+#: includes/settings.php:239
+msgid "WPDiscuz"
+msgstr ""
+
+#: includes/settings.php:245
+msgid "WPForms"
+msgstr ""
+
+#: includes/settings.php:101
+msgid "Widget customization"
+msgstr ""
+
+#: includes/settings.php:263
+msgid "WooCommerce login page"
+msgstr ""
+
+#: includes/settings.php:251
+msgid "WooCommerce register page"
+msgstr ""
+
+#: includes/settings.php:257
+msgid "WooCommerce reset password page"
+msgstr ""
+
+#: includes/settings.php:291
+msgid "WordPress"
+msgstr ""
+
+#: includes/settings.php:132 includes/settings.php:146
+#: includes/settings.php:160 includes/settings.php:173
+msgid "Yes"
+msgstr ""

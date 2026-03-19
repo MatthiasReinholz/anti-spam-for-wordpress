@@ -1,24 +1,25 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 GFForms::include_addon_framework();
 
-class ALTCHA_GFFormsAddOn extends GFAddOn
+class ASFW_GFFormsAddOn extends GFAddOn
 {
-
-    protected $_version = ALTCHA_VERSION;
+    protected $_version = ASFW_VERSION;
     protected $_min_gravityforms_version = '2.5';
-    protected $_slug = 'altcha';
+    protected $_slug = 'anti-spam-for-wordpress';
     protected $_full_path = __FILE__;
-    protected $_short_title = 'ALTCHA';
+    protected $_short_title = 'Anti Spam';
 
     private static $_instance = null;
 
     public static function get_instance()
     {
         if (self::$_instance == null) {
-            self::$_instance = new ALTCHA_GFFormsAddOn();
+            self::$_instance = new ASFW_GFFormsAddOn();
         }
 
         return self::$_instance;
@@ -34,7 +35,7 @@ class ALTCHA_GFFormsAddOn extends GFAddOn
         parent::pre_init();
 
         if ($this->is_gravityforms_supported() && class_exists('GF_Field')) {
-            require_once('field.php');
+            require_once 'field.php';
         }
     }
 
