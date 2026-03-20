@@ -15,9 +15,16 @@ if (is_admin()) {
             AntiSpamForWordPressPlugin::$option_expires,
             AntiSpamForWordPressPlugin::$option_hidefooter,
             AntiSpamForWordPressPlugin::$option_hidelogo,
+            AntiSpamForWordPressPlugin::$option_footer_text,
             AntiSpamForWordPressPlugin::$option_auto,
             AntiSpamForWordPressPlugin::$option_floating,
             AntiSpamForWordPressPlugin::$option_delay,
+            AntiSpamForWordPressPlugin::$option_lazy,
+            AntiSpamForWordPressPlugin::$option_rate_limit_max_challenges,
+            AntiSpamForWordPressPlugin::$option_rate_limit_max_failures,
+            AntiSpamForWordPressPlugin::$option_rate_limit_window,
+            AntiSpamForWordPressPlugin::$option_honeypot,
+            AntiSpamForWordPressPlugin::$option_min_submit_time,
             AntiSpamForWordPressPlugin::$option_integration_coblocks,
             AntiSpamForWordPressPlugin::$option_integration_contact_form_7,
             AntiSpamForWordPressPlugin::$option_integration_custom,
@@ -89,9 +96,119 @@ if (is_admin()) {
                 'name' => AntiSpamForWordPressPlugin::$option_expires,
                 'hint' => __('How long a challenge stays valid.', 'anti-spam-for-wordpress'),
                 'options' => array(
-                    '3600' => __('1 hour', 'anti-spam-for-wordpress'),
-                    '14400' => __('4 hours', 'anti-spam-for-wordpress'),
-                    '0' => __('No expiration', 'anti-spam-for-wordpress'),
+                    '120' => __('2 minutes', 'anti-spam-for-wordpress'),
+                    '300' => __('5 minutes', 'anti-spam-for-wordpress'),
+                    '600' => __('10 minutes', 'anti-spam-for-wordpress'),
+                    '1800' => __('30 minutes', 'anti-spam-for-wordpress'),
+                ),
+            )
+        );
+
+        add_settings_section(
+            'asfw_security_settings_section',
+            __('Security hardening', 'anti-spam-for-wordpress'),
+            'asfw_security_section_callback',
+            'asfw_admin'
+        );
+
+        add_settings_field(
+            'asfw_settings_lazy_field',
+            __('Lazy challenge loading', 'anti-spam-for-wordpress'),
+            'asfw_settings_field_callback',
+            'asfw_admin',
+            'asfw_security_settings_section',
+            array(
+                'name' => AntiSpamForWordPressPlugin::$option_lazy,
+                'description' => __('Yes', 'anti-spam-for-wordpress'),
+                'hint' => __('Load challenge data on first interaction instead of immediately on page load.', 'anti-spam-for-wordpress'),
+                'type' => 'checkbox',
+            )
+        );
+
+        add_settings_field(
+            'asfw_settings_rate_limit_window_field',
+            __('Rate limit window', 'anti-spam-for-wordpress'),
+            'asfw_settings_select_callback',
+            'asfw_admin',
+            'asfw_security_settings_section',
+            array(
+                'name' => AntiSpamForWordPressPlugin::$option_rate_limit_window,
+                'hint' => __('Window used for challenge and failure rate limits.', 'anti-spam-for-wordpress'),
+                'options' => array(
+                    '300' => __('5 minutes', 'anti-spam-for-wordpress'),
+                    '600' => __('10 minutes', 'anti-spam-for-wordpress'),
+                    '900' => __('15 minutes', 'anti-spam-for-wordpress'),
+                ),
+            )
+        );
+
+        add_settings_field(
+            'asfw_settings_rate_limit_challenges_field',
+            __('Max challenges per window', 'anti-spam-for-wordpress'),
+            'asfw_settings_select_callback',
+            'asfw_admin',
+            'asfw_security_settings_section',
+            array(
+                'name' => AntiSpamForWordPressPlugin::$option_rate_limit_max_challenges,
+                'hint' => __('Limit repeated challenge fetches from the same visitor.', 'anti-spam-for-wordpress'),
+                'options' => array(
+                    '0' => __('Disabled', 'anti-spam-for-wordpress'),
+                    '15' => '15',
+                    '30' => '30',
+                    '60' => '60',
+                    '120' => '120',
+                ),
+            )
+        );
+
+        add_settings_field(
+            'asfw_settings_rate_limit_failures_field',
+            __('Max failed verifications per window', 'anti-spam-for-wordpress'),
+            'asfw_settings_select_callback',
+            'asfw_admin',
+            'asfw_security_settings_section',
+            array(
+                'name' => AntiSpamForWordPressPlugin::$option_rate_limit_max_failures,
+                'hint' => __('Throttle repeated bad submissions from the same visitor.', 'anti-spam-for-wordpress'),
+                'options' => array(
+                    '0' => __('Disabled', 'anti-spam-for-wordpress'),
+                    '5' => '5',
+                    '10' => '10',
+                    '20' => '20',
+                    '50' => '50',
+                ),
+            )
+        );
+
+        add_settings_field(
+            'asfw_settings_honeypot_field',
+            __('Honeypot field', 'anti-spam-for-wordpress'),
+            'asfw_settings_field_callback',
+            'asfw_admin',
+            'asfw_security_settings_section',
+            array(
+                'name' => AntiSpamForWordPressPlugin::$option_honeypot,
+                'description' => __('Yes', 'anti-spam-for-wordpress'),
+                'hint' => __('Add an off-screen trap field to catch simple bots.', 'anti-spam-for-wordpress'),
+                'type' => 'checkbox',
+            )
+        );
+
+        add_settings_field(
+            'asfw_settings_min_submit_time_field',
+            __('Minimum submit time', 'anti-spam-for-wordpress'),
+            'asfw_settings_select_callback',
+            'asfw_admin',
+            'asfw_security_settings_section',
+            array(
+                'name' => AntiSpamForWordPressPlugin::$option_min_submit_time,
+                'hint' => __('Reject submissions that complete too quickly.', 'anti-spam-for-wordpress'),
+                'options' => array(
+                    '0' => __('Disabled', 'anti-spam-for-wordpress'),
+                    '2' => __('2 seconds', 'anti-spam-for-wordpress'),
+                    '3' => __('3 seconds', 'anti-spam-for-wordpress'),
+                    '5' => __('5 seconds', 'anti-spam-for-wordpress'),
+                    '10' => __('10 seconds', 'anti-spam-for-wordpress'),
                 ),
             )
         );
@@ -159,6 +276,19 @@ if (is_admin()) {
                 'name' => AntiSpamForWordPressPlugin::$option_hidelogo,
                 'description' => __('Yes', 'anti-spam-for-wordpress'),
                 'type' => 'checkbox',
+            )
+        );
+
+        add_settings_field(
+            'asfw_settings_footer_text_field',
+            __('Footer text', 'anti-spam-for-wordpress'),
+            'asfw_settings_field_callback',
+            'asfw_admin',
+            'asfw_widget_settings_section',
+            array(
+                'name' => AntiSpamForWordPressPlugin::$option_footer_text,
+                'hint' => __('Shown in the widget footer when the footer is visible.', 'anti-spam-for-wordpress'),
+                'type' => 'text',
             )
         );
 

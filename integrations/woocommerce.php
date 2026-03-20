@@ -10,7 +10,7 @@ add_action(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_woocommerce_register();
         if (!empty($mode)) {
-            asfw_render_woocommerce_widget($mode, 'asfw_register');
+            asfw_render_woocommerce_widget($mode, 'woocommerce:register', 'asfw_register');
         }
     },
     10,
@@ -23,8 +23,7 @@ add_action(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_woocommerce_register();
         if (!empty($mode)) {
-            $payload = isset($_POST['asfw_register']) ? trim(sanitize_text_field($_POST['asfw_register'])) : '';
-            if ($plugin->verify($payload) === false) {
+            if (asfw_verify_posted_widget('woocommerce:register', 'asfw_register') === false) {
                 return $errors->add(
                     'asfw_error_message',
                     esc_html__('Could not verify you are not a robot.', 'anti-spam-for-wordpress')
@@ -44,7 +43,7 @@ add_action(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_woocommerce_login();
         if (!empty($mode)) {
-            asfw_render_woocommerce_widget($mode);
+            asfw_render_woocommerce_widget($mode, 'woocommerce:login');
         }
     },
     10,
@@ -70,8 +69,7 @@ add_filter(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_woocommerce_login();
         if (!empty($mode)) {
-            $payload = isset($_POST['asfw']) ? trim(sanitize_text_field($_POST['asfw'])) : '';
-            if ($plugin->verify($payload) === false) {
+            if (asfw_verify_posted_widget('woocommerce:login') === false) {
                 return new WP_Error(
                     'asfw-error',
                     esc_html__('Could not verify you are not a robot.', 'anti-spam-for-wordpress')
@@ -91,7 +89,7 @@ add_action(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_woocommerce_reset_password();
         if (!empty($mode)) {
-            asfw_render_woocommerce_widget($mode);
+            asfw_render_woocommerce_widget($mode, 'woocommerce:reset-password');
         }
     },
     10,
@@ -111,8 +109,7 @@ add_filter(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_woocommerce_reset_password();
         if (!empty($mode)) {
-            $payload = isset($_POST['asfw']) ? trim(sanitize_text_field($_POST['asfw'])) : '';
-            if ($plugin->verify($payload) === false) {
+            if (asfw_verify_posted_widget('woocommerce:reset-password') === false) {
                 $errors->add(
                     'asfw_error_message',
                     esc_html__('Could not verify you are not a robot.', 'anti-spam-for-wordpress')
@@ -126,8 +123,7 @@ add_filter(
     1
 );
 
-function asfw_render_woocommerce_widget($mode, $name = null)
+function asfw_render_woocommerce_widget($mode, $context, $name = null)
 {
-    $plugin = AntiSpamForWordPressPlugin::$instance;
-    echo wp_kses($plugin->render_widget($mode, true, null, $name), AntiSpamForWordPressPlugin::$html_allowed_tags);
+    echo asfw_render_widget_markup($mode, $context, $name);
 }

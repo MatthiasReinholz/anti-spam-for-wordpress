@@ -11,7 +11,7 @@ if (asfw_plugin_active('wpforms')) {
             $plugin = AntiSpamForWordPressPlugin::$instance;
             $mode = $plugin->get_integration_wpforms();
             if ($mode === 'captcha') {
-                echo wp_kses($plugin->render_widget($mode, true), AntiSpamForWordPressPlugin::$html_allowed_tags);
+                echo asfw_render_widget_markup($mode, 'wpforms');
             }
         },
         10,
@@ -24,8 +24,7 @@ if (asfw_plugin_active('wpforms')) {
             $plugin = AntiSpamForWordPressPlugin::$instance;
             $mode = $plugin->get_integration_wpforms();
             if (!empty($mode) && $mode === 'captcha') {
-                $payload = isset($_POST['asfw']) ? trim(sanitize_text_field($_POST['asfw'])) : '';
-                if ($plugin->verify($payload) === false) {
+                if (asfw_verify_posted_widget('wpforms') === false) {
                     wpforms()->process->errors[$form_data['id']]['header'] = esc_html__('Could not verify you are not a robot.', 'anti-spam-for-wordpress');
                 }
             }

@@ -42,6 +42,20 @@ class AntiSpamForWordPressPlugin
 
     public static $option_hidelogo = 'asfw_hidelogo';
 
+    public static $option_footer_text = 'asfw_footer_text';
+
+    public static $option_lazy = 'asfw_lazy';
+
+    public static $option_rate_limit_max_challenges = 'asfw_rate_limit_max_challenges';
+
+    public static $option_rate_limit_max_failures = 'asfw_rate_limit_max_failures';
+
+    public static $option_rate_limit_window = 'asfw_rate_limit_window';
+
+    public static $option_honeypot = 'asfw_honeypot';
+
+    public static $option_min_submit_time = 'asfw_min_submit_time';
+
     public static $option_integration_coblocks = 'asfw_integration_coblocks';
 
     public static $option_integration_contact_form_7 = 'asfw_integration_contact_form_7';
@@ -79,7 +93,7 @@ class AntiSpamForWordPressPlugin
     public static $option_integration_wpforms = 'asfw_integration_wpforms';
 
     public static $html_allowed_tags = array(
-        'altcha-widget' => array(
+        'asfw-widget' => array(
             'challengeurl' => array(),
             'strings' => array(),
             'auto' => array(),
@@ -88,15 +102,24 @@ class AntiSpamForWordPressPlugin
             'hidelogo' => array(),
             'hidefooter' => array(),
             'name' => array(),
+            'data-asfw-challengeurl' => array(),
+            'data-asfw-context' => array(),
+            'data-asfw-field' => array(),
+            'data-asfw-lazy' => array(),
+            'data-asfw-provider' => array(),
         ),
         'div' => array(
+            'aria-hidden' => array(),
             'class' => array(),
             'style' => array(),
         ),
         'input' => array(
+            'aria-hidden' => array(),
+            'autocomplete' => array(),
             'class' => array(),
             'id' => array(),
             'name' => array(),
+            'tabindex' => array(),
             'type' => array(),
             'value' => array(),
             'style' => array(),
@@ -143,6 +166,18 @@ class AntiSpamForWordPressPlugin
         return get_option(self::$option_hidelogo);
     }
 
+    public function get_footer_text()
+    {
+        $default_text = __('Protected by Anti Spam for WordPress', 'anti-spam-for-wordpress');
+        $footer_text = trim(wp_strip_all_tags((string) get_option(self::$option_footer_text, '')));
+
+        if ($footer_text === '') {
+            return $default_text;
+        }
+
+        return $footer_text;
+    }
+
     public function get_hidefooter()
     {
         return get_option(self::$option_hidefooter);
@@ -161,6 +196,36 @@ class AntiSpamForWordPressPlugin
     public function get_delay()
     {
         return trim(get_option(self::$option_delay));
+    }
+
+    public function get_lazy()
+    {
+        return (bool) get_option(self::$option_lazy);
+    }
+
+    public function get_rate_limit_max_challenges()
+    {
+        return intval(get_option(self::$option_rate_limit_max_challenges), 10);
+    }
+
+    public function get_rate_limit_max_failures()
+    {
+        return intval(get_option(self::$option_rate_limit_max_failures), 10);
+    }
+
+    public function get_rate_limit_window()
+    {
+        return intval(get_option(self::$option_rate_limit_window), 10);
+    }
+
+    public function get_honeypot()
+    {
+        return (bool) get_option(self::$option_honeypot);
+    }
+
+    public function get_min_submit_time()
+    {
+        return intval(get_option(self::$option_min_submit_time), 10);
     }
 
     public function get_integration_coblocks()
@@ -253,11 +318,58 @@ class AntiSpamForWordPressPlugin
         return trim(get_option(self::$option_integration_wpforms));
     }
 
-    public function get_challenge_url()
+    public function get_widget_provider()
+    {
+        return apply_filters('asfw_widget_provider', 'asfw');
+    }
+
+    public function get_widget_tag_name()
+    {
+        return apply_filters('asfw_widget_tag_name', 'asfw-widget');
+    }
+
+    public function normalize_context($context)
+    {
+        $context = strtolower((string) $context);
+        $context = preg_replace('/[^a-z0-9:._-]/', '-', $context);
+        $context = trim((string) $context, '-');
+
+        if ($context === '') {
+            $context = 'generic';
+        }
+
+        return $context;
+    }
+
+    public function get_widget_context($mode, $name = null, $context = null)
+    {
+        if ($context === null || $context === '') {
+            $context = 'form:' . ($mode ?: 'custom');
+            if (!empty($name)) {
+                $context .= ':' . sanitize_key($name);
+            }
+        }
+
+        return apply_filters(
+            'asfw_widget_context',
+            $this->normalize_context($context),
+            $mode,
+            $name
+        );
+    }
+
+    public function get_challenge_url($context = null)
     {
         $challenge_url = get_rest_url(null, '/anti-spam-for-wordpress/v1/challenge');
+        if (!empty($context)) {
+            $challenge_url = add_query_arg(
+                'context',
+                $this->normalize_context($context),
+                $challenge_url
+            );
+        }
 
-        return apply_filters('asfw_challenge_url', $challenge_url);
+        return apply_filters('asfw_challenge_url', $challenge_url, $context);
     }
 
     public function get_translations($language = null)
@@ -269,16 +381,11 @@ class AntiSpamForWordPressPlugin
             switch_to_locale($language);
         }
 
-        $website = constant('ASFW_WEBSITE');
         $translations = array(
             'error' => __('Verification failed. Try again later.', 'anti-spam-for-wordpress'),
-            'footer' => sprintf(
-                /* translators: the placeholders contain opening and closing tags for a link (<a> tag) */
-                __('Protected by %sAnti Spam for WordPress%s', 'anti-spam-for-wordpress'),
-                '<a href="' . esc_url($website) . '" target="_blank" rel="noopener noreferrer">',
-                '</a>'
-            ),
+            'footer' => $this->get_footer_text(),
             'label' => __('I\'m not a robot', 'anti-spam-for-wordpress'),
+            'required' => __('Please verify before submitting.', 'anti-spam-for-wordpress'),
             'verified' => __('Verified', 'anti-spam-for-wordpress'),
             'verifying' => __('Verifying...', 'anti-spam-for-wordpress'),
             'waitAlert' => __('Verifying... please wait.', 'anti-spam-for-wordpress'),
@@ -328,54 +435,314 @@ class AntiSpamForWordPressPlugin
         return bin2hex(random_bytes(12));
     }
 
-    public function verify($payload, $hmac_key = null)
+    public function get_challenge_transient_key($challenge_id)
     {
-        if ($hmac_key === null) {
-            $hmac_key = $this->get_secret();
+        return 'asfw_challenge_' . sanitize_key($challenge_id);
+    }
+
+    public function get_challenge_lock_key($challenge_id)
+    {
+        return 'asfw_challenge_lock_' . sanitize_key($challenge_id);
+    }
+
+    public function get_started_field_name($field_name = 'asfw')
+    {
+        return sanitize_key($field_name) . '_started';
+    }
+
+    public function get_honeypot_field_name($field_name = 'asfw')
+    {
+        return sanitize_key($field_name) . '_website';
+    }
+
+    public function get_client_fingerprint()
+    {
+        $ip_address = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : 'unknown';
+        $secret = $this->get_secret() ?: wp_salt('nonce');
+
+        return hash_hmac('sha256', $ip_address, $secret);
+    }
+
+    public function get_rate_limit_key($type, $context)
+    {
+        return 'asfw_rl_' . sanitize_key($type) . '_' . md5($this->get_client_fingerprint() . '|' . $context);
+    }
+
+    public function get_rate_limit_limit($type)
+    {
+        if ($type === 'challenge') {
+            return max(0, $this->get_rate_limit_max_challenges());
         }
 
-        if (empty($payload) || empty($hmac_key)) {
-            do_action('asfw_verify_result', false);
+        return max(0, $this->get_rate_limit_max_failures());
+    }
 
+    public function get_rate_limit_window_safe()
+    {
+        return max(60, $this->get_rate_limit_window());
+    }
+
+    public function get_rate_limit_state($type, $context)
+    {
+        $limit = $this->get_rate_limit_limit($type);
+        if ($limit <= 0) {
+            return array(
+                'count' => 0,
+                'limit' => 0,
+                'window' => $this->get_rate_limit_window_safe(),
+            );
+        }
+
+        $bucket = get_transient($this->get_rate_limit_key($type, $context));
+        if (!is_array($bucket)) {
+            $bucket = array(
+                'count' => 0,
+            );
+        }
+
+        return array(
+            'count' => isset($bucket['count']) ? intval($bucket['count'], 10) : 0,
+            'limit' => $limit,
+            'window' => $this->get_rate_limit_window_safe(),
+        );
+    }
+
+    public function is_rate_limited($type, $context)
+    {
+        $state = $this->get_rate_limit_state($type, $context);
+        if ($state['limit'] <= 0) {
             return false;
         }
 
-        $data = json_decode(base64_decode($payload));
-        $result = $this->verify_solution($payload, $hmac_key);
+        if ($state['count'] >= $state['limit']) {
+            do_action('asfw_rate_limited', $type, $context, $state);
 
-        do_action('asfw_verify_result', $result);
-
-        return $result;
-    }
-
-    public function verify_solution($payload, $hmac_key = null)
-    {
-        if ($hmac_key === null) {
-            $hmac_key = $this->get_secret();
+            return new WP_Error(
+                'asfw_rate_limited',
+                __('Too many verification attempts. Please wait and try again.', 'anti-spam-for-wordpress'),
+                array('status' => 429)
+            );
         }
 
-        $data = json_decode(base64_decode($payload));
-        $salt_url = wp_parse_url($data->salt);
-        if (isset($salt_url['query']) && !empty($salt_url['query'])) {
-            parse_str($salt_url['query'], $salt_params);
-            if (!empty($salt_params['expires'])) {
-                $expires = intval($salt_params['expires'], 10);
-                if ($expires > 0 && $expires < time()) {
-                    return false;
+        return false;
+    }
+
+    public function increment_rate_limit($type, $context)
+    {
+        $state = $this->get_rate_limit_state($type, $context);
+        if ($state['limit'] <= 0) {
+            return $state;
+        }
+
+        $state['count']++;
+        set_transient(
+            $this->get_rate_limit_key($type, $context),
+            array('count' => $state['count']),
+            $state['window']
+        );
+
+        return $state;
+    }
+
+    public function clear_rate_limit($type, $context)
+    {
+        delete_transient($this->get_rate_limit_key($type, $context));
+    }
+
+    public function decode_payload($payload)
+    {
+        if (!is_string($payload) || trim($payload) === '') {
+            return new WP_Error('asfw_empty_payload', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        $decoded = base64_decode($payload, true);
+        if ($decoded === false) {
+            return new WP_Error('asfw_invalid_base64', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        $data = json_decode($decoded, true);
+        if (!is_array($data) || json_last_error() !== JSON_ERROR_NONE) {
+            return new WP_Error('asfw_invalid_json', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        $required = array('algorithm', 'challenge', 'number', 'salt', 'signature');
+        foreach ($required as $field) {
+            if (!array_key_exists($field, $data)) {
+                return new WP_Error('asfw_missing_field', __('Verification failed.', 'anti-spam-for-wordpress'));
+            }
+        }
+
+        if (
+            !is_string($data['algorithm']) ||
+            !is_string($data['challenge']) ||
+            !is_string($data['salt']) ||
+            !is_string($data['signature']) ||
+            (!is_int($data['number']) && !is_string($data['number']))
+        ) {
+            return new WP_Error('asfw_invalid_field_type', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        if (!preg_match('/^\d+$/', (string) $data['number'])) {
+            return new WP_Error('asfw_invalid_number', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        $data['number'] = (string) intval($data['number'], 10);
+
+        return $data;
+    }
+
+    public function validate_submission_guards($context, $field_name = 'asfw')
+    {
+        $rate_limited = $this->is_rate_limited('failure', $context);
+        if ($rate_limited instanceof WP_Error) {
+            return $rate_limited;
+        }
+
+        if ($this->get_honeypot()) {
+            $honeypot = asfw_get_posted_value($this->get_honeypot_field_name($field_name));
+            if ($honeypot !== '') {
+                $this->increment_rate_limit('failure', $context);
+
+                return new WP_Error('asfw_honeypot', __('Verification failed.', 'anti-spam-for-wordpress'));
+            }
+        }
+
+        $min_submit_time = $this->get_min_submit_time();
+        if ($min_submit_time > 0) {
+            $started_value = asfw_get_posted_value($this->get_started_field_name($field_name));
+            if ($started_value !== '' && preg_match('/^\d+$/', $started_value)) {
+                $started_at = intval($started_value, 10);
+                $elapsed_ms = round(microtime(true) * 1000) - $started_at;
+                if ($elapsed_ms >= 0 && $elapsed_ms < ($min_submit_time * 1000)) {
+                    $this->increment_rate_limit('failure', $context);
+
+                    return new WP_Error('asfw_submitted_too_fast', __('Verification failed.', 'anti-spam-for-wordpress'));
                 }
             }
         }
 
-        $alg_ok = ($data->algorithm === 'SHA-256');
-        $calculated_challenge = hash('sha256', $data->salt . $data->number);
-        $challenge_ok = ($data->challenge === $calculated_challenge);
-        $calculated_signature = hash_hmac('sha256', $data->challenge, $hmac_key);
-        $signature_ok = ($data->signature === $calculated_signature);
-
-        return $alg_ok && $challenge_ok && $signature_ok;
+        return true;
     }
 
-    public function generate_challenge($hmac_key = null, $complexity = null, $expires = null)
+    public function validate_solution($payload, $hmac_key = null, $expected_context = null)
+    {
+        if ($hmac_key === null) {
+            $hmac_key = $this->get_secret();
+        }
+
+        if (empty($hmac_key)) {
+            return new WP_Error('asfw_missing_secret', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        $data = $this->decode_payload($payload);
+        if ($data instanceof WP_Error) {
+            return $data;
+        }
+
+        if ($data['algorithm'] !== 'SHA-256') {
+            return new WP_Error('asfw_invalid_algorithm', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        $salt_url = wp_parse_url($data['salt']);
+        if (!is_array($salt_url)) {
+            return new WP_Error('asfw_invalid_salt', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        $salt_params = array();
+        if (!empty($salt_url['query'])) {
+            parse_str($salt_url['query'], $salt_params);
+        }
+
+        $context = isset($salt_params['context']) ? $this->normalize_context($salt_params['context']) : '';
+        $challenge_id = isset($salt_params['challenge_id']) ? sanitize_key($salt_params['challenge_id']) : '';
+        if ($context === '' || $challenge_id === '') {
+            return new WP_Error('asfw_missing_challenge_state', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        if ($expected_context !== null && $expected_context !== '' && $this->normalize_context($expected_context) !== $context) {
+            return new WP_Error('asfw_context_mismatch', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        if (!empty($salt_params['expires'])) {
+            $expires = intval($salt_params['expires'], 10);
+            if ($expires > 0 && $expires < time()) {
+                delete_transient($this->get_challenge_transient_key($challenge_id));
+
+                return new WP_Error('asfw_expired', __('Verification expired.', 'anti-spam-for-wordpress'));
+            }
+        }
+
+        $challenge_state = get_transient($this->get_challenge_transient_key($challenge_id));
+        if (!is_array($challenge_state)) {
+            return new WP_Error('asfw_unknown_challenge', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        if (!empty($challenge_state['context']) && $this->normalize_context($challenge_state['context']) !== $context) {
+            return new WP_Error('asfw_transient_context_mismatch', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        $lock_key = $this->get_challenge_lock_key($challenge_id);
+        if (get_transient($lock_key) !== false) {
+            return new WP_Error('asfw_replay_locked', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+        set_transient($lock_key, 1, 30);
+
+        $calculated_challenge = hash('sha256', $data['salt'] . $data['number']);
+        if (!hash_equals($calculated_challenge, $data['challenge'])) {
+            delete_transient($lock_key);
+
+            return new WP_Error('asfw_invalid_challenge', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        $calculated_signature = hash_hmac('sha256', $data['challenge'], $hmac_key);
+        if (!hash_equals($calculated_signature, $data['signature'])) {
+            delete_transient($lock_key);
+
+            return new WP_Error('asfw_invalid_signature', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        delete_transient($this->get_challenge_transient_key($challenge_id));
+        set_transient($lock_key, 1, 30);
+
+        return true;
+    }
+
+    public function validate_request($payload, $hmac_key = null, $context = null, $field_name = 'asfw')
+    {
+        $context = $context === null ? null : $this->normalize_context($context);
+        $guard_result = $this->validate_submission_guards($context ?: 'generic', $field_name);
+        if ($guard_result instanceof WP_Error) {
+            return $guard_result;
+        }
+
+        $result = $this->validate_solution($payload, $hmac_key, $context);
+        if ($result instanceof WP_Error) {
+            $this->increment_rate_limit('failure', $context ?: 'generic');
+
+            return $result;
+        }
+
+        $this->clear_rate_limit('failure', $context ?: 'generic');
+
+        return true;
+    }
+
+    public function verify($payload, $hmac_key = null, $context = null, $field_name = 'asfw')
+    {
+        $result = $this->validate_request($payload, $hmac_key, $context, $field_name);
+        $success = !($result instanceof WP_Error);
+
+        do_action('asfw_verify_result', $success, $result, $context, $field_name);
+
+        return $success;
+    }
+
+    public function verify_solution($payload, $hmac_key = null, $expected_context = null)
+    {
+        return !($this->validate_solution($payload, $hmac_key, $expected_context) instanceof WP_Error);
+    }
+
+    public function generate_challenge($hmac_key = null, $complexity = null, $expires = null, $context = null)
     {
         if ($hmac_key === null) {
             $hmac_key = $this->get_secret();
@@ -389,14 +756,22 @@ class AntiSpamForWordPressPlugin
             $expires = intval($this->get_expires(), 10);
         }
 
-        $salt = $this->random_secret();
-        if ($expires > 0) {
-            $salt .= '?' . http_build_query(
-                array(
-                    'expires' => time() + $expires,
-                )
-            );
+        $context = $this->normalize_context($context ?: 'generic');
+        $rate_limited = $this->is_rate_limited('challenge', $context);
+        if ($rate_limited instanceof WP_Error) {
+            return $rate_limited;
         }
+
+        $challenge_id = $this->random_secret();
+        $salt = $this->random_secret();
+        $transient_ttl = max(60, $expires > 0 ? $expires : 300);
+        $salt .= '?' . http_build_query(
+            array(
+                'challenge_id' => $challenge_id,
+                'context' => $context,
+                'expires' => time() + $transient_ttl,
+            )
+        );
 
         if (!str_ends_with($salt, '&')) {
             $salt .= '&';
@@ -423,32 +798,57 @@ class AntiSpamForWordPressPlugin
         $secret_number = random_int($min_secret, $max_secret);
         $challenge = hash('sha256', $salt . $secret_number);
         $signature = hash_hmac('sha256', $challenge, $hmac_key);
+        set_transient(
+            $this->get_challenge_transient_key($challenge_id),
+            array(
+                'context' => $context,
+                'issued_at' => time(),
+            ),
+            $transient_ttl
+        );
+        $this->increment_rate_limit('challenge', $context);
 
-        return array(
+        $challenge_data = array(
             'algorithm' => 'SHA-256',
             'challenge' => $challenge,
             'maxnumber' => $max_secret,
             'salt' => $salt,
             'signature' => $signature,
         );
+
+        do_action('asfw_challenge_issued', $challenge_data, $context, $challenge_id);
+
+        return $challenge_data;
     }
 
-    public function get_widget_attrs($mode, $language = null, $name = null)
+    public function get_widget_attrs($mode, $language = null, $name = null, $context = null)
     {
         $floating = $this->get_floating();
         $delay = $this->get_delay();
+        $field_name = sanitize_key($name ?: 'asfw');
+        $context = $this->get_widget_context($mode, $field_name, $context);
         $strings = wp_json_encode($this->get_translations($language));
+        $auto = $this->get_auto();
+        $lazy = $this->get_lazy();
         $attrs = array(
-            'challengeurl' => $this->get_challenge_url(),
+            'data-asfw-context' => $context,
+            'data-asfw-field' => $field_name,
+            'data-asfw-lazy' => $lazy ? '1' : '0',
+            'data-asfw-provider' => $this->get_widget_provider(),
             'strings' => $strings,
         );
 
-        if ($name) {
-            $attrs['name'] = $name;
+        $challenge_url = $this->get_challenge_url($context);
+        if ($lazy && $auto !== 'onload') {
+            $attrs['data-asfw-challengeurl'] = $challenge_url;
+        } else {
+            $attrs['challengeurl'] = $challenge_url;
         }
 
-        if ($this->get_auto()) {
-            $attrs['auto'] = $this->get_auto();
+        $attrs['name'] = $field_name;
+
+        if ($auto) {
+            $attrs['auto'] = $auto;
         }
 
         if ($floating) {
@@ -467,15 +867,29 @@ class AntiSpamForWordPressPlugin
             $attrs['hidefooter'] = '1';
         }
 
-        return apply_filters('asfw_widget_attrs', $attrs, $mode, $language, $name);
+        return apply_filters('asfw_widget_attrs', $attrs, $mode, $language, $field_name, $context);
     }
 
-    public function render_widget($mode, $wrap = false, $language = null, $name = null)
+    public function render_widget_auxiliary_fields($field_name = 'asfw')
+    {
+        $html = '<input type="hidden" name="' . esc_attr($this->get_started_field_name($field_name)) . '" value="">';
+
+        if ($this->get_honeypot()) {
+            $html .= '<div class="asfw-honeypot" aria-hidden="true" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;">';
+            $html .= '<input type="text" autocomplete="off" tabindex="-1" name="' . esc_attr($this->get_honeypot_field_name($field_name)) . '" value="">';
+            $html .= '</div>';
+        }
+
+        return $html;
+    }
+
+    public function render_widget($mode, $wrap = false, $language = null, $name = null, $context = null)
     {
         asfw_enqueue_scripts();
         asfw_enqueue_styles();
 
-        $attrs = $this->get_widget_attrs($mode, $language, $name);
+        $field_name = sanitize_key($name ?: 'asfw');
+        $attrs = $this->get_widget_attrs($mode, $language, $field_name, $context);
         $attributes = join(
             ' ',
             array_map(
@@ -490,16 +904,18 @@ class AntiSpamForWordPressPlugin
             )
         );
 
-        $html = '<altcha-widget ' . $attributes . '></altcha-widget>';
-        $html .= '<noscript><div class="altcha-no-javascript">';
+        $tag_name = $this->get_widget_tag_name();
+        $html = '<' . $tag_name . ' ' . $attributes . '></' . $tag_name . '>';
+        $html .= $this->render_widget_auxiliary_fields($field_name);
+        $html .= '<noscript><div class="asfw-no-javascript">';
         $html .= esc_html__('This form requires JavaScript.', 'anti-spam-for-wordpress');
         $html .= '</div></noscript>';
 
         if ($wrap) {
-            $html = '<div class="altcha-widget-wrap">' . $html . '</div>';
+            $html = '<div class="asfw-widget-wrap">' . $html . '</div>';
         }
 
-        return apply_filters('asfw_widget_html', $html, $mode, $language, $name);
+        return apply_filters('asfw_widget_html', $html, $mode, $language, $field_name, $context);
     }
 }
 
@@ -521,14 +937,26 @@ add_action(
                 'methods' => WP_REST_Server::READABLE,
                 'callback' => 'asfw_generate_challenge_endpoint',
                 'permission_callback' => '__return_true',
+                'args' => array(
+                    'context' => array(
+                        'required' => false,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ),
+                ),
             )
         );
     }
 );
 
-function asfw_generate_challenge_endpoint()
+function asfw_generate_challenge_endpoint(WP_REST_Request $request)
 {
-    $response = new WP_REST_Response(AntiSpamForWordPressPlugin::$instance->generate_challenge());
+    $context = $request->get_param('context');
+    $challenge = AntiSpamForWordPressPlugin::$instance->generate_challenge(null, null, null, $context);
+    if ($challenge instanceof WP_Error) {
+        return $challenge;
+    }
+
+    $response = new WP_REST_Response($challenge);
     $response->set_headers(array('Cache-Control' => 'no-cache, no-store, max-age=0'));
 
     return $response;

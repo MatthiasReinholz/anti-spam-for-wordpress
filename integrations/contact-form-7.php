@@ -15,10 +15,7 @@ if (asfw_plugin_active('contact-form-7')) {
             if ($mode === 'captcha') {
                 $input = '<input class="wpcf7-form-control wpcf7-submit ';
                 $button = '<button class="wpcf7-form-control wpcf7-submit ';
-                $widget = wp_kses(
-                    $plugin->render_widget($mode, true, AntiSpamForWordPressPlugin::$language),
-                    AntiSpamForWordPressPlugin::$html_allowed_tags
-                );
+                $widget = asfw_render_widget_markup($mode, 'contact-form-7', 'asfw', true, AntiSpamForWordPressPlugin::$language);
                 if (strpos($elements, $input) !== false) {
                     $elements = str_replace($input, $widget . $input, $elements);
                 } elseif (strpos($elements, $button) !== false) {
@@ -44,9 +41,7 @@ if (asfw_plugin_active('contact-form-7')) {
             $plugin = AntiSpamForWordPressPlugin::$instance;
             $mode = $plugin->get_integration_contact_form_7();
             if (!empty($mode) && ($mode === 'captcha' || $mode === 'shortcode')) {
-                $payload = isset($_POST['asfw']) ? trim(sanitize_text_field($_POST['asfw'])) : '';
-
-                return $plugin->verify($payload) === false;
+                return asfw_verify_posted_widget($mode === 'captcha' ? 'contact-form-7' : null) === false;
             }
 
             return $spam;

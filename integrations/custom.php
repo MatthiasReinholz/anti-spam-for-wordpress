@@ -17,7 +17,7 @@ add_action(
                 ASFW_VERSION,
                 true
             );
-            $attrs = wp_json_encode($plugin->get_widget_attrs($mode));
+            $attrs = wp_json_encode($plugin->get_widget_attrs($mode, null, 'asfw', 'custom'));
             wp_register_script(
                 'asfw-widget-custom-options',
                 '',

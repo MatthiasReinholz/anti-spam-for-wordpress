@@ -26,7 +26,7 @@ if (asfw_plugin_active('coblocks')) {
             if ($mode === 'captcha') {
                 return str_replace(
                     '<button type="submit"',
-                    wp_kses($plugin->render_widget($mode, true), AntiSpamForWordPressPlugin::$html_allowed_tags) . '<button type="submit"',
+                    asfw_render_widget_markup($mode, 'coblocks') . '<button type="submit"',
                     $block_content
                 );
             }
@@ -85,8 +85,7 @@ if (asfw_plugin_active('coblocks')) {
             $plugin = AntiSpamForWordPressPlugin::$instance;
             $mode = $plugin->get_integration_coblocks();
             if (!empty($mode) && $mode === 'captcha') {
-                $payload = isset($_POST['asfw']) ? trim(sanitize_text_field($_POST['asfw'])) : '';
-                if ($plugin->verify($payload) === false) {
+                if (asfw_verify_posted_widget('coblocks') === false) {
                     return array(
                         'body' => '{"success":false}',
                         'response' => array(

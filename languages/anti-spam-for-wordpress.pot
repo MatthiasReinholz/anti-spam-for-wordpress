@@ -43,12 +43,6 @@ msgstr ""
 msgid "Anti Spam for WordPress"
 msgstr ""
 
-#: admin/options.php:31
-msgid ""
-"Anti Spam for WordPress is a fork of the ALTCHA WordPress plugin v1, adapted "
-"and maintained by Matthias Reinholz."
-msgstr ""
-
 #: integrations/formidable/builder-field.php:1
 msgid "Anti Spam for WordPress will be displayed here."
 msgstr ""
@@ -61,6 +55,22 @@ msgstr ""
 
 #: includes/settings.php:108
 msgid "Auto verification"
+msgstr ""
+
+#: includes/settings.php:283
+msgid "Footer text"
+msgstr ""
+
+#: includes/settings.php:289
+msgid "Shown in the widget footer when the footer is visible."
+msgstr ""
+
+#: includes/core.php:156
+msgid "Protected by Anti Spam for WordPress"
+msgstr ""
+
+#: includes/core.php:388
+msgid "Please verify before submitting."
 msgstr ""
 
 #: includes/settings.php:282 includes/settings.php:322
@@ -225,11 +235,6 @@ msgstr ""
 
 #: includes/settings.php:117
 msgid "On page load"
-msgstr ""
-
-#: includes/core.php:277
-#, php-format
-msgid "Protected by %sAnti Spam for WordPress%s"
 msgstr ""
 
 #: includes/settings.php:298

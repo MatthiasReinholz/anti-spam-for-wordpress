@@ -61,4 +61,52 @@ function asfw_enqueue_scripts()
         ASFW_VERSION,
         true
     );
+
+    $plugin = AntiSpamForWordPressPlugin::$instance;
+    wp_localize_script(
+        'asfw-widget-wp',
+        'ASFW_RUNTIME',
+        array(
+            'defaultFieldName' => 'asfw',
+            'honeypotEnabled' => $plugin ? (bool) $plugin->get_honeypot() : false,
+            'lazy' => $plugin ? (bool) $plugin->get_lazy() : false,
+            'minSubmitTime' => $plugin ? (int) $plugin->get_min_submit_time() : 0,
+        )
+    );
+}
+
+function asfw_get_posted_value($key)
+{
+    if (!isset($_POST[$key])) {
+        return '';
+    }
+
+    return trim(sanitize_text_field(wp_unslash($_POST[$key])));
+}
+
+function asfw_get_posted_payload($key)
+{
+    if (!isset($_POST[$key])) {
+        return '';
+    }
+
+    return trim((string) wp_unslash($_POST[$key]));
+}
+
+function asfw_render_widget_markup($mode, $context = null, $name = null, $wrap = true, $language = null)
+{
+    $plugin = AntiSpamForWordPressPlugin::$instance;
+
+    return wp_kses(
+        $plugin->render_widget($mode, $wrap, $language, $name, $context),
+        AntiSpamForWordPressPlugin::$html_allowed_tags
+    );
+}
+
+function asfw_verify_posted_widget($context = null, $field_name = 'asfw')
+{
+    $plugin = AntiSpamForWordPressPlugin::$instance;
+    $payload = asfw_get_posted_payload($field_name);
+
+    return $plugin->verify($payload, null, $context, $field_name);
 }

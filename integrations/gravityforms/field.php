@@ -55,7 +55,7 @@ class ASFW_GFForms_Field extends GF_Field
             $widget_html .= '<div><span>' . esc_html__('Anti Spam Widget placeholder', 'anti-spam-for-wordpress') . '</span></div>';
             $widget_html .= '</div>';
         } else {
-            $widget_html = wp_kses($plugin->render_widget($mode), AntiSpamForWordPressPlugin::$html_allowed_tags);
+            $widget_html = asfw_render_widget_markup($mode, 'gravityforms', 'asfw', false);
         }
 
         return sprintf("<div class='ginput_container ginput_container_%s gfield--type-html'>%s</div>", $this->type, $widget_html);
@@ -77,8 +77,7 @@ class ASFW_GFForms_Field extends GF_Field
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_gravityforms();
         if (!empty($mode) && $mode === 'captcha') {
-            $payload = isset($_POST['asfw']) ? trim(sanitize_text_field($_POST['asfw'])) : '';
-            if ($plugin->verify($payload) === false) {
+            if (asfw_verify_posted_widget('gravityforms') === false) {
                 $this->failed_validation = true;
                 $this->validation_message = __('Could not verify you are not a robot.', 'anti-spam-for-wordpress');
             }

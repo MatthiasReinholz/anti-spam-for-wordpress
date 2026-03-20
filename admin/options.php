@@ -28,8 +28,6 @@ function asfw_options_page_html()
     <div class="wrap">
       <hr>
 
-      <p><?php echo esc_html__('Anti Spam for WordPress is a fork of the ALTCHA WordPress plugin v1, adapted and maintained by Matthias Reinholz.', 'anti-spam-for-wordpress'); ?></p>
-
       <form action="options.php" method="post">
         <?php
         settings_errors();
@@ -71,6 +69,13 @@ function asfw_widget_section_callback()
 {
     ?>
     <p><?php echo esc_html__('Customize the widget to fit your forms.', 'anti-spam-for-wordpress'); ?></p>
+    <?php
+}
+
+function asfw_security_section_callback()
+{
+    ?>
+    <p><?php echo esc_html__('Harden verification with short-lived challenges, rate limits, and low-friction bot traps.', 'anti-spam-for-wordpress'); ?></p>
     <?php
 }
 

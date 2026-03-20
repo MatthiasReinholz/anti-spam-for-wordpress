@@ -13,7 +13,7 @@ if (asfw_plugin_active('html-forms')) {
             $plugin = AntiSpamForWordPressPlugin::$instance;
             $mode = $plugin->get_integration_html_forms();
             if ($mode === 'captcha') {
-                return str_replace('</form>', wp_kses($plugin->render_widget($mode), AntiSpamForWordPressPlugin::$html_allowed_tags) . '</form>', $html);
+                return str_replace('</form>', asfw_render_widget_markup($mode, 'html-forms', 'asfw', false) . '</form>', $html);
             }
 
             return $html;
@@ -26,12 +26,12 @@ if (asfw_plugin_active('html-forms')) {
             $plugin = AntiSpamForWordPressPlugin::$instance;
             $mode = $plugin->get_integration_html_forms();
             if (!empty($mode)) {
-                if ($mode === 'shortcode' && strpos($form, '<altcha-widget ') === false) {
+                $widget_tag = '<' . $plugin->get_widget_tag_name() . ' ';
+                if ($mode === 'shortcode' && strpos($form, $widget_tag) === false) {
                     return $error_code;
                 }
                 if ($mode === 'captcha' || $mode === 'shortcode') {
-                    $payload = isset($_POST['asfw']) ? trim(sanitize_text_field($_POST['asfw'])) : '';
-                    if ($plugin->verify($payload) === false) {
+                    if (asfw_verify_posted_widget($mode === 'captcha' ? 'html-forms' : null) === false) {
                         return 'asfw_invalid';
                     }
                 }

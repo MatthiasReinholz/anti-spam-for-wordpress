@@ -10,8 +10,8 @@ add_action(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_wpdiscuz();
         if (!empty($mode)) {
-            $output = '<div class="altcha-widget-wrap-wpdiscuz">';
-            $output .= $plugin->render_widget($mode, false);
+            $output = '<div class="asfw-widget-wrap-wpdiscuz">';
+            $output .= $plugin->render_widget($mode, false, null, 'asfw', 'wpdiscuz:comments');
             $output .= '</div>';
             echo wp_kses($output, AntiSpamForWordPressPlugin::$html_allowed_tags);
         }

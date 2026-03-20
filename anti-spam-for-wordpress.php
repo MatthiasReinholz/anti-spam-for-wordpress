@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
 
 /*
  * Plugin Name: Anti Spam for WordPress
- * Description: Self-hosted spam protection for WordPress forms using a proof-of-work widget. This plugin is a fork of the ALTCHA WordPress plugin v1.
+ * Description: Self-hosted spam protection for WordPress forms using a proof-of-work widget.
  * Author: Matthias Reinholz
  * Author URI: https://matthiasreinholz.com
  * Version: 0.0.1
@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) {
 define('ASFW_FILE', __FILE__);
 define('ASFW_VERSION', '0.0.1');
 define('ASFW_WEBSITE', 'https://matthiasreinholz.com');
-define('ASFW_WIDGET_VERSION', '2.2.2');
+define('ASFW_WIDGET_VERSION', '1.0.0');
 
 // Required for is_plugin_active.
 require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -45,8 +45,8 @@ require plugin_dir_path(__FILE__) . 'integrations/wpmembers.php';
 require plugin_dir_path(__FILE__) . 'integrations/woocommerce.php';
 require plugin_dir_path(__FILE__) . 'integrations/wordpress.php';
 
-AntiSpamForWordPressPlugin::$widget_script_src = plugin_dir_url(__FILE__) . 'public/altcha.min.js';
-AntiSpamForWordPressPlugin::$widget_style_src = plugin_dir_url(__FILE__) . 'public/altcha.css';
+AntiSpamForWordPressPlugin::$widget_script_src = plugin_dir_url(__FILE__) . 'public/asfw-widget.js';
+AntiSpamForWordPressPlugin::$widget_style_src = plugin_dir_url(__FILE__) . 'public/asfw-widget.css';
 AntiSpamForWordPressPlugin::$wp_script_src = plugin_dir_url(__FILE__) . 'public/script.js';
 AntiSpamForWordPressPlugin::$admin_script_src = plugin_dir_url(__FILE__) . 'public/admin.js';
 AntiSpamForWordPressPlugin::$admin_css_src = plugin_dir_url(__FILE__) . 'public/admin.css';
@@ -63,14 +63,19 @@ add_shortcode(
     function ($attrs) {
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $defaults = array(
+            'context' => null,
             'language' => null,
             'mode' => $plugin->get_integration_custom(),
+            'name' => 'asfw',
         );
         $attributes = shortcode_atts($defaults, $attrs);
 
-        return wp_kses(
-            $plugin->render_widget($attributes['mode'], true, $attributes['language']),
-            AntiSpamForWordPressPlugin::$html_allowed_tags
+        return asfw_render_widget_markup(
+            $attributes['mode'],
+            $attributes['context'],
+            $attributes['name'],
+            true,
+            $attributes['language']
         );
     }
 );
@@ -97,7 +102,7 @@ function asfw_activate()
     }
 
     if (get_option(AntiSpamForWordPressPlugin::$option_expires, '') === '') {
-        update_option(AntiSpamForWordPressPlugin::$option_expires, '3600');
+        update_option(AntiSpamForWordPressPlugin::$option_expires, '300');
     }
 
     if (get_option(AntiSpamForWordPressPlugin::$option_hidefooter, null) === null) {
@@ -108,8 +113,39 @@ function asfw_activate()
         update_option(AntiSpamForWordPressPlugin::$option_hidelogo, false);
     }
 
+    if (get_option(AntiSpamForWordPressPlugin::$option_footer_text, '') === '') {
+        update_option(
+            AntiSpamForWordPressPlugin::$option_footer_text,
+            __('Protected by Anti Spam for WordPress', 'anti-spam-for-wordpress')
+        );
+    }
+
     if (get_option(AntiSpamForWordPressPlugin::$option_integration_custom, '') === '') {
         update_option(AntiSpamForWordPressPlugin::$option_integration_custom, 'captcha');
+    }
+
+    if (get_option(AntiSpamForWordPressPlugin::$option_lazy, null) === null) {
+        update_option(AntiSpamForWordPressPlugin::$option_lazy, true);
+    }
+
+    if (get_option(AntiSpamForWordPressPlugin::$option_rate_limit_max_challenges, '') === '') {
+        update_option(AntiSpamForWordPressPlugin::$option_rate_limit_max_challenges, '30');
+    }
+
+    if (get_option(AntiSpamForWordPressPlugin::$option_rate_limit_max_failures, '') === '') {
+        update_option(AntiSpamForWordPressPlugin::$option_rate_limit_max_failures, '10');
+    }
+
+    if (get_option(AntiSpamForWordPressPlugin::$option_rate_limit_window, '') === '') {
+        update_option(AntiSpamForWordPressPlugin::$option_rate_limit_window, '600');
+    }
+
+    if (get_option(AntiSpamForWordPressPlugin::$option_honeypot, null) === null) {
+        update_option(AntiSpamForWordPressPlugin::$option_honeypot, true);
+    }
+
+    if (get_option(AntiSpamForWordPressPlugin::$option_min_submit_time, '') === '') {
+        update_option(AntiSpamForWordPressPlugin::$option_min_submit_time, '3');
     }
 }
 
@@ -151,6 +187,7 @@ function asfw_maybe_migrate_legacy_settings($force = false)
         'altcha_delay' => AntiSpamForWordPressPlugin::$option_delay,
         'altcha_hidefooter' => AntiSpamForWordPressPlugin::$option_hidefooter,
         'altcha_hidelogo' => AntiSpamForWordPressPlugin::$option_hidelogo,
+        'altcha_footer_text' => AntiSpamForWordPressPlugin::$option_footer_text,
         'altcha_integration_coblocks' => AntiSpamForWordPressPlugin::$option_integration_coblocks,
         'altcha_integration_contact_form_7' => AntiSpamForWordPressPlugin::$option_integration_contact_form_7,
         'altcha_integration_custom' => AntiSpamForWordPressPlugin::$option_integration_custom,

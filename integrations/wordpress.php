@@ -10,7 +10,7 @@ add_action(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_wordpress_register();
         if (!empty($mode)) {
-            asfw_render_wordpress_widget($mode, 'asfw_register');
+            asfw_render_wordpress_widget($mode, 'wordpress:register', 'asfw_register');
         }
     },
     10,
@@ -23,8 +23,7 @@ add_action(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_wordpress_register();
         if (!empty($mode)) {
-            $payload = isset($_POST['asfw_register']) ? trim(sanitize_text_field($_POST['asfw_register'])) : '';
-            if ($plugin->verify($payload) === false) {
+            if (asfw_verify_posted_widget('wordpress:register', 'asfw_register') === false) {
                 return $errors->add(
                     'asfw_error_message',
                     '<strong>' . esc_html__('Error', 'anti-spam-for-wordpress') . '</strong> : ' . esc_html__('Could not verify you are not a robot.', 'anti-spam-for-wordpress')
@@ -44,7 +43,7 @@ add_action(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_wordpress_login();
         if (!empty($mode)) {
-            asfw_render_wordpress_widget($mode);
+            asfw_render_wordpress_widget($mode, 'wordpress:login');
         }
     },
     10,
@@ -70,8 +69,7 @@ add_filter(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_wordpress_login();
         if (!empty($mode)) {
-            $payload = isset($_POST['asfw']) ? trim(sanitize_text_field($_POST['asfw'])) : '';
-            if ($plugin->verify($payload) === false) {
+            if (asfw_verify_posted_widget('wordpress:login') === false) {
                 return new WP_Error(
                     'asfw-error',
                     '<strong>' . esc_html__('Error', 'anti-spam-for-wordpress') . '</strong> : ' . esc_html__('Could not verify you are not a robot.', 'anti-spam-for-wordpress')
@@ -91,7 +89,7 @@ add_action(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_wordpress_reset_password();
         if (!empty($mode)) {
-            asfw_render_wordpress_widget($mode);
+            asfw_render_wordpress_widget($mode, 'wordpress:reset-password');
         }
     },
     10,
@@ -111,8 +109,7 @@ add_filter(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_wordpress_reset_password();
         if (!empty($mode)) {
-            $payload = isset($_POST['asfw']) ? trim(sanitize_text_field($_POST['asfw'])) : '';
-            if ($plugin->verify($payload) === false) {
+            if (asfw_verify_posted_widget('wordpress:reset-password') === false) {
                 $errors->add(
                     'asfw_error_message',
                     '<strong>' . esc_html__('Error', 'anti-spam-for-wordpress') . '</strong> : ' . esc_html__('Could not verify you are not a robot.', 'anti-spam-for-wordpress')
@@ -132,7 +129,7 @@ add_action(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_wordpress_comments();
         if (!empty($mode)) {
-            asfw_render_wordpress_widget($mode);
+            asfw_render_wordpress_widget($mode, 'wordpress:comments');
         }
     },
     10,
@@ -145,7 +142,7 @@ add_action(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_wordpress_comments();
         if (!empty($mode)) {
-            asfw_render_wordpress_widget($mode);
+            asfw_render_wordpress_widget($mode, 'wordpress:comments');
         }
     },
     10,
@@ -165,8 +162,8 @@ add_filter(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = (asfw_plugin_active('wpdiscuz') && $plugin->get_integration_wpdiscuz()) || $plugin->get_integration_wordpress_comments();
         if (!empty($mode)) {
-            $payload = isset($_POST['asfw']) ? trim(sanitize_text_field($_POST['asfw'])) : '';
-            if ($plugin->verify($payload) === false) {
+            $context = (asfw_plugin_active('wpdiscuz') && $plugin->get_integration_wpdiscuz()) ? 'wpdiscuz:comments' : 'wordpress:comments';
+            if (asfw_verify_posted_widget($context) === false) {
                 wp_die('<strong>' . esc_html__('Error', 'anti-spam-for-wordpress') . '</strong> : ' . esc_html__('Could not verify you are not a robot.', 'anti-spam-for-wordpress'));
             }
         }
@@ -177,8 +174,7 @@ add_filter(
     1
 );
 
-function asfw_render_wordpress_widget($mode, $name = null)
+function asfw_render_wordpress_widget($mode, $context, $name = null)
 {
-    $plugin = AntiSpamForWordPressPlugin::$instance;
-    echo wp_kses($plugin->render_widget($mode, true, null, $name), AntiSpamForWordPressPlugin::$html_allowed_tags);
+    echo asfw_render_widget_markup($mode, $context, $name);
 }

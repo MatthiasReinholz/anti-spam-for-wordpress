@@ -14,9 +14,9 @@ Self-hosted spam protection for WordPress forms using a proof-of-work widget.
 
 == Description ==
 
-Anti Spam for WordPress is a fork of the ALTCHA WordPress plugin v1, adapted and maintained by Matthias Reinholz.
+Anti Spam for WordPress is maintained by Matthias Reinholz.
 
-This fork keeps the local proof-of-work approach and removes ALTCHA-hosted API regions, API keys, and remote spam classification. The plugin now runs entirely inside your WordPress installation.
+The plugin keeps the local proof-of-work approach and removes external API regions, API keys, and remote spam classification. It now runs entirely inside your WordPress installation.
 
 = Features =
 
@@ -58,7 +58,6 @@ This plugin requires the WordPress REST API. If you use a plugin that disables t
 = Source Code =
 
 * Plugin: https://github.com/MatthiasReinholz/anti-spam-for-wordpress
-* Bundled ALTCHA Widget: https://github.com/altcha-org/altcha
 
 == Screenshots ==
 
@@ -72,6 +71,6 @@ This plugin requires the WordPress REST API. If you use a plugin that disables t
 
 = 0.0.1 =
 * Rebranded the plugin as Anti Spam for WordPress.
-* Removed ALTCHA-hosted API modes and remote spam classification.
-* Added migration from legacy `altcha_*` options to the new `asfw_*` option set.
+* Removed hosted API modes and remote spam classification.
+* Added migration from legacy option names to the new `asfw_*` option set.
 * Replaced the shortcode with `[anti_spam_widget]`.

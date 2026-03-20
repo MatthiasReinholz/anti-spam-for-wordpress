@@ -29,7 +29,7 @@ class Elementor_Form_AntiSpamWidget_Field extends \ElementorPro\Modules\Forms\Fi
         }
 
         echo wp_kses(
-            "<div style=\"flex-basis:100%\">" . $plugin->render_widget($mode, false) . '</div>',
+            "<div style=\"flex-basis:100%\">" . $plugin->render_widget($mode, false, null, 'asfw', 'elementor') . '</div>',
             AntiSpamForWordPressPlugin::$html_allowed_tags
         );
         echo wp_kses(
@@ -74,8 +74,7 @@ class Elementor_Form_AntiSpamWidget_Field extends \ElementorPro\Modules\Forms\Fi
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_elementor();
         if (!empty($mode) && $mode === 'captcha') {
-            $payload = isset($_POST['asfw']) ? trim(sanitize_text_field($_POST['asfw'])) : '';
-            if ($plugin->verify($payload) === false) {
+            if (asfw_verify_posted_widget('elementor') === false) {
                 $ajax_handler->add_error(
                     $field['id'],
                     esc_html__('Verification failed.', 'anti-spam-for-wordpress')

@@ -29,8 +29,7 @@ if (asfw_plugin_active('forminator')) {
             $plugin = AntiSpamForWordPressPlugin::$instance;
             $mode = $plugin->get_integration_forminator();
             if (!empty($mode) && $mode === 'captcha') {
-                $payload = isset($_POST['asfw']) ? trim(sanitize_text_field($_POST['asfw'])) : '';
-                if ($plugin->verify($payload) === false) {
+                if (asfw_verify_posted_widget('forminator') === false) {
                     return array(
                         'can_submit' => false,
                         'error' => __('Could not verify you are not a robot.', 'anti-spam-for-wordpress'),
@@ -50,7 +49,7 @@ function asfw_forminator_render_widget($html)
     $plugin = AntiSpamForWordPressPlugin::$instance;
     $mode = $plugin->get_integration_forminator();
     if ($mode === 'captcha') {
-        $elements = wp_kses($plugin->render_widget($mode, true), AntiSpamForWordPressPlugin::$html_allowed_tags);
+        $elements = asfw_render_widget_markup($mode, 'forminator');
         $target = '<div class="forminator-row forminator-row-last"';
         $pos = strpos($html, $target);
 

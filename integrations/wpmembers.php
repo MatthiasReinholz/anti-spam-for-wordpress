@@ -10,8 +10,7 @@ add_action(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_wordpress_register();
         if (!empty($mode)) {
-            $payload = isset($_POST['asfw_register']) ? trim(sanitize_text_field($_POST['asfw_register'])) : '';
-            if ($plugin->verify($payload) === false) {
+            if (asfw_verify_posted_widget('wordpress:register', 'asfw_register') === false) {
                 global $wpmem_themsg;
                 $wpmem_themsg = esc_html__('Registration failed. Please try again later.', 'anti-spam-for-wordpress');
             }

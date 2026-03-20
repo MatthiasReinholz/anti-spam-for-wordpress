@@ -32,7 +32,7 @@ if (!function_exists('asfw_enfold_theme_add_captcha_field')) {
         $captcha = array(
             'id' => 'captcha',
             'type' => 'html',
-            'content' => wp_kses($plugin->render_widget($mode, true), AntiSpamForWordPressPlugin::$html_allowed_tags),
+            'content' => asfw_render_widget_markup($mode, 'enfold-theme'),
         );
 
         return insertBeforeKey($elements, 'av-button', 'captcha', $captcha);
@@ -49,8 +49,7 @@ add_filter(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_enfold_theme();
         if (!empty($mode)) {
-            $payload = isset($_POST['asfw']) ? trim(sanitize_text_field(urldecode($_POST['asfw']))) : '';
-            if ($plugin->verify($payload) === false) {
+            if (asfw_verify_posted_widget('enfold-theme') === false) {
                 $that->submit_error = __('Verification failed. Try again later.', 'anti-spam-for-wordpress');
                 error_log('asfw: verification failed');
 
@@ -71,8 +70,7 @@ add_filter(
         $plugin = AntiSpamForWordPressPlugin::$instance;
         $mode = $plugin->get_integration_enfold_theme();
         if (!empty($mode)) {
-            $payload = isset($_POST['asfw']) ? trim(sanitize_text_field(urldecode($_POST['asfw']))) : '';
-            if ($plugin->verify($payload) === false) {
+            if (asfw_verify_posted_widget('enfold-theme') === false) {
                 $data['email_address'] = 'captcha failed';
                 $data['status'] = 'THIS STATUS DOES NOT EXIST';
             }
