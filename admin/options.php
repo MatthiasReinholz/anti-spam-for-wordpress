@@ -10,14 +10,14 @@ function asfw_options_page_html()
         'asfw-admin-script',
         AntiSpamForWordPressPlugin::$admin_script_src,
         array(),
-        ASFW_VERSION,
+        asfw_asset_version('public/admin.js'),
         true
     );
     wp_enqueue_style(
         'asfw-admin-styles',
         AntiSpamForWordPressPlugin::$admin_css_src,
         array(),
-        ASFW_VERSION,
+        asfw_asset_version('public/admin.css'),
         'all'
     );
     ?>

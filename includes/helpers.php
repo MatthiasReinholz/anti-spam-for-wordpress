@@ -34,13 +34,26 @@ function asfw_plugin_active($name)
     }
 }
 
+function asfw_asset_version($relative_path)
+{
+    $path = plugin_dir_path(ASFW_FILE) . ltrim($relative_path, '/');
+    if (file_exists($path)) {
+        $mtime = filemtime($path);
+        if ($mtime !== false) {
+            return (string) $mtime;
+        }
+    }
+
+    return ASFW_VERSION;
+}
+
 function asfw_enqueue_styles()
 {
     wp_enqueue_style(
         'asfw-widget-styles',
         AntiSpamForWordPressPlugin::$widget_style_src,
         array(),
-        ASFW_VERSION,
+        asfw_asset_version('public/asfw-widget.css'),
         'all'
     );
 }
@@ -51,14 +64,14 @@ function asfw_enqueue_scripts()
         'asfw-widget',
         AntiSpamForWordPressPlugin::$widget_script_src,
         array(),
-        ASFW_VERSION,
+        asfw_asset_version('public/asfw-widget.js'),
         true
     );
     wp_enqueue_script(
         'asfw-widget-wp',
         AntiSpamForWordPressPlugin::$wp_script_src,
         array('asfw-widget'),
-        ASFW_VERSION,
+        asfw_asset_version('public/script.js'),
         true
     );
 

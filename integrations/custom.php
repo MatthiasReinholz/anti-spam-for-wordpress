@@ -14,7 +14,7 @@ add_action(
                 'asfw-widget-custom',
                 AntiSpamForWordPressPlugin::$custom_script_src,
                 array('asfw-widget'),
-                ASFW_VERSION,
+                asfw_asset_version('public/custom.js'),
                 true
             );
             $attrs = wp_json_encode($plugin->get_widget_attrs($mode, null, 'asfw', 'custom'));
@@ -22,7 +22,7 @@ add_action(
                 'asfw-widget-custom-options',
                 '',
                 array(),
-                ASFW_VERSION,
+                asfw_asset_version('public/custom.js'),
                 false
             );
             wp_enqueue_script('asfw-widget-custom-options');
