@@ -26,7 +26,7 @@ Releases are tag-driven. A branch push must never publish a plugin release.
 Normal release flow:
 
 1. Merge the intended feature branches into `main`.
-2. Run the `prepare-release` workflow with `version=x.y.z`.
+2. Run the `prepare-release` workflow and choose `patch`, `minor`, `major`, or `custom`.
 3. Review the generated `release/x.y.z` pull request.
 4. Replace the changelog placeholder with final release notes and complete the release checklist in the PR body.
 5. Merge the `release/x.y.z` pull request into `main`.
@@ -40,7 +40,7 @@ Hotfixes use the same idea, but from a `hotfix/x.y.z` branch. If a hotfix branch
 The repository includes:
 
 - `ci.yml`: runs on pull requests to `main` and on pushes to `feature/*`, `release/*`, and `hotfix/*`
-- `prepare-release.yml`: manually creates or updates a `release/x.y.z` pull request and bumps version metadata
+- `prepare-release.yml`: creates a `release/x.y.z` pull request, deriving the version from a selected release type or a custom override
 - `finalize-release.yml`: automatically tags merged `release/*` and `hotfix/*` pull requests after metadata validation
 - `release.yml`: runs on semver tag pushes, builds the plugin zip, creates the GitHub release, and optionally deploys to WordPress.org
 
