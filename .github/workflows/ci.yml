@@ -1,0 +1,49 @@
+name: ci
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - 'feature/**'
+      - 'release/**'
+      - 'hotfix/**'
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f
+        with:
+          php-version: '8.1'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '20'
+
+      - name: Lint PHP
+        run: bash scripts/ci/lint_php.sh
+
+      - name: Lint JavaScript
+        run: bash scripts/ci/lint_js.sh
+
+      - name: Verify version metadata
+        run: bash scripts/ci/check_versions.sh
+
+      - name: Build package
+        run: bash scripts/ci/build_zip.sh
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: anti-spam-for-wordpress-package
+          path: dist/anti-spam-for-wordpress.zip
+          if-no-files-found: error

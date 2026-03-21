@@ -1,7 +1,10 @@
 /.wordpress-org
 /.git
 /.github
+/dist
 /node_modules
 .distignore
 .gitignore
+/scripts
+CONTRIBUTING.md
 README.md
