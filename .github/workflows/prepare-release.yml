@@ -3,9 +3,19 @@ name: prepare-release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Release version in x.y.z format'
+      release_type:
+        description: 'How to derive the next release version'
         required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+      version:
+        description: 'Release version in x.y.z format when release type is custom'
+        required: false
         type: string
       base_ref:
         description: 'Base branch for the release branch'
@@ -18,7 +28,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: prepare-release-${{ inputs.version }}
+  group: prepare-release-${{ inputs.base_ref }}-${{ inputs.release_type }}-${{ inputs.version || 'auto' }}
   cancel-in-progress: false
 
 jobs:
@@ -32,16 +42,25 @@ jobs:
         with:
           ref: ${{ inputs.base_ref }}
 
-      - name: Validate version
+      - name: Resolve target version
+        id: version
         run: |
-          if ! [[ "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Version must use x.y.z format." >&2
-            exit 1
+          if [ "${{ inputs.release_type }}" = "custom" ]; then
+            if ! [[ "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Custom version must use x.y.z format." >&2
+              exit 1
+            fi
+
+            echo "value=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          version="$(bash scripts/release/next_version.sh "${{ inputs.release_type }}")"
+          echo "value=$version" >> "$GITHUB_OUTPUT"
 
       - name: Ensure release branch does not already exist
         env:
-          RELEASE_BRANCH: release/${{ inputs.version }}
+          RELEASE_BRANCH: release/${{ steps.version.outputs.value }}
         run: |
           if git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" >/dev/null 2>&1; then
             echo "Release branch $RELEASE_BRANCH already exists. Update the existing release PR manually or delete the branch before rerunning prepare-release." >&2
@@ -49,22 +68,23 @@ jobs:
           fi
 
       - name: Bump release metadata
-        run: bash scripts/release/bump_version.sh "${{ inputs.version }}"
+        run: bash scripts/release/bump_version.sh "${{ steps.version.outputs.value }}"
 
       - name: Create or update release pull request
         uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676
         with:
-          branch: release/${{ inputs.version }}
+          branch: release/${{ steps.version.outputs.value }}
           base: ${{ inputs.base_ref }}
-          commit-message: Prepare release ${{ inputs.version }}
-          title: Prepare release ${{ inputs.version }}
+          commit-message: Prepare release ${{ steps.version.outputs.value }}
+          title: Prepare release ${{ steps.version.outputs.value }}
           body: |
             This PR was created by the `prepare-release` workflow.
 
             Included changes:
-            - bump plugin metadata to `${{ inputs.version }}`
-            - add a changelog stub for `${{ inputs.version }}`
+            - bump plugin metadata to `${{ steps.version.outputs.value }}`
+            - add a changelog stub for `${{ steps.version.outputs.value }}`
             - update the POT project version
+            - derive the version using release type `${{ inputs.release_type }}`
 
             Release checklist:
             - [ ] Replace the changelog placeholder with final release notes.
@@ -79,6 +99,6 @@ jobs:
             - [ ] Merge this PR into `main`.
 
             After merge:
-            - the `finalize-release` workflow creates and pushes the annotated `${{ inputs.version }}` tag automatically
+            - the `finalize-release` workflow creates and pushes the annotated `${{ steps.version.outputs.value }}` tag automatically
             - the tag triggers the `release` workflow automatically
           delete-branch: false
