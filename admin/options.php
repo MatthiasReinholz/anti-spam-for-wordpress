@@ -6,6 +6,13 @@ if (!defined('ABSPATH')) {
 
 function asfw_options_page_html()
 {
+    wp_enqueue_script(
+        'asfw-admin-script',
+        AntiSpamForWordPressPlugin::$admin_script_src,
+        array(),
+        ASFW_VERSION,
+        true
+    );
     wp_enqueue_style(
         'asfw-admin-styles',
         AntiSpamForWordPressPlugin::$admin_css_src,
@@ -137,23 +144,28 @@ function asfw_settings_select_callback(array $args)
     <?php
 }
 
-function asfw_settings_pages_callback(array $args)
+function asfw_settings_privacy_target_callback(array $args)
 {
     $name = $args['name'];
     $hint = isset($args['hint']) ? $args['hint'] : null;
-    $selected = absint(get_option($name, 0));
-
-    wp_dropdown_pages(
+    $selected = trim((string) get_option($name, ''));
+    $pages = get_pages(
         array(
-            'echo' => 1,
-            'id' => $name,
-            'name' => $name,
-            'option_none_value' => 0,
-            'selected' => $selected,
-            'show_option_none' => __('Select a page', 'anti-spam-for-wordpress'),
+            'sort_column' => 'menu_order,post_title',
         )
     );
-    if ($hint) { ?>
+    ?>
+    <select name="<?php echo esc_attr($name); ?>" id="<?php echo esc_attr($name); ?>">
+      <option value=""><?php echo esc_html__('No link', 'anti-spam-for-wordpress'); ?></option>
+      <option value="custom" <?php selected($selected, 'custom'); ?>><?php echo esc_html__('Custom URL', 'anti-spam-for-wordpress'); ?></option>
+      <?php foreach ($pages as $page) { ?>
+        <option value="<?php echo esc_attr((string) $page->ID); ?>" <?php selected($selected, (string) $page->ID); ?>>
+          <?php echo esc_html($page->post_title); ?>
+        </option>
+      <?php } ?>
+    </select>
+    <?php if ($hint) { ?>
       <div style="opacity:0.7;font-size:85%;margin-top:3px"><?php echo esc_html($hint); ?></div>
-    <?php }
+    <?php } ?>
+    <?php
 }

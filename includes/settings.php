@@ -296,14 +296,14 @@ if (is_admin()) {
         );
 
         add_settings_field(
-            'asfw_settings_privacy_page_field',
-            __('Privacy page', 'anti-spam-for-wordpress'),
-            'asfw_settings_pages_callback',
+            'asfw_settings_privacy_target_field',
+            __('Privacy link', 'anti-spam-for-wordpress'),
+            'asfw_settings_privacy_target_callback',
             'asfw_admin',
             'asfw_widget_settings_section',
             array(
                 'name' => AntiSpamForWordPressPlugin::$option_privacy_page,
-                'hint' => __('If selected, this page is used for the footer privacy link.', 'anti-spam-for-wordpress'),
+                'hint' => __('Choose a page or switch to a custom URL for the footer privacy link.', 'anti-spam-for-wordpress'),
             )
         );
 

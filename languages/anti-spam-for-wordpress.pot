@@ -66,15 +66,15 @@ msgid "Shown in the widget footer when the footer is visible."
 msgstr ""
 
 #: includes/settings.php:300
-msgid "Privacy page"
+msgid "Privacy link"
 msgstr ""
 
-#: admin/options.php:142
-msgid "Select a page"
+#: admin/options.php:154
+msgid "No link"
 msgstr ""
 
 #: includes/settings.php:306
-msgid "If selected, this page is used for the footer privacy link."
+msgid "Choose a page or switch to a custom URL for the footer privacy link."
 msgstr ""
 
 #: includes/settings.php:313

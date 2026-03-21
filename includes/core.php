@@ -193,7 +193,14 @@ class AntiSpamForWordPressPlugin
 
     public function get_privacy_page_id()
     {
-        return absint(get_option(self::$option_privacy_page, 0));
+        $value = trim((string) get_option(self::$option_privacy_page, ''));
+
+        return ctype_digit($value) ? absint($value) : 0;
+    }
+
+    public function get_privacy_target()
+    {
+        return trim((string) get_option(self::$option_privacy_page, ''));
     }
 
     public function get_privacy_custom_url()
@@ -219,7 +226,11 @@ class AntiSpamForWordPressPlugin
             }
         }
 
-        return $this->get_privacy_custom_url();
+        if ($this->get_privacy_target() === 'custom') {
+            return $this->get_privacy_custom_url();
+        }
+
+        return '';
     }
 
     public function get_auto()

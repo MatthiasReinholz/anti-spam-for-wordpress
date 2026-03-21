@@ -170,7 +170,7 @@ asfw-widget {
   border-top: 1px solid color-mix(in srgb, var(--asfw-border) 55%, white);
   color: var(--asfw-muted);
   display: flex;
-  gap: 0.35rem;
+  gap: 0.28rem;
   justify-content: flex-end;
   padding: 0.35rem 0.9rem 0.45rem;
   font-size: 0.74rem;
@@ -192,7 +192,6 @@ asfw-widget {
   white-space: nowrap;
 }
 
-.asfw-footer-separator[hidden],
 .asfw-footer-link[hidden] {
   display: none;
 }
