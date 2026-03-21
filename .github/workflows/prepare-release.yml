@@ -17,6 +17,10 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: prepare-release-${{ inputs.version }}
+  cancel-in-progress: false
+
 jobs:
   prepare:
     name: Prepare release branch
@@ -24,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout base ref
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ inputs.base_ref }}
 
@@ -35,11 +39,20 @@ jobs:
             exit 1
           fi
 
+      - name: Ensure release branch does not already exist
+        env:
+          RELEASE_BRANCH: release/${{ inputs.version }}
+        run: |
+          if git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" >/dev/null 2>&1; then
+            echo "Release branch $RELEASE_BRANCH already exists. Update the existing release PR manually or delete the branch before rerunning prepare-release." >&2
+            exit 1
+          fi
+
       - name: Bump release metadata
         run: bash scripts/release/bump_version.sh "${{ inputs.version }}"
 
       - name: Create or update release pull request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676
         with:
           branch: release/${{ inputs.version }}
           base: ${{ inputs.base_ref }}

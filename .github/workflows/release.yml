@@ -19,19 +19,26 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f
         with:
           php-version: '8.1'
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '20'
+
+      - name: Verify release tag comes from a merged release PR
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          COMMIT_SHA="$(git rev-parse HEAD)"
+          bash scripts/ci/check_release_pr.sh "${GITHUB_REPOSITORY}" "${GITHUB_REF_NAME}" "$COMMIT_SHA"
 
       - name: Validate tag and metadata versions
         run: bash scripts/ci/check_versions.sh "${GITHUB_REF_NAME}"
@@ -46,7 +53,7 @@ jobs:
         run: bash scripts/ci/build_zip.sh
 
       - name: Upload package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: anti-spam-for-wordpress-${{ github.ref_name }}
           path: dist/anti-spam-for-wordpress.zip
@@ -58,7 +65,7 @@ jobs:
 
       - name: Deploy to WordPress.org
         if: ${{ env.WP_DEPLOY_ENABLED != 'false' }}
-        uses: 10up/action-wordpress-plugin-deploy@stable
+        uses: 10up/action-wordpress-plugin-deploy@54bd289b8525fd23a5c365ec369185f2966529c2
         with:
           generate-zip: false
         env:
@@ -68,7 +75,7 @@ jobs:
           SLUG: anti-spam-for-wordpress
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631
         with:
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
