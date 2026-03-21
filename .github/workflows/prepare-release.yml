@@ -53,8 +53,19 @@ jobs:
             - add a changelog stub for `${{ inputs.version }}`
             - update the POT project version
 
-            Before merging:
-            - replace the changelog placeholder with final release notes
-            - ensure CI passes
-            - complete the WordPress smoke test
+            Release checklist:
+            - [ ] Replace the changelog placeholder with final release notes.
+            - [ ] Confirm the version bump is correct in plugin metadata and `readme.txt`.
+            - [ ] Confirm CI passed on this release PR.
+            - [ ] Complete a WordPress smoke test:
+              - [ ] settings page loads
+              - [ ] widget renders
+              - [ ] challenge solve succeeds
+              - [ ] verification succeeds
+              - [ ] one representative integration still works
+            - [ ] Merge this PR into `main`.
+
+            After merge:
+            - the `finalize-release` workflow creates and pushes the annotated `${{ inputs.version }}` tag automatically
+            - the tag triggers the `release` workflow automatically
           delete-branch: false

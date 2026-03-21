@@ -23,28 +23,26 @@ Delete merged feature, release, and hotfix branches after merge.
 
 Releases are tag-driven. A branch push must never publish a plugin release.
 
+Normal release flow:
+
 1. Merge the intended feature branches into `main`.
 2. Run the `prepare-release` workflow with `version=x.y.z`.
-3. Review the generated `release/x.y.z` pull request and update:
-   - `anti-spam-for-wordpress.php`
-   - `readme.txt`
-   - `languages/anti-spam-for-wordpress.pot`
-4. Replace the changelog placeholder with final release notes.
-5. Verify the release branch passes CI and complete a manual smoke test in WordPress.
-6. Merge `release/x.y.z` back into `main` with a pull request.
-7. Run the `tag-release` workflow with `version=x.y.z` and `ref=main`.
-8. The pushed tag triggers the release workflow automatically.
+3. Review the generated `release/x.y.z` pull request.
+4. Replace the changelog placeholder with final release notes and complete the release checklist in the PR body.
+5. Merge the `release/x.y.z` pull request into `main`.
+6. The merged release PR automatically creates and pushes the `x.y.z` tag.
+7. The pushed tag automatically triggers the publish workflow.
 
-Hotfixes follow the same process from a `hotfix/x.y.z` branch created from `main`.
+Hotfixes use the same idea, but from a `hotfix/x.y.z` branch. If a hotfix branch has matching metadata and is merged into `main`, the tag is created automatically there as well.
 
 ## CI And Release Automation
 
 The repository includes:
 
 - `ci.yml`: runs on pull requests to `main` and on pushes to `feature/*`, `release/*`, and `hotfix/*`
-- `release.yml`: runs only on semver-like tag pushes
-- `prepare-release.yml`: manually creates or updates a `release/x.y.z` pull request
-- `tag-release.yml`: manually creates and pushes the annotated release tag after the release PR is merged
+- `prepare-release.yml`: manually creates or updates a `release/x.y.z` pull request and bumps version metadata
+- `finalize-release.yml`: automatically tags merged `release/*` and `hotfix/*` pull requests after metadata validation
+- `release.yml`: runs on semver tag pushes, builds the plugin zip, creates the GitHub release, and optionally deploys to WordPress.org
 
 CI validates:
 
@@ -53,14 +51,7 @@ CI validates:
 - version consistency across plugin metadata
 - package creation and plugin root structure
 
-The release workflow:
-
-- verifies the tag matches plugin metadata
-- builds the plugin zip
-- creates a GitHub release with the zip attached
-- deploys to WordPress.org only when `WP_DEPLOY_ENABLED` is not set to `false`
-
-The `prepare-release` workflow updates version metadata in the tracked files for you. WordPress still requires the version to exist in those files, but you no longer need to edit them manually for each release.
+WordPress still requires the version to exist in tracked plugin files, so the version bump cannot live purely in GitHub settings. The repo now handles that through Actions and scripts so you do not need to edit version strings manually for each release.
 
 ## Required GitHub Settings
 
