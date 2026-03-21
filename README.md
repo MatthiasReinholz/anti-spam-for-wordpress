@@ -33,6 +33,10 @@ The plugin serves a local proof-of-work challenge through the WordPress REST API
 3. Activate the plugin through the Plugins menu in WordPress.
 4. Review the settings and enable the integrations you need.
 
+## Development
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch model, CI expectations, and release process.
+
 ## REST API
 
 This plugin requires the WordPress REST API. If you are using any plugin that disables the REST API, allow the endpoint `/anti-spam-for-wordpress/v1/challenge`.
