@@ -75,8 +75,8 @@ jobs:
         with:
           branch: release/${{ steps.version.outputs.value }}
           base: ${{ inputs.base_ref }}
-          commit-message: Prepare release ${{ steps.version.outputs.value }}
-          title: Prepare release ${{ steps.version.outputs.value }}
+          commit-message: Release ${{ steps.version.outputs.value }}
+          title: Release ${{ steps.version.outputs.value }}
           body: |
             This PR was created by the `prepare-release` workflow.
 
