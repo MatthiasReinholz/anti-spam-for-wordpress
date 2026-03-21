@@ -65,8 +65,36 @@ msgstr ""
 msgid "Shown in the widget footer when the footer is visible."
 msgstr ""
 
+#: includes/settings.php:300
+msgid "Privacy page"
+msgstr ""
+
+#: admin/options.php:142
+msgid "Select a page"
+msgstr ""
+
+#: includes/settings.php:306
+msgid "If selected, this page is used for the footer privacy link."
+msgstr ""
+
+#: includes/settings.php:313
+msgid "Privacy URL"
+msgstr ""
+
+#: includes/settings.php:319
+msgid "Used when no privacy page is selected."
+msgstr ""
+
+#: includes/settings.php:326
+msgid "Open privacy link in new tab"
+msgstr ""
+
 #: includes/core.php:156
 msgid "Protected by Anti Spam for WordPress"
+msgstr ""
+
+#: includes/core.php:387
+msgid "Privacy"
 msgstr ""
 
 #: includes/core.php:388

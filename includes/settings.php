@@ -16,6 +16,9 @@ if (is_admin()) {
             AntiSpamForWordPressPlugin::$option_hidefooter,
             AntiSpamForWordPressPlugin::$option_hidelogo,
             AntiSpamForWordPressPlugin::$option_footer_text,
+            AntiSpamForWordPressPlugin::$option_privacy_page,
+            AntiSpamForWordPressPlugin::$option_privacy_url,
+            AntiSpamForWordPressPlugin::$option_privacy_new_tab,
             AntiSpamForWordPressPlugin::$option_auto,
             AntiSpamForWordPressPlugin::$option_floating,
             AntiSpamForWordPressPlugin::$option_delay,
@@ -289,6 +292,44 @@ if (is_admin()) {
                 'name' => AntiSpamForWordPressPlugin::$option_footer_text,
                 'hint' => __('Shown in the widget footer when the footer is visible.', 'anti-spam-for-wordpress'),
                 'type' => 'text',
+            )
+        );
+
+        add_settings_field(
+            'asfw_settings_privacy_page_field',
+            __('Privacy page', 'anti-spam-for-wordpress'),
+            'asfw_settings_pages_callback',
+            'asfw_admin',
+            'asfw_widget_settings_section',
+            array(
+                'name' => AntiSpamForWordPressPlugin::$option_privacy_page,
+                'hint' => __('If selected, this page is used for the footer privacy link.', 'anti-spam-for-wordpress'),
+            )
+        );
+
+        add_settings_field(
+            'asfw_settings_privacy_url_field',
+            __('Privacy URL', 'anti-spam-for-wordpress'),
+            'asfw_settings_field_callback',
+            'asfw_admin',
+            'asfw_widget_settings_section',
+            array(
+                'name' => AntiSpamForWordPressPlugin::$option_privacy_url,
+                'hint' => __('Used when no privacy page is selected.', 'anti-spam-for-wordpress'),
+                'type' => 'url',
+            )
+        );
+
+        add_settings_field(
+            'asfw_settings_privacy_new_tab_field',
+            __('Open privacy link in new tab', 'anti-spam-for-wordpress'),
+            'asfw_settings_field_callback',
+            'asfw_admin',
+            'asfw_widget_settings_section',
+            array(
+                'name' => AntiSpamForWordPressPlugin::$option_privacy_new_tab,
+                'description' => __('Yes', 'anti-spam-for-wordpress'),
+                'type' => 'checkbox',
             )
         );
 

@@ -192,6 +192,21 @@ asfw-widget {
   white-space: nowrap;
 }
 
+.asfw-footer-separator[hidden],
+.asfw-footer-link[hidden] {
+  display: none;
+}
+
+.asfw-footer-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.asfw-footer-link:hover {
+  opacity: 1;
+}
+
 .asfw-hidden-value {
   display: none;
 }

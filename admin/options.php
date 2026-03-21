@@ -136,3 +136,24 @@ function asfw_settings_select_callback(array $args)
     <?php } ?>
     <?php
 }
+
+function asfw_settings_pages_callback(array $args)
+{
+    $name = $args['name'];
+    $hint = isset($args['hint']) ? $args['hint'] : null;
+    $selected = absint(get_option($name, 0));
+
+    wp_dropdown_pages(
+        array(
+            'echo' => 1,
+            'id' => $name,
+            'name' => $name,
+            'option_none_value' => 0,
+            'selected' => $selected,
+            'show_option_none' => __('Select a page', 'anti-spam-for-wordpress'),
+        )
+    );
+    if ($hint) { ?>
+      <div style="opacity:0.7;font-size:85%;margin-top:3px"><?php echo esc_html($hint); ?></div>
+    <?php }
+}

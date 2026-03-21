@@ -29,7 +29,7 @@ function asfwBase64Encode(value) {
 
 class ASFWWidgetElement extends HTMLElement {
   static get observedAttributes() {
-    return ['auto', 'challengeurl', 'data-asfw-challengeurl', 'delay', 'floating', 'hidefooter', 'hidelogo', 'name', 'strings'];
+    return ['auto', 'challengeurl', 'data-asfw-challengeurl', 'data-asfw-privacy-new-tab', 'data-asfw-privacy-url', 'delay', 'floating', 'hidefooter', 'hidelogo', 'name', 'strings'];
   }
 
   constructor() {
@@ -119,6 +119,8 @@ class ASFWWidgetElement extends HTMLElement {
               <path fill="currentColor" d="M17 9h-1V7a4 4 0 1 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-6 0V7a2 2 0 1 1 4 0v2h-4Z"></path>
             </svg>
             <span class="asfw-footer-text"></span>
+            <span class="asfw-footer-separator" aria-hidden="true">&middot;</span>
+            <a class="asfw-footer-link" rel="noopener noreferrer"></a>
           </div>
         </div>
         <input type="hidden" class="asfw-hidden-value">
@@ -132,6 +134,8 @@ class ASFWWidgetElement extends HTMLElement {
     this._error = this.querySelector('.asfw-error');
     this._footer = this.querySelector('.asfw-footer');
     this._footerIcon = this.querySelector('.asfw-footer-icon');
+    this._footerLink = this.querySelector('.asfw-footer-link');
+    this._footerSeparator = this.querySelector('.asfw-footer-separator');
     this._footerText = this.querySelector('.asfw-footer-text');
     this._valueInput = this.querySelector('.asfw-hidden-value');
 
@@ -146,10 +150,17 @@ class ASFWWidgetElement extends HTMLElement {
     }
 
     const strings = this.getStrings();
+    const privacyUrl = this.getPrivacyUrl();
+    const privacyNewTab = this.opensPrivacyInNewTab();
     this._label.textContent = strings.label;
     this._footerText.textContent = strings.footer;
     this._footer.hidden = this.hasAttribute('hidefooter');
     this._footerIcon.hidden = this.hasAttribute('hidelogo');
+    this._footerLink.hidden = privacyUrl === '';
+    this._footerSeparator.hidden = privacyUrl === '';
+    this._footerLink.textContent = strings.privacy || 'Privacy';
+    this._footerLink.href = privacyUrl || '#';
+    this._footerLink.target = privacyNewTab ? '_blank' : '_self';
     this._valueInput.name = this.getFieldName();
     this._shell.dataset.floating = this.getAttribute('floating') || '';
 
@@ -229,6 +240,14 @@ class ASFWWidgetElement extends HTMLElement {
 
   getChallengeUrl() {
     return this.getAttribute('challengeurl') || this.getAttribute('data-asfw-challengeurl') || '';
+  }
+
+  getPrivacyUrl() {
+    return this.getAttribute('data-asfw-privacy-url') || '';
+  }
+
+  opensPrivacyInNewTab() {
+    return this.getAttribute('data-asfw-privacy-new-tab') === '1';
   }
 
   getDelayMs() {

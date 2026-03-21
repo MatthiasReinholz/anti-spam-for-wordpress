@@ -120,6 +120,10 @@ function asfw_activate()
         );
     }
 
+    if (get_option(AntiSpamForWordPressPlugin::$option_privacy_new_tab, null) === null) {
+        update_option(AntiSpamForWordPressPlugin::$option_privacy_new_tab, false);
+    }
+
     if (get_option(AntiSpamForWordPressPlugin::$option_integration_custom, '') === '') {
         update_option(AntiSpamForWordPressPlugin::$option_integration_custom, 'captcha');
     }

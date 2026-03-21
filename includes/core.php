@@ -44,6 +44,12 @@ class AntiSpamForWordPressPlugin
 
     public static $option_footer_text = 'asfw_footer_text';
 
+    public static $option_privacy_page = 'asfw_privacy_page';
+
+    public static $option_privacy_url = 'asfw_privacy_url';
+
+    public static $option_privacy_new_tab = 'asfw_privacy_new_tab';
+
     public static $option_lazy = 'asfw_lazy';
 
     public static $option_rate_limit_max_challenges = 'asfw_rate_limit_max_challenges';
@@ -106,6 +112,8 @@ class AntiSpamForWordPressPlugin
             'data-asfw-context' => array(),
             'data-asfw-field' => array(),
             'data-asfw-lazy' => array(),
+            'data-asfw-privacy-new-tab' => array(),
+            'data-asfw-privacy-url' => array(),
             'data-asfw-provider' => array(),
         ),
         'div' => array(
@@ -181,6 +189,37 @@ class AntiSpamForWordPressPlugin
     public function get_hidefooter()
     {
         return get_option(self::$option_hidefooter);
+    }
+
+    public function get_privacy_page_id()
+    {
+        return absint(get_option(self::$option_privacy_page, 0));
+    }
+
+    public function get_privacy_custom_url()
+    {
+        return esc_url_raw(trim((string) get_option(self::$option_privacy_url, '')));
+    }
+
+    public function get_privacy_new_tab()
+    {
+        return (bool) get_option(self::$option_privacy_new_tab);
+    }
+
+    public function get_privacy_url()
+    {
+        $page_id = $this->get_privacy_page_id();
+        if ($page_id > 0) {
+            $page = get_post($page_id);
+            if ($page instanceof WP_Post && $page->post_type === 'page' && $page->post_status === 'publish') {
+                $permalink = get_permalink($page_id);
+                if (is_string($permalink) && $permalink !== '') {
+                    return $permalink;
+                }
+            }
+        }
+
+        return $this->get_privacy_custom_url();
     }
 
     public function get_auto()
@@ -385,6 +424,7 @@ class AntiSpamForWordPressPlugin
             'error' => __('Verification failed. Try again later.', 'anti-spam-for-wordpress'),
             'footer' => $this->get_footer_text(),
             'label' => __('I\'m not a robot', 'anti-spam-for-wordpress'),
+            'privacy' => __('Privacy', 'anti-spam-for-wordpress'),
             'required' => __('Please verify before submitting.', 'anti-spam-for-wordpress'),
             'verified' => __('Verified', 'anti-spam-for-wordpress'),
             'verifying' => __('Verifying...', 'anti-spam-for-wordpress'),
@@ -837,6 +877,12 @@ class AntiSpamForWordPressPlugin
             'data-asfw-provider' => $this->get_widget_provider(),
             'strings' => $strings,
         );
+
+        $privacy_url = $this->get_privacy_url();
+        if ($privacy_url !== '') {
+            $attrs['data-asfw-privacy-url'] = $privacy_url;
+            $attrs['data-asfw-privacy-new-tab'] = $this->get_privacy_new_tab() ? '1' : '0';
+        }
 
         $challenge_url = $this->get_challenge_url($context);
         if ($lazy && $auto !== 'onload') {
