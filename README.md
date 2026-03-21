@@ -37,6 +37,8 @@ The plugin serves a local proof-of-work challenge through the WordPress REST API
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch model, CI expectations, and release process.
 
+Release preparation and release tagging can be driven from GitHub Actions through the `prepare-release` and `tag-release` workflows.
+
 ## REST API
 
 This plugin requires the WordPress REST API. If you are using any plugin that disables the REST API, allow the endpoint `/anti-spam-for-wordpress/v1/challenge`.

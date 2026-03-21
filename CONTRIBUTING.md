@@ -24,15 +24,16 @@ Delete merged feature, release, and hotfix branches after merge.
 Releases are tag-driven. A branch push must never publish a plugin release.
 
 1. Merge the intended feature branches into `main`.
-2. Create `release/x.y.z` from `main`.
-3. Update version metadata in:
+2. Run the `prepare-release` workflow with `version=x.y.z`.
+3. Review the generated `release/x.y.z` pull request and update:
    - `anti-spam-for-wordpress.php`
    - `readme.txt`
-4. Update the changelog and release notes.
+   - `languages/anti-spam-for-wordpress.pot`
+4. Replace the changelog placeholder with final release notes.
 5. Verify the release branch passes CI and complete a manual smoke test in WordPress.
 6. Merge `release/x.y.z` back into `main` with a pull request.
-7. Create an annotated tag `x.y.z` on the merge commit in `main`.
-8. Push the tag to trigger the release workflow.
+7. Run the `tag-release` workflow with `version=x.y.z` and `ref=main`.
+8. The pushed tag triggers the release workflow automatically.
 
 Hotfixes follow the same process from a `hotfix/x.y.z` branch created from `main`.
 
@@ -42,6 +43,8 @@ The repository includes:
 
 - `ci.yml`: runs on pull requests to `main` and on pushes to `feature/*`, `release/*`, and `hotfix/*`
 - `release.yml`: runs only on semver-like tag pushes
+- `prepare-release.yml`: manually creates or updates a `release/x.y.z` pull request
+- `tag-release.yml`: manually creates and pushes the annotated release tag after the release PR is merged
 
 CI validates:
 
@@ -56,6 +59,8 @@ The release workflow:
 - builds the plugin zip
 - creates a GitHub release with the zip attached
 - deploys to WordPress.org only when `WP_DEPLOY_ENABLED` is not set to `false`
+
+The `prepare-release` workflow updates version metadata in the tracked files for you. WordPress still requires the version to exist in those files, but you no longer need to edit them manually for each release.
 
 ## Required GitHub Settings
 

@@ -1,0 +1,60 @@
+name: prepare-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version in x.y.z format'
+        required: true
+        type: string
+      base_ref:
+        description: 'Base branch for the release branch'
+        required: true
+        default: 'main'
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare:
+    name: Prepare release branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout base ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.base_ref }}
+
+      - name: Validate version
+        run: |
+          if ! [[ "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must use x.y.z format." >&2
+            exit 1
+          fi
+
+      - name: Bump release metadata
+        run: bash scripts/release/bump_version.sh "${{ inputs.version }}"
+
+      - name: Create or update release pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: release/${{ inputs.version }}
+          base: ${{ inputs.base_ref }}
+          commit-message: Prepare release ${{ inputs.version }}
+          title: Prepare release ${{ inputs.version }}
+          body: |
+            This PR was created by the `prepare-release` workflow.
+
+            Included changes:
+            - bump plugin metadata to `${{ inputs.version }}`
+            - add a changelog stub for `${{ inputs.version }}`
+            - update the POT project version
+
+            Before merging:
+            - replace the changelog placeholder with final release notes
+            - ensure CI passes
+            - complete the WordPress smoke test
+          delete-branch: false
