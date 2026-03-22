@@ -91,7 +91,7 @@ jobs:
             - version metadata consistency
             - release branch name matches the version bump
             - release changelog section exists
-            - release placeholder has been replaced
+            - release changelog entry contains bullet items
             - PHP and JavaScript syntax
             - package build
 

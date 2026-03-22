@@ -40,8 +40,7 @@ Hotfixes use the same idea, but from a `hotfix/x.y.z` branch. If a hotfix branch
 The repository includes:
 
 - `ci.yml`: runs on pull requests to `main` and on pushes to `feature/*`, `release/*`, and `hotfix/*`
-- `prepare-release.yml`: creates a `release/x.y.z` pull request, deriving the version from a selected release type or a custom override
-- auto-generates the initial changelog entry from commits since the latest release tag
+- `prepare-release.yml`: creates a `release/x.y.z` pull request, derives the version from a selected release type or a custom override, and auto-generates the initial changelog entry from commits since the latest release tag
 - `finalize-release.yml`: automatically tags merged `release/*` and `hotfix/*` pull requests after metadata validation
 - `release.yml`: runs on semver tag pushes, builds the plugin zip, creates the GitHub release, and optionally deploys to WordPress.org
 

@@ -4,52 +4,182 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+function asfw_sanitize_checkbox_option($value)
+{
+    return empty($value) ? 0 : 1;
+}
+
+function asfw_sanitize_enum_option($value, array $allowed, $default = '')
+{
+    $value = trim((string) $value);
+
+    return in_array($value, $allowed, true) ? $value : $default;
+}
+
+function asfw_sanitize_numeric_string_option($value, array $allowed, $default)
+{
+    $value = trim((string) $value);
+
+    return in_array($value, $allowed, true) ? $value : $default;
+}
+
+function asfw_sanitize_secret_option($value)
+{
+    $value = trim(wp_strip_all_tags((string) $value));
+    if ($value === '') {
+        $current = trim((string) get_option(AntiSpamForWordPressPlugin::$option_secret, ''));
+
+        return $current !== '' ? $current : AntiSpamForWordPressPlugin::$instance->random_secret();
+    }
+
+    return $value;
+}
+
+function asfw_sanitize_footer_text_option($value)
+{
+    return trim(wp_strip_all_tags((string) $value));
+}
+
+function asfw_sanitize_privacy_target_option($value)
+{
+    $value = trim((string) $value);
+    if ($value === '' || $value === 'custom') {
+        return $value;
+    }
+
+    if (ctype_digit($value)) {
+        return (string) absint($value);
+    }
+
+    return '';
+}
+
+function asfw_sanitize_privacy_url_option($value)
+{
+    return esc_url_raw(trim((string) $value));
+}
+
+function asfw_register_setting_option($option, $sanitize_callback = null)
+{
+    $args = array();
+    if ($sanitize_callback !== null) {
+        $args['sanitize_callback'] = $sanitize_callback;
+    }
+
+    register_setting('asfw_options', $option, $args);
+}
+
 if (is_admin()) {
     add_action('admin_init', 'asfw_settings_init');
 
     function asfw_settings_init()
     {
-        $options = array(
+        asfw_register_setting_option(
             AntiSpamForWordPressPlugin::$option_secret,
+            'asfw_sanitize_secret_option'
+        );
+        asfw_register_setting_option(
             AntiSpamForWordPressPlugin::$option_complexity,
+            function ($value) {
+                return asfw_sanitize_enum_option($value, array('low', 'medium', 'high'), 'medium');
+            }
+        );
+        asfw_register_setting_option(
             AntiSpamForWordPressPlugin::$option_expires,
-            AntiSpamForWordPressPlugin::$option_hidefooter,
-            AntiSpamForWordPressPlugin::$option_hidelogo,
+            function ($value) {
+                return asfw_sanitize_numeric_string_option($value, array('120', '300', '600', '1800'), '300');
+            }
+        );
+        asfw_register_setting_option(AntiSpamForWordPressPlugin::$option_hidefooter, 'asfw_sanitize_checkbox_option');
+        asfw_register_setting_option(AntiSpamForWordPressPlugin::$option_hidelogo, 'asfw_sanitize_checkbox_option');
+        asfw_register_setting_option(
             AntiSpamForWordPressPlugin::$option_footer_text,
+            'asfw_sanitize_footer_text_option'
+        );
+        asfw_register_setting_option(
             AntiSpamForWordPressPlugin::$option_privacy_page,
+            'asfw_sanitize_privacy_target_option'
+        );
+        asfw_register_setting_option(
             AntiSpamForWordPressPlugin::$option_privacy_url,
-            AntiSpamForWordPressPlugin::$option_privacy_new_tab,
+            'asfw_sanitize_privacy_url_option'
+        );
+        asfw_register_setting_option(AntiSpamForWordPressPlugin::$option_privacy_new_tab, 'asfw_sanitize_checkbox_option');
+        asfw_register_setting_option(
             AntiSpamForWordPressPlugin::$option_auto,
-            AntiSpamForWordPressPlugin::$option_floating,
-            AntiSpamForWordPressPlugin::$option_delay,
-            AntiSpamForWordPressPlugin::$option_lazy,
+            function ($value) {
+                return asfw_sanitize_enum_option($value, array('', 'onload', 'onfocus', 'onsubmit'));
+            }
+        );
+        asfw_register_setting_option(AntiSpamForWordPressPlugin::$option_floating, 'asfw_sanitize_checkbox_option');
+        asfw_register_setting_option(AntiSpamForWordPressPlugin::$option_delay, 'asfw_sanitize_checkbox_option');
+        asfw_register_setting_option(AntiSpamForWordPressPlugin::$option_lazy, 'asfw_sanitize_checkbox_option');
+        asfw_register_setting_option(
             AntiSpamForWordPressPlugin::$option_rate_limit_max_challenges,
+            function ($value) {
+                return asfw_sanitize_numeric_string_option($value, array('0', '15', '30', '60', '120'), '30');
+            }
+        );
+        asfw_register_setting_option(
             AntiSpamForWordPressPlugin::$option_rate_limit_max_failures,
+            function ($value) {
+                return asfw_sanitize_numeric_string_option($value, array('0', '5', '10', '20', '50'), '10');
+            }
+        );
+        asfw_register_setting_option(
             AntiSpamForWordPressPlugin::$option_rate_limit_window,
-            AntiSpamForWordPressPlugin::$option_honeypot,
+            function ($value) {
+                return asfw_sanitize_numeric_string_option($value, array('300', '600', '900'), '600');
+            }
+        );
+        asfw_register_setting_option(AntiSpamForWordPressPlugin::$option_honeypot, 'asfw_sanitize_checkbox_option');
+        asfw_register_setting_option(
             AntiSpamForWordPressPlugin::$option_min_submit_time,
-            AntiSpamForWordPressPlugin::$option_integration_coblocks,
-            AntiSpamForWordPressPlugin::$option_integration_contact_form_7,
-            AntiSpamForWordPressPlugin::$option_integration_custom,
-            AntiSpamForWordPressPlugin::$option_integration_elementor,
-            AntiSpamForWordPressPlugin::$option_integration_enfold_theme,
-            AntiSpamForWordPressPlugin::$option_integration_formidable,
-            AntiSpamForWordPressPlugin::$option_integration_forminator,
-            AntiSpamForWordPressPlugin::$option_integration_gravityforms,
-            AntiSpamForWordPressPlugin::$option_integration_woocommerce_login,
-            AntiSpamForWordPressPlugin::$option_integration_woocommerce_register,
-            AntiSpamForWordPressPlugin::$option_integration_woocommerce_reset_password,
-            AntiSpamForWordPressPlugin::$option_integration_html_forms,
-            AntiSpamForWordPressPlugin::$option_integration_wordpress_comments,
-            AntiSpamForWordPressPlugin::$option_integration_wordpress_login,
-            AntiSpamForWordPressPlugin::$option_integration_wordpress_register,
-            AntiSpamForWordPressPlugin::$option_integration_wordpress_reset_password,
-            AntiSpamForWordPressPlugin::$option_integration_wpdiscuz,
-            AntiSpamForWordPressPlugin::$option_integration_wpforms,
+            function ($value) {
+                return asfw_sanitize_numeric_string_option($value, array('0', '2', '3', '5', '10'), '3');
+            }
         );
 
-        foreach ($options as $option) {
-            register_setting('asfw_options', $option);
+        foreach (
+            array(
+                AntiSpamForWordPressPlugin::$option_integration_coblocks,
+                AntiSpamForWordPressPlugin::$option_integration_contact_form_7,
+                AntiSpamForWordPressPlugin::$option_integration_elementor,
+                AntiSpamForWordPressPlugin::$option_integration_enfold_theme,
+                AntiSpamForWordPressPlugin::$option_integration_formidable,
+                AntiSpamForWordPressPlugin::$option_integration_forminator,
+                AntiSpamForWordPressPlugin::$option_integration_gravityforms,
+                AntiSpamForWordPressPlugin::$option_integration_woocommerce_login,
+                AntiSpamForWordPressPlugin::$option_integration_woocommerce_register,
+                AntiSpamForWordPressPlugin::$option_integration_woocommerce_reset_password,
+                AntiSpamForWordPressPlugin::$option_integration_wordpress_comments,
+                AntiSpamForWordPressPlugin::$option_integration_wordpress_login,
+                AntiSpamForWordPressPlugin::$option_integration_wordpress_register,
+                AntiSpamForWordPressPlugin::$option_integration_wordpress_reset_password,
+                AntiSpamForWordPressPlugin::$option_integration_wpdiscuz,
+                AntiSpamForWordPressPlugin::$option_integration_wpforms,
+            ) as $option
+        ) {
+            asfw_register_setting_option(
+                $option,
+                function ($value) {
+                    return asfw_sanitize_enum_option($value, array('', 'captcha'));
+                }
+            );
+        }
+
+        foreach (
+            array(
+                AntiSpamForWordPressPlugin::$option_integration_html_forms,
+                AntiSpamForWordPressPlugin::$option_integration_custom,
+            ) as $option
+        ) {
+            asfw_register_setting_option(
+                $option,
+                function ($value) {
+                    return asfw_sanitize_enum_option($value, array('', 'captcha', 'shortcode'));
+                }
+            );
         }
 
         add_settings_section(
@@ -315,7 +445,7 @@ if (is_admin()) {
             'asfw_widget_settings_section',
             array(
                 'name' => AntiSpamForWordPressPlugin::$option_privacy_url,
-                'hint' => __('Used when no privacy page is selected.', 'anti-spam-for-wordpress'),
+                'hint' => __('Used when Custom URL is selected.', 'anti-spam-for-wordpress'),
                 'type' => 'url',
             )
         );
