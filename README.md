@@ -4,9 +4,21 @@ Anti Spam for WordPress is a self-hosted anti-spam plugin for WordPress forms, m
 
 Repository: [github.com/MatthiasReinholz/anti-spam-for-wordpress](https://github.com/MatthiasReinholz/anti-spam-for-wordpress)
 
-## How it works
+## Overview
 
-The plugin serves a local proof-of-work challenge through the WordPress REST API, renders the bundled widget in supported forms, and verifies the response locally in PHP. No external challenge API or remote spam classification is required.
+The plugin serves a local proof-of-work challenge through the WordPress REST API, renders a first-party browser widget in supported forms, and verifies the response locally in PHP. No external challenge API or remote spam classification is required.
+
+## Operational Notes
+
+The challenge endpoint must not be cached:
+
+- `/wp-json/anti-spam-for-wordpress/v1/challenge`
+
+If you run a CDN, edge cache, or page cache, configure a bypass rule for that path.
+
+## Provenance
+
+Originally based on [ALTCHA for WordPress](https://github.com/altcha-org/wordpress-plugin).
 
 ## Supported integrations
 
@@ -62,8 +74,6 @@ Actions:
 ## Notes
 
 * The plugin now ships with a first-party browser widget.
-* The legacy shortcode is intentionally not supported.
-* Legacy option values are migrated into the new `asfw_*` option set on activation.
 
 ## License
 

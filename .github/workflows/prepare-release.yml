@@ -41,6 +41,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           ref: ${{ inputs.base_ref }}
+          fetch-depth: 0
 
       - name: Resolve target version
         id: version
@@ -82,21 +83,26 @@ jobs:
 
             Included changes:
             - bump plugin metadata to `${{ steps.version.outputs.value }}`
-            - add a changelog stub for `${{ steps.version.outputs.value }}`
+            - add auto-generated changelog notes for `${{ steps.version.outputs.value }}`
             - update the POT project version
             - derive the version using release type `${{ inputs.release_type }}`
 
-            Release checklist:
-            - [ ] Replace the changelog placeholder with final release notes.
-            - [ ] Confirm the version bump is correct in plugin metadata and `readme.txt`.
-            - [ ] Confirm CI passed on this release PR.
+            Automated checks on this PR:
+            - version metadata consistency
+            - release branch name matches the version bump
+            - release changelog section exists
+            - release changelog entry contains bullet items
+            - PHP and JavaScript syntax
+            - package build
+
+            Manual release checklist:
+            - [ ] Review the auto-generated changelog entry for `${{ steps.version.outputs.value }}` and edit or extend it if needed.
             - [ ] Complete a WordPress smoke test:
               - [ ] settings page loads
               - [ ] widget renders
               - [ ] challenge solve succeeds
               - [ ] verification succeeds
               - [ ] one representative integration still works
-            - [ ] Merge this PR into `main`.
 
             After merge:
             - the `finalize-release` workflow creates and pushes the annotated `${{ steps.version.outputs.value }}` tag automatically
