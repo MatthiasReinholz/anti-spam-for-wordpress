@@ -7,7 +7,7 @@ PLUGIN_SLUG="anti-spam-for-wordpress"
 DIST_DIR="$ROOT_DIR/dist"
 STAGE_ROOT="$DIST_DIR/package"
 STAGE_DIR="$STAGE_ROOT/$PLUGIN_SLUG"
-ZIP_PATH="$DIST_DIR/$PLUGIN_SLUG.zip"
+ZIP_PATH="$DIST_DIR/$PLUGIN_SLUG-plugin.zip"
 
 PACKAGE_ITEMS=(
   admin
@@ -17,7 +17,6 @@ PACKAGE_ITEMS=(
   public
   anti-spam-for-wordpress.php
   readme.txt
-  README.md
   LICENSE
 )
 
@@ -40,6 +39,11 @@ fi
 
 if [ ! -f "$STAGE_DIR/public/asfw-widget.js" ] || [ ! -f "$STAGE_DIR/public/asfw-widget.css" ]; then
   echo "Package is missing required widget assets." >&2
+  exit 1
+fi
+
+if [ -e "$STAGE_DIR/README.md" ] || [ -e "$STAGE_DIR/CONTRIBUTING.md" ] || [ -e "$STAGE_DIR/scripts" ]; then
+  echo "Package contains development-only files." >&2
   exit 1
 fi
 
