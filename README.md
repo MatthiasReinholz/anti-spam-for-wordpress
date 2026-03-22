@@ -18,10 +18,7 @@ If you run a CDN, edge cache, or page cache, configure a bypass rule for that pa
 
 ## Provenance
 
-This project started as a fork of ALTCHA for WordPress v1:
-[github.com/altcha-org/wordpress-plugin](https://github.com/altcha-org/wordpress-plugin)
-
-The upstream ALTCHA WordPress plugin repository is published under GPL-2.0, and this fork currently keeps the project licensed as GPLv2 or later. I did not change the project to GPLv3-only.
+Originally based on [ALTCHA for WordPress](https://github.com/altcha-org/wordpress-plugin).
 
 ## Supported integrations
 
@@ -77,8 +74,6 @@ Actions:
 ## Notes
 
 * The plugin now ships with a first-party browser widget.
-* The legacy shortcode is intentionally not supported.
-* Legacy option values are migrated into the new `asfw_*` option set on activation.
 
 ## License
 
