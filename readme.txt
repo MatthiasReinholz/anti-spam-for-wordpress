@@ -2,8 +2,8 @@
 Tags: spam, anti-spam, antispam, captcha, proof-of-work, gdpr, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.0.1
-Stable tag: 0.0.1
+Version: 0.1.0
+Stable tag: 0.1.0
 Requires at least: 5.0
 Requires PHP: 7.3
 Tested up to: 6.8
@@ -68,6 +68,9 @@ This plugin requires the WordPress REST API. If you use a plugin that disables t
 5. Floating UI example
 
 == Changelog ==
+
+= 0.1.0 =
+* TODO: finalize release notes.
 
 = 0.0.1 =
 * Rebranded the plugin as Anti Spam for WordPress.
