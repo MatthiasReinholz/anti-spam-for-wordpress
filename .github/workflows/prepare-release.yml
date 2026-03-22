@@ -41,6 +41,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ inputs.base_ref }}
+          fetch-depth: 0
 
       - name: Resolve target version
         id: version
@@ -82,7 +83,7 @@ jobs:
 
             Included changes:
             - bump plugin metadata to `${{ steps.version.outputs.value }}`
-            - add a changelog stub for `${{ steps.version.outputs.value }}`
+            - add auto-generated changelog notes for `${{ steps.version.outputs.value }}`
             - update the POT project version
             - derive the version using release type `${{ inputs.release_type }}`
 
@@ -95,7 +96,7 @@ jobs:
             - package build
 
             Manual release checklist:
-            - [ ] Finalize the changelog entry text for `${{ steps.version.outputs.value }}`.
+            - [ ] Review the auto-generated changelog entry for `${{ steps.version.outputs.value }}` and edit or extend it if needed.
             - [ ] Complete a WordPress smoke test:
               - [ ] settings page loads
               - [ ] widget renders

@@ -25,8 +25,23 @@ if ! grep -q "^= $VERSION =$" "$README_FILE"; then
   exit 1
 fi
 
-if grep -q '^\* TODO: finalize release notes\.$' "$README_FILE"; then
-  echo "readme.txt still contains the release-notes placeholder. Replace it before merging the release PR." >&2
+section_contents="$(
+  awk -v version="$VERSION" '
+    $0 == "= " version " =" {
+      in_section=1
+      next
+    }
+    in_section && /^= .* =$/ {
+      exit
+    }
+    in_section {
+      print
+    }
+  ' "$README_FILE"
+)"
+
+if ! printf '%s\n' "$section_contents" | grep -q '^\* '; then
+  echo "readme.txt changelog entry for version $VERSION does not contain any bullet items." >&2
   exit 1
 fi
 

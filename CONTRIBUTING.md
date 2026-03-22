@@ -28,7 +28,7 @@ Normal release flow:
 1. Merge the intended feature branches into `main`.
 2. Run the `prepare-release` workflow and choose `patch`, `minor`, `major`, or `custom`.
 3. Review the generated `release/x.y.z` pull request.
-4. Replace the changelog placeholder with final release notes and complete the release checklist in the PR body.
+4. Review the auto-generated changelog entry, adjust it if needed, and complete the release checklist in the PR body.
 5. Merge the `release/x.y.z` pull request into `main`.
 6. The merged release PR automatically creates and pushes the `x.y.z` tag.
 7. The pushed tag automatically triggers the publish workflow.
@@ -41,6 +41,7 @@ The repository includes:
 
 - `ci.yml`: runs on pull requests to `main` and on pushes to `feature/*`, `release/*`, and `hotfix/*`
 - `prepare-release.yml`: creates a `release/x.y.z` pull request, deriving the version from a selected release type or a custom override
+- auto-generates the initial changelog entry from commits since the latest release tag
 - `finalize-release.yml`: automatically tags merged `release/*` and `hotfix/*` pull requests after metadata validation
 - `release.yml`: runs on semver tag pushes, builds the plugin zip, creates the GitHub release, and optionally deploys to WordPress.org
 
@@ -50,7 +51,7 @@ CI validates:
 - JavaScript syntax across shipped JavaScript files
 - version consistency across plugin metadata
 - release branch name and version alignment for `release/*` and `hotfix/*`
-- presence of a real changelog entry instead of the release placeholder for `release/*` and `hotfix/*`
+- presence of at least one changelog bullet item for `release/*` and `hotfix/*`
 - package creation and plugin root structure
 
 WordPress still requires the version to exist in tracked plugin files, so the version bump cannot live purely in GitHub settings. The repo now handles that through Actions and scripts so you do not need to edit version strings manually for each release.
