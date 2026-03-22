@@ -82,7 +82,7 @@ msgid "Privacy URL"
 msgstr ""
 
 #: includes/settings.php:319
-msgid "Used when no privacy page is selected."
+msgid "Used when Custom URL is selected."
 msgstr ""
 
 #: includes/settings.php:326

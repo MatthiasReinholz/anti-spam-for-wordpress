@@ -18,6 +18,9 @@ Anti Spam for WordPress is maintained by Matthias Reinholz.
 
 The plugin keeps the local proof-of-work approach and removes external API regions, API keys, and remote spam classification. It now runs entirely inside your WordPress installation.
 
+Originally based on ALTCHA for WordPress:
+https://github.com/altcha-org/wordpress-plugin
+
 = Features =
 
 * Self-hosted challenge generation and verification
@@ -55,6 +58,8 @@ The plugin keeps the local proof-of-work approach and removes external API regio
 
 This plugin requires the WordPress REST API. If you use a plugin that disables the REST API, allow the endpoint `/anti-spam-for-wordpress/v1/challenge`.
 
+If you use a CDN or edge cache, bypass caching for `/wp-json/anti-spam-for-wordpress/v1/challenge`.
+
 = Source Code =
 
 * Plugin: https://github.com/MatthiasReinholz/anti-spam-for-wordpress
@@ -75,5 +80,5 @@ This plugin requires the WordPress REST API. If you use a plugin that disables t
 = 0.0.1 =
 * Rebranded the plugin as Anti Spam for WordPress.
 * Removed hosted API modes and remote spam classification.
-* Added migration from legacy option names to the new `asfw_*` option set.
+* Added settings migration compatibility for existing installs.
 * Replaced the shortcode with `[anti_spam_widget]`.
