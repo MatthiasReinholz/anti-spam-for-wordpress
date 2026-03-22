@@ -38,6 +38,11 @@ jobs:
       - name: Verify version metadata
         run: bash scripts/ci/check_versions.sh
 
+      - name: Validate release branch metadata
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+        run: bash scripts/ci/check_release_branch.sh "$BRANCH_NAME"
+
       - name: Build package
         run: bash scripts/ci/build_zip.sh
 

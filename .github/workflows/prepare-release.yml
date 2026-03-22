@@ -86,17 +86,22 @@ jobs:
             - update the POT project version
             - derive the version using release type `${{ inputs.release_type }}`
 
-            Release checklist:
-            - [ ] Replace the changelog placeholder with final release notes.
-            - [ ] Confirm the version bump is correct in plugin metadata and `readme.txt`.
-            - [ ] Confirm CI passed on this release PR.
+            Automated checks on this PR:
+            - version metadata consistency
+            - release branch name matches the version bump
+            - release changelog section exists
+            - release placeholder has been replaced
+            - PHP and JavaScript syntax
+            - package build
+
+            Manual release checklist:
+            - [ ] Finalize the changelog entry text for `${{ steps.version.outputs.value }}`.
             - [ ] Complete a WordPress smoke test:
               - [ ] settings page loads
               - [ ] widget renders
               - [ ] challenge solve succeeds
               - [ ] verification succeeds
               - [ ] one representative integration still works
-            - [ ] Merge this PR into `main`.
 
             After merge:
             - the `finalize-release` workflow creates and pushes the annotated `${{ steps.version.outputs.value }}` tag automatically

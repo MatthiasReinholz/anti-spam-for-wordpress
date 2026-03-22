@@ -49,6 +49,8 @@ CI validates:
 - PHP syntax across shipped PHP files
 - JavaScript syntax across shipped JavaScript files
 - version consistency across plugin metadata
+- release branch name and version alignment for `release/*` and `hotfix/*`
+- presence of a real changelog entry instead of the release placeholder for `release/*` and `hotfix/*`
 - package creation and plugin root structure
 
 WordPress still requires the version to exist in tracked plugin files, so the version bump cannot live purely in GitHub settings. The repo now handles that through Actions and scripts so you do not need to edit version strings manually for each release.
