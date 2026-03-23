@@ -2,27 +2,6 @@
 
 set -euo pipefail
 
-VERSION="${1:-}"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "Usage: $0 x.y.z" >&2
-  exit 1
-fi
-
-previous_tag="$(
-  git tag --sort=-v:refname \
-    | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' \
-    | head -n 1
-)"
-
-if [ -n "$previous_tag" ]; then
-  notes="$(git log --no-merges --format='* %s' "${previous_tag}..HEAD")"
-else
-  notes="$(git log --no-merges --format='* %s')"
-fi
-
-if [ -z "$notes" ]; then
-  notes="* Maintenance release."
-fi
-
-printf '%s\n' "$notes"
+exec bash "$ROOT_DIR/.wp-plugin-base/scripts/release/generate_release_notes.sh" "$@"

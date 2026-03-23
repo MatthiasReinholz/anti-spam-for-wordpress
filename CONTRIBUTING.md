@@ -1,70 +1,55 @@
 # Contributing
 
+This file is managed by `wp-plugin-base`. Update it from the foundation repo instead of hand-editing it here.
+
 ## Branching Model
 
 This repository uses short-lived branches:
 
-- `main`: protected and always intended to stay releasable
+- `main`: protected and intended to stay releasable
 - `feature/<topic>`: normal development work
 - `release/<version>`: release preparation only
 - `hotfix/<version>`: urgent production fixes branched from `main`
 
 Do not push directly to `main`. Open a pull request instead.
 
-Recommended merge policy:
-
-- `feature/*`: squash merge
-- `release/*`: merge commit or squash, but keep the choice consistent
-- `hotfix/*`: merge commit or squash, but keep the choice consistent
-
-Delete merged feature, release, and hotfix branches after merge.
-
 ## Release Process
 
-Releases are tag-driven. A branch push must never publish a plugin release.
+Releases are merge-driven and tag-backed. A branch push must never publish a plugin release.
 
 Normal release flow:
 
 1. Merge the intended feature branches into `main`.
 2. Run the `prepare-release` workflow and choose `patch`, `minor`, `major`, or `custom`.
+   Rerunning `prepare-release` for the same version refreshes the existing `release/x.y.z` branch and updates the existing PR if needed.
 3. Review the generated `release/x.y.z` pull request.
-4. Review the auto-generated changelog entry, adjust it if needed, and complete the release checklist in the PR body.
+4. Review the auto-generated changelog entry, adjust it if needed, and complete any plugin-specific smoke tests.
 5. Merge the `release/x.y.z` pull request into `main`.
-6. The merged release PR automatically creates and pushes the `x.y.z` tag.
-7. The pushed tag automatically triggers the publish workflow.
+6. The merged release PR automatically creates the `x.y.z` tag and publishes the GitHub release in the same workflow.
+7. Use `release.yml` only as a manual recovery path for an existing tag if automatic publication needs to be repeated.
 
-Hotfixes use the same idea, but from a `hotfix/x.y.z` branch. If a hotfix branch has matching metadata and is merged into `main`, the tag is created automatically there as well.
+Hotfixes use the same model from `hotfix/x.y.z` branches.
 
 ## CI And Release Automation
 
-The repository includes:
+This project uses local managed workflow files generated from `wp-plugin-base` version `v1.2.1`.
 
-- `ci.yml`: runs on pull requests to `main` and on pushes to `feature/*`, `release/*`, and `hotfix/*`
-- `prepare-release.yml`: creates a `release/x.y.z` pull request, derives the version from a selected release type or a custom override, and auto-generates the initial changelog entry from commits since the latest release tag
-- `finalize-release.yml`: automatically tags merged `release/*` and `hotfix/*` pull requests after metadata validation
-- `release.yml`: runs on semver tag pushes, builds the plugin zip, creates the GitHub release, and optionally deploys to WordPress.org
-- the installable GitHub release asset is `anti-spam-for-wordpress-plugin.zip`
+Managed workflow files:
 
-CI validates:
+- `.github/dependabot.yml`
+- `.github/workflows/ci.yml`
+- `.github/workflows/prepare-release.yml`
+- `.github/workflows/finalize-release.yml`
+- `.github/workflows/release.yml`
+- `.github/workflows/update-foundation.yml`
 
-- PHP syntax across shipped PHP files
-- JavaScript syntax across shipped JavaScript files
-- version consistency across plugin metadata
-- release branch name and version alignment for `release/*` and `hotfix/*`
-- presence of at least one changelog bullet item for `release/*` and `hotfix/*`
-- package creation and plugin root structure
+`finalize-release.yml` is the normal automated publish path. `release.yml` is the manual recovery workflow for an already existing tag. `.github/dependabot.yml` opens reviewable PRs for GitHub Actions version updates.
 
-WordPress still requires the version to exist in tracked plugin files, so the version bump cannot live purely in GitHub settings. The repo now handles that through Actions and scripts so you do not need to edit version strings manually for each release.
+`prepare-release.yml` and `update-foundation.yml` need the GitHub repository setting `Allow GitHub Actions to create and approve pull requests`. If that setting is greyed out, an organization owner must allow it at the organization level first.
 
-## Required GitHub Settings
+The WordPress.org deploy path is built in but opt-in. It only runs when `WP_ORG_DEPLOY_ENABLED=true`.
 
-These controls must be configured in GitHub and are not enforceable from the repo alone:
+Set `WP_ORG_DEPLOY_ENABLED` in GitHub Actions settings as either:
 
-- protect `main`
-- require pull requests before merge
-- require at least one approval
-- require status checks to pass
-- require branches to be up to date before merge
-- restrict direct pushes to `main`
-
-If you want the ability to pause WordPress.org releases without changing code, set the Actions variable `WP_DEPLOY_ENABLED=false`. Prefer setting it on the `production` environment used by the release workflow.
+- a repository variable for the whole repository, or
+- an environment variable on the deployment environment used by the release workflow
