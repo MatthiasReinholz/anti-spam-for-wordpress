@@ -3,7 +3,4 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-
-while IFS= read -r file; do
-  node --check "$file"
-done < <(find "$ROOT_DIR/public" -name '*.js' -print | sort)
+exec bash "$ROOT_DIR/.wp-plugin-base/scripts/ci/lint_js.sh" "$@"
