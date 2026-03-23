@@ -32,7 +32,7 @@ Hotfixes use the same model from `hotfix/x.y.z` branches.
 
 ## CI And Release Automation
 
-This project uses local managed workflow files generated from `wp-plugin-base` version `v1.2.0`.
+This project uses local managed workflow files generated from `wp-plugin-base` version `v1.2.1`.
 
 Managed workflow files:
 
