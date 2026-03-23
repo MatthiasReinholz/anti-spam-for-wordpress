@@ -43,6 +43,7 @@ The repository includes:
 - `prepare-release.yml`: creates a `release/x.y.z` pull request, derives the version from a selected release type or a custom override, and auto-generates the initial changelog entry from commits since the latest release tag
 - `finalize-release.yml`: automatically tags merged `release/*` and `hotfix/*` pull requests after metadata validation
 - `release.yml`: runs on semver tag pushes, builds the plugin zip, creates the GitHub release, and optionally deploys to WordPress.org
+- the installable GitHub release asset is `anti-spam-for-wordpress-plugin.zip`
 
 CI validates:
 

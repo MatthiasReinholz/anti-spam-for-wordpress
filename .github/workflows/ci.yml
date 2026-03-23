@@ -50,5 +50,5 @@ jobs:
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
           name: anti-spam-for-wordpress-package
-          path: dist/anti-spam-for-wordpress.zip
+          path: dist/anti-spam-for-wordpress-plugin.zip
           if-no-files-found: error
