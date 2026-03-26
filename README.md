@@ -32,7 +32,6 @@ Originally based on [ALTCHA for WordPress](https://github.com/altcha-org/wordpre
 * HTML Forms
 * WPDiscuz
 * WPForms
-* WP-Members
 * WordPress login, registration, password reset
 * WordPress comments
 * WooCommerce

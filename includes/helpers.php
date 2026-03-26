@@ -25,8 +25,6 @@ function asfw_plugin_active($name)
             return is_plugin_active('woocommerce/woocommerce.php');
         case 'wpdiscuz':
             return is_plugin_active('wpdiscuz/class.WpdiscuzCore.php');
-        case 'wpmembers':
-            return is_plugin_active('wp-members/wp-members.php');
         case 'wpforms':
             return is_plugin_active('wpforms/wpforms.php') || is_plugin_active('wpforms-lite/wpforms.php');
         default:
@@ -83,7 +81,6 @@ function asfw_enqueue_scripts()
             'defaultFieldName' => 'asfw',
             'honeypotEnabled' => $plugin ? (bool) $plugin->get_honeypot() : false,
             'lazy' => $plugin ? (bool) $plugin->get_lazy() : false,
-            'minSubmitTime' => $plugin ? (int) $plugin->get_min_submit_time() : 0,
         )
     );
 }

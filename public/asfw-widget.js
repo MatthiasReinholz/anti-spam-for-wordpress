@@ -29,12 +29,13 @@ function asfwBase64Encode(value) {
 
 class ASFWWidgetElement extends HTMLElement {
   static get observedAttributes() {
-    return ['auto', 'challengeurl', 'data-asfw-challengeurl', 'data-asfw-privacy-new-tab', 'data-asfw-privacy-url', 'delay', 'floating', 'hidefooter', 'hidelogo', 'name', 'strings'];
+    return ['auto', 'challengeurl', 'data-asfw-challengeurl', 'data-asfw-min-submit-time', 'data-asfw-privacy-new-tab', 'data-asfw-privacy-url', 'delay', 'floating', 'hidefooter', 'hidelogo', 'name', 'strings'];
   }
 
   constructor() {
     super();
     this._challenge = null;
+    this._challengeIssuedAt = 0;
     this._challengeUrl = '';
     this._form = null;
     this._verifyPromise = null;
@@ -252,6 +253,11 @@ class ASFWWidgetElement extends HTMLElement {
     return Number.isFinite(delay) && delay > 0 ? delay : 0;
   }
 
+  getMinSubmitTimeMs() {
+    const seconds = Number.parseInt(this.getAttribute('data-asfw-min-submit-time') || '0', 10);
+    return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : 0;
+  }
+
   getExpiryTimestamp(challenge) {
     if (!challenge || typeof challenge.salt !== 'string') {
       return null;
@@ -277,6 +283,7 @@ class ASFWWidgetElement extends HTMLElement {
     this._valueInput.value = '';
     if (clearChallenge) {
       this._challenge = null;
+      this._challengeIssuedAt = 0;
     }
     this._autoStarted = this.getAutoMode() === 'onload' && this._autoStarted;
     this.setState('idle');
@@ -428,6 +435,7 @@ class ASFWWidgetElement extends HTMLElement {
     }
 
     this._challenge = await this.fetchChallenge();
+    this._challengeIssuedAt = Date.now();
     return this._challenge;
   }
 
@@ -467,6 +475,14 @@ class ASFWWidgetElement extends HTMLElement {
 
         if (this.getDelayMs() > 0) {
           await asfwSleep(this.getDelayMs());
+        }
+
+        const minSubmitTimeMs = this.getMinSubmitTimeMs();
+        if (minSubmitTimeMs > 0 && this._challengeIssuedAt > 0) {
+          const remainingMs = minSubmitTimeMs - (Date.now() - this._challengeIssuedAt);
+          if (remainingMs > 0) {
+            await asfwSleep(remainingMs);
+          }
         }
 
         this._valueInput.value = asfwBase64Encode(JSON.stringify({
