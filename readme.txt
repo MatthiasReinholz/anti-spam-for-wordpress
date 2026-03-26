@@ -5,7 +5,7 @@ Author URI: https://matthiasreinholz.com
 Version: 0.3.0
 Stable tag: 0.3.0
 Requires at least: 5.0
-Requires PHP: 7.3
+Requires PHP: 8.0
 Tested up to: 6.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -41,7 +41,6 @@ https://github.com/altcha-org/wordpress-plugin
 * HTML Forms
 * WPDiscuz
 * WPForms
-* WP-Members
 * WordPress Login, Register, Password reset
 * WordPress Comments
 * WooCommerce

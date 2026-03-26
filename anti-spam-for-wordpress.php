@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
  * Version: 0.3.0
  * Stable tag: 0.3.0
  * Requires at least: 5.0
- * Requires PHP: 7.3
+ * Requires PHP: 8.0
  * Tested up to: 6.8
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -41,7 +41,6 @@ require plugin_dir_path(__FILE__) . 'integrations/html-forms.php';
 require plugin_dir_path(__FILE__) . 'integrations/gravityforms.php';
 require plugin_dir_path(__FILE__) . 'integrations/wpdiscuz.php';
 require plugin_dir_path(__FILE__) . 'integrations/wpforms.php';
-require plugin_dir_path(__FILE__) . 'integrations/wpmembers.php';
 require plugin_dir_path(__FILE__) . 'integrations/woocommerce.php';
 require plugin_dir_path(__FILE__) . 'integrations/wordpress.php';
 
