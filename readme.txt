@@ -63,6 +63,28 @@ If you use a CDN or edge cache, bypass caching for `/wp-json/anti-spam-for-wordp
 
 * Plugin: https://github.com/MatthiasReinholz/anti-spam-for-wordpress
 
+== Frequently Asked Questions ==
+
+= The widget shows an error or never loads =
+
+The plugin requires the WordPress REST API. Make sure no security plugin is blocking the `/wp-json/anti-spam-for-wordpress/v1/challenge` endpoint. Check the browser console for network errors.
+
+= I use a CDN or page cache and challenges fail =
+
+Each challenge must be unique. Add a cache bypass rule for `/wp-json/anti-spam-for-wordpress/v1/challenge` in your CDN or caching plugin.
+
+= The widget is blocked by Content Security Policy (CSP) headers =
+
+If your site sends strict CSP headers, ensure that `script-src` allows the domain serving the plugin scripts and that `style-src` permits inline styles used by the widget.
+
+= Users behind a shared IP or proxy are being blocked =
+
+The plugin uses IP-based client fingerprinting to prevent challenge replay. Users behind a shared NAT gateway or corporate proxy may share an IP, which can cause false lockouts under heavy rate limiting. Lower the rate limit thresholds or disable rate limiting if this is a problem.
+
+= How does proof-of-work differ from a CAPTCHA? =
+
+Instead of asking the user to solve a visual puzzle, the widget asks the browser to perform a small computational task (hashing). This runs automatically and is invisible to the user.
+
 == Screenshots ==
 
 1. Settings page
@@ -80,18 +102,19 @@ If you use a CDN or edge cache, bypass caching for `/wp-json/anti-spam-for-wordp
 
 
 = 0.3.0 =
-* chore(deps): bump shivammathur/setup-php
-* chore(deps): bump actions/checkout from 5.0.1 to 6.0.2
-* chore: bump wp-plugin-base to v1.2.1
-* chore: sync wp-plugin-base v1.2.0
-
+* Updated CI dependencies (shivammathur/setup-php, actions/checkout 6.0.2).
+* Upgraded wp-plugin-base to v1.2.1.
+* Hardened anti-spam verification flow.
 
 = 0.2.0 =
-* Refine release packaging and notes
-
+* Hardened settings sanitization callbacks.
+* Improved public documentation and README wording.
+* Added automated release note generation and release PR validation.
+* Refined release packaging workflow.
 
 = 0.1.0 =
-* TODO: finalize release notes.
+* Added semver controls to the release workflow.
+* Stabilised branching and release model.
 
 = 0.0.1 =
 * Rebranded the plugin as Anti Spam for WordPress.
