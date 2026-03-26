@@ -94,6 +94,17 @@ function asfw_get_posted_value($key)
     return trim(sanitize_text_field(wp_unslash($_POST[$key])));
 }
 
+/**
+ * Retrieve a raw proof-of-work payload from $_POST.
+ *
+ * Unlike asfw_get_posted_value(), this function intentionally skips
+ * sanitize_text_field() because the payload is a base64-encoded JSON
+ * string that must be preserved verbatim for cryptographic verification.
+ * The returned value MUST be passed through decode_payload() before use.
+ *
+ * @param string $key The $_POST key to retrieve.
+ * @return string The raw payload string, or empty string if not set.
+ */
 function asfw_get_posted_payload($key)
 {
     if (!isset($_POST[$key])) {

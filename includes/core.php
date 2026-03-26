@@ -379,6 +379,15 @@ class AntiSpamForWordPressPlugin
         return apply_filters('asfw_widget_tag_name', 'asfw-widget');
     }
 
+    /**
+     * Normalize a context string to a safe, consistent format.
+     *
+     * Lowercases, strips non-alphanumeric characters (except colons, dots,
+     * and dashes), and limits to 128 characters. Returns 'generic' for empty input.
+     *
+     * @param string $context Raw context identifier.
+     * @return string Normalized context string.
+     */
     public function normalize_context($context)
     {
         $context = strtolower((string) $context);
@@ -646,6 +655,15 @@ class AntiSpamForWordPressPlugin
         delete_transient($this->get_rate_limit_key($type, $context));
     }
 
+    /**
+     * Decode and validate a base64-encoded proof-of-work payload.
+     *
+     * Performs base64 decoding, JSON parsing, field presence checks,
+     * type validation, and number range verification.
+     *
+     * @param string $payload Base64-encoded JSON payload from the widget.
+     * @return array|WP_Error Decoded payload array on success, WP_Error on failure.
+     */
     public function decode_payload($payload)
     {
         if (!is_string($payload) || trim($payload) === '') {
@@ -683,11 +701,23 @@ class AntiSpamForWordPressPlugin
             return new WP_Error('asfw_invalid_number', __('Verification failed.', 'anti-spam-for-wordpress'));
         }
 
-        $data['number'] = (string) intval($data['number'], 10);
+        $number = intval($data['number'], 10);
+        if ($number < 0 || $number > 1000000) {
+            return new WP_Error('asfw_invalid_number', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        $data['number'] = (string) $number;
 
         return $data;
     }
 
+    /**
+     * Check pre-verification guards such as rate limits and honeypot presence.
+     *
+     * @param string $context  Normalized context identifier.
+     * @param string $field_name Form field name prefix.
+     * @return true|WP_Error True if all guards pass, WP_Error otherwise.
+     */
     public function validate_submission_guards($context, $field_name = 'asfw')
     {
         $rate_limited = $this->is_rate_limited('failure', $context);
@@ -713,6 +743,17 @@ class AntiSpamForWordPressPlugin
         return true;
     }
 
+    /**
+     * Validate a proof-of-work solution against the stored challenge state.
+     *
+     * Checks algorithm, expiration, transient state, client fingerprint,
+     * minimum submit time, replay protection, HMAC signature, and hash correctness.
+     *
+     * @param string      $payload          Base64-encoded JSON payload.
+     * @param string|null $hmac_key         HMAC secret key. Defaults to the stored secret.
+     * @param string|null $expected_context Expected context to match against the salt.
+     * @return true|WP_Error True on valid solution, WP_Error on failure.
+     */
     public function validate_solution($payload, $hmac_key = null, $expected_context = null)
     {
         if ($hmac_key === null) {
@@ -811,6 +852,18 @@ class AntiSpamForWordPressPlugin
         return true;
     }
 
+    /**
+     * Full request validation: context resolution, submission guards, and solution verification.
+     *
+     * Combines resolve_expected_context(), validate_submission_guards(), and
+     * validate_solution() into a single call. Manages rate limit counters.
+     *
+     * @param string      $payload    Base64-encoded JSON payload.
+     * @param string|null $hmac_key   HMAC secret key. Defaults to the stored secret.
+     * @param string|null $context    Expected context. If null, resolved from POST data.
+     * @param string      $field_name Form field name prefix.
+     * @return true|WP_Error True on success, WP_Error on failure.
+     */
     public function validate_request($payload, $hmac_key = null, $context = null, $field_name = 'asfw')
     {
         $context = $this->resolve_expected_context($context, $field_name);
@@ -837,6 +890,17 @@ class AntiSpamForWordPressPlugin
         return true;
     }
 
+    /**
+     * Verify a proof-of-work submission and fire the asfw_verify_result action.
+     *
+     * This is the primary entry point for integrations to verify form submissions.
+     *
+     * @param string      $payload    Base64-encoded JSON payload.
+     * @param string|null $hmac_key   HMAC secret key. Defaults to the stored secret.
+     * @param string|null $context    Expected context. If null, resolved from POST data.
+     * @param string      $field_name Form field name prefix.
+     * @return bool True if verification passed, false otherwise.
+     */
     public function verify($payload, $hmac_key = null, $context = null, $field_name = 'asfw')
     {
         $result = $this->validate_request($payload, $hmac_key, $context, $field_name);
@@ -847,11 +911,32 @@ class AntiSpamForWordPressPlugin
         return $success;
     }
 
+    /**
+     * Validate a proof-of-work payload without triggering actions or rate-limit updates.
+     *
+     * @param string      $payload          Base64-encoded JSON payload.
+     * @param string|null $hmac_key         HMAC secret key. Defaults to the stored secret.
+     * @param string|null $expected_context Expected context to match against the salt.
+     * @return bool True on valid solution, false otherwise.
+     */
     public function verify_solution($payload, $hmac_key = null, $expected_context = null)
     {
         return !($this->validate_solution($payload, $hmac_key, $expected_context) instanceof WP_Error);
     }
 
+    /**
+     * Generate a new proof-of-work challenge.
+     *
+     * Creates a SHA-256 challenge with HMAC signature, stores state in a transient,
+     * and enforces rate limits. Difficulty ranges: low (25k-50k), medium (100k-200k),
+     * high (300k-600k) iterations.
+     *
+     * @param string|null $hmac_key   HMAC secret key. Defaults to the stored secret.
+     * @param string|null $complexity Difficulty level: 'low', 'medium', or 'high'.
+     * @param int|null    $expires    Challenge TTL in seconds. Defaults to configured value.
+     * @param string|null $context    Context identifier. Defaults to 'generic'.
+     * @return array|WP_Error Challenge data array on success, WP_Error if rate limited.
+     */
     public function generate_challenge($hmac_key = null, $complexity = null, $expires = null, $context = null)
     {
         if ($hmac_key === null) {
@@ -932,6 +1017,15 @@ class AntiSpamForWordPressPlugin
         return $challenge_data;
     }
 
+    /**
+     * Build the HTML attribute array for a widget element.
+     *
+     * @param string      $mode     Integration mode identifier.
+     * @param string|null $language Locale override for widget strings.
+     * @param string|null $name     Custom field name prefix.
+     * @param string|null $context  Custom context identifier.
+     * @return array Associative array of HTML attribute key-value pairs.
+     */
     public function get_widget_attrs($mode, $language = null, $name = null, $context = null)
     {
         $floating = $this->get_floating();
@@ -988,6 +1082,13 @@ class AntiSpamForWordPressPlugin
         return apply_filters('asfw_widget_attrs', $attrs, $mode, $language, $field_name, $context);
     }
 
+    /**
+     * Render hidden auxiliary form fields: timestamp, context, signature, and honeypot.
+     *
+     * @param string $field_name Form field name prefix.
+     * @param string $context    Normalized context identifier.
+     * @return string HTML markup for the hidden fields.
+     */
     public function render_widget_auxiliary_fields($field_name = 'asfw', $context = 'generic')
     {
         $html = '<input type="hidden" name="' . esc_attr($this->get_started_field_name($field_name)) . '" value="">';
@@ -1003,6 +1104,16 @@ class AntiSpamForWordPressPlugin
         return $html;
     }
 
+    /**
+     * Render the complete widget markup including the custom element and auxiliary fields.
+     *
+     * @param string      $mode     Integration mode identifier.
+     * @param bool        $wrap     Whether to wrap in a container div.
+     * @param string|null $language Locale override for widget strings.
+     * @param string|null $name     Custom field name prefix.
+     * @param string|null $context  Custom context identifier.
+     * @return string Sanitized HTML markup.
+     */
     public function render_widget($mode, $wrap = false, $language = null, $name = null, $context = null)
     {
         asfw_enqueue_scripts();

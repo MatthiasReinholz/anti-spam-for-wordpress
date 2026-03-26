@@ -134,6 +134,12 @@ asfw-widget {
   display: block;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .asfw-spinner {
+    animation: none;
+  }
+}
+
 .asfw-labels {
   min-width: 0;
 }
