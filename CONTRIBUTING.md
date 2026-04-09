@@ -32,11 +32,12 @@ Hotfixes use the same model from `hotfix/x.y.z` branches.
 
 ## CI And Release Automation
 
-This project uses local managed workflow files generated from `wp-plugin-base` version `v1.2.1`.
+This project uses local managed workflow files generated from `wp-plugin-base` version `v1.2.3`.
 
 Managed workflow files:
 
 - `.github/dependabot.yml`
+- `.github/CODEOWNERS` when `CODEOWNERS_REVIEWERS` is set in `.wp-plugin-base.env`
 - `.github/workflows/ci.yml`
 - `.github/workflows/prepare-release.yml`
 - `.github/workflows/finalize-release.yml`
@@ -45,7 +46,18 @@ Managed workflow files:
 
 `finalize-release.yml` is the normal automated publish path. `release.yml` is the manual recovery workflow for an already existing tag. `.github/dependabot.yml` opens reviewable PRs for GitHub Actions version updates.
 
-`prepare-release.yml` and `update-foundation.yml` need the GitHub repository setting `Allow GitHub Actions to create and approve pull requests`. If that setting is greyed out, an organization owner must allow it at the organization level first.
+`prepare-release.yml` and `update-foundation.yml` need the GitHub repository setting `Allow GitHub Actions to create and approve pull requests`.
+
+Enable it in GitHub under `Settings` -> `Actions` -> `General`:
+
+1. Under `Actions permissions`, choose `Allow OWNER, and select non-OWNER, actions and reusable workflows`.
+2. Allow GitHub-authored actions and only the specific non-GitHub actions documented by the foundation version vendored in this repository.
+3. Enable `Require actions to be pinned to a full-length commit SHA`.
+4. Set `Workflow permissions` to `Read and write permissions`.
+5. Enable `Allow GitHub Actions to create and approve pull requests`.
+6. Save the change.
+
+If that option is greyed out, an organization owner must allow it first in the organization under `Settings` -> `Actions` -> `General`.
 
 The WordPress.org deploy path is built in but opt-in. It only runs when `WP_ORG_DEPLOY_ENABLED=true`.
 
@@ -53,3 +65,14 @@ Set `WP_ORG_DEPLOY_ENABLED` in GitHub Actions settings as either:
 
 - a repository variable for the whole repository, or
 - an environment variable on the deployment environment used by the release workflow
+
+If WordPress.org deploy is enabled, keep `SVN_USERNAME` and `SVN_PASSWORD` in GitHub Actions environment secrets when possible, and protect the `PRODUCTION_ENVIRONMENT` environment with at least one reviewer.
+
+## Security Expectations
+
+This project inherits the foundation security model:
+
+- workflow action references must stay pinned to full commit SHAs
+- the project should keep GitHub Actions limited to the approved action allowlist for the pinned foundation version
+- workflow, script, and dependency-policy changes should be reviewed like privileged infrastructure changes
+- `update-foundation` only trusts published foundation releases that pass provenance checks
