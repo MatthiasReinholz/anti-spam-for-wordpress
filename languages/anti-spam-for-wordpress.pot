@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Anti Spam for WordPress 0.3.1\n"
+"Project-Id-Version: Anti Spam for WordPress 0.3.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/anti-spam-for-wordpress\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-15T11:10:48+00:00\n"
+"POT-Creation-Date: 2026-04-15T11:41:20+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: anti-spam-for-wordpress\n"
@@ -78,8 +78,8 @@ msgstr ""
 msgid "Custom URL"
 msgstr ""
 
-#: anti-spam-for-wordpress.php:119
-#: includes/core.php:179
+#: anti-spam-for-wordpress.php:118
+#: includes/core.php:180
 msgid "Protected by Anti Spam for WordPress"
 msgstr ""
 
@@ -87,67 +87,72 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: includes/core.php:435
+#: includes/core.php:446
 #: integrations/enfold-theme.php:53
 msgid "Verification failed. Try again later."
 msgstr ""
 
-#: includes/core.php:437
+#: includes/core.php:448
 msgid "I'm not a robot"
 msgstr ""
 
-#: includes/core.php:438
+#: includes/core.php:449
 msgid "Privacy"
 msgstr ""
 
-#: includes/core.php:439
+#: includes/core.php:450
 msgid "Please verify before submitting."
 msgstr ""
 
-#: includes/core.php:440
+#: includes/core.php:451
 msgid "Verified"
 msgstr ""
 
-#: includes/core.php:441
+#: includes/core.php:452
 msgid "Verifying..."
 msgstr ""
 
-#: includes/core.php:442
+#: includes/core.php:453
 msgid "Verifying... please wait."
 msgstr ""
 
-#: includes/core.php:573
-msgid "Too many verification attempts. Please wait and try again."
-msgstr ""
-
-#: includes/core.php:606
-#: includes/core.php:611
-#: includes/core.php:616
-#: includes/core.php:622
-#: includes/core.php:633
-#: includes/core.php:637
-#: includes/core.php:657
+#: includes/core.php:565
+#: includes/core.php:571
 #: includes/core.php:670
-#: includes/core.php:685
-#: includes/core.php:694
-#: includes/core.php:699
-#: includes/core.php:710
-#: includes/core.php:714
-#: includes/core.php:728
+#: includes/core.php:675
+#: includes/core.php:680
+#: includes/core.php:686
+#: includes/core.php:697
+#: includes/core.php:701
+#: includes/core.php:706
 #: includes/core.php:732
-#: includes/core.php:737
-#: includes/core.php:745
-#: includes/core.php:752
+#: includes/core.php:739
+#: includes/core.php:764
+#: includes/core.php:773
+#: includes/core.php:778
+#: includes/core.php:789
+#: includes/core.php:793
+#: includes/core.php:807
+#: includes/core.php:811
+#: includes/core.php:818
+#: includes/core.php:825
+#: includes/core.php:831
+#: includes/core.php:839
+#: includes/core.php:846
 #: integrations/elementor/field.php:80
 #: integrations/formidable/AntiSpamWidgetFieldType.php:55
 msgid "Verification failed."
 msgstr ""
 
-#: includes/core.php:722
+#: includes/core.php:628
+msgid "Too many verification attempts. Please wait and try again."
+msgstr ""
+
+#: includes/core.php:801
 msgid "Verification expired."
 msgstr ""
 
-#: includes/core.php:968
+#: includes/core.php:1146
 msgid "This form requires JavaScript."
 msgstr ""
 
@@ -513,8 +518,4 @@ msgstr ""
 #: integrations/wordpress.php:115
 #: integrations/wordpress.php:167
 msgid "Error"
-msgstr ""
-
-#: integrations/wpmembers.php:15
-msgid "Registration failed. Please try again later."
 msgstr ""

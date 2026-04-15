@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
  * Description: Self-hosted spam protection for WordPress forms using a proof-of-work widget.
  * Author: Matthias Reinholz
  * Author URI: https://matthiasreinholz.com
- * Version: 0.3.1
+ * Version: 0.3.2
  * Stable tag: 0.3.0
  * Requires at least: 5.0
  * Requires PHP: 8.0
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
  */
 
 define('ASFW_FILE', __FILE__);
-define('ASFW_VERSION', '0.3.1');
+define('ASFW_VERSION', '0.3.2');
 define('ASFW_WEBSITE', 'https://matthiasreinholz.com');
 define('ASFW_WIDGET_VERSION', '1.0.0');
 

@@ -2,8 +2,8 @@
 Tags: spam, anti-spam, antispam, captcha, proof-of-work, gdpr, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.3.1
-Stable tag: 0.3.1
+Version: 0.3.2
+Stable tag: 0.3.2
 Requires at least: 5.0
 Requires PHP: 8.0
 Tested up to: 6.8
@@ -94,6 +94,11 @@ Instead of asking the user to solve a visual puzzle, the widget asks the browser
 5. Floating UI example
 
 == Changelog ==
+
+= 0.3.2 =
+* Fix - Polish docs and compatibility fixes.
+* Update - Harden anti-spam verification flow.
+
 
 = 0.3.1 =
 * Fix - fix(ci): disable persisted checkout credentials in prepare-release.
