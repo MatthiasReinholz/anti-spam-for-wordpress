@@ -2,8 +2,8 @@
 Tags: spam, anti-spam, antispam, captcha, proof-of-work, gdpr, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.3.0
-Stable tag: 0.3.0
+Version: 0.3.1
+Stable tag: 0.3.1
 Requires at least: 5.0
 Requires PHP: 7.3
 Tested up to: 6.8
@@ -73,6 +73,12 @@ If you use a CDN or edge cache, bypass caching for `/wp-json/anti-spam-for-wordp
 5. Floating UI example
 
 == Changelog ==
+
+= 0.3.1 =
+* Fix - fix(ci): disable persisted checkout credentials in prepare-release.
+* Update - chore: update wp-plugin-base to v1.6.2.
+* Update - chore: update wp-plugin-base to v1.2.3.
+
 
 = 0.3.0 =
 * chore(deps): bump shivammathur/setup-php
