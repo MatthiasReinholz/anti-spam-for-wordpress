@@ -507,7 +507,7 @@ if (is_admin()) {
             __('Enfold Theme', 'anti-spam-for-wordpress'),
             AntiSpamForWordPressPlugin::$option_integration_enfold_theme,
             empty(array_filter(wp_get_themes(), function ($theme) {
-                return stripos($theme, 'enfold') !== false;
+                return stripos($theme->get('Name'), 'enfold') !== false;
             }))
         );
         asfw_add_integration_field(

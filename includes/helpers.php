@@ -25,8 +25,6 @@ function asfw_plugin_active($name)
             return is_plugin_active('woocommerce/woocommerce.php');
         case 'wpdiscuz':
             return is_plugin_active('wpdiscuz/class.WpdiscuzCore.php');
-        case 'wpmembers':
-            return is_plugin_active('wp-members/wp-members.php');
         case 'wpforms':
             return is_plugin_active('wpforms/wpforms.php') || is_plugin_active('wpforms-lite/wpforms.php');
         default:
@@ -83,7 +81,6 @@ function asfw_enqueue_scripts()
             'defaultFieldName' => 'asfw',
             'honeypotEnabled' => $plugin ? (bool) $plugin->get_honeypot() : false,
             'lazy' => $plugin ? (bool) $plugin->get_lazy() : false,
-            'minSubmitTime' => $plugin ? (int) $plugin->get_min_submit_time() : 0,
         )
     );
 }
@@ -97,6 +94,17 @@ function asfw_get_posted_value($key)
     return trim(sanitize_text_field(wp_unslash($_POST[$key])));
 }
 
+/**
+ * Retrieve a raw proof-of-work payload from $_POST.
+ *
+ * Unlike asfw_get_posted_value(), this function intentionally skips
+ * sanitize_text_field() because the payload is a base64-encoded JSON
+ * string that must be preserved verbatim for cryptographic verification.
+ * The returned value MUST be passed through decode_payload() before use.
+ *
+ * @param string $key The $_POST key to retrieve.
+ * @return string The raw payload string, or empty string if not set.
+ */
 function asfw_get_posted_payload($key)
 {
     if (!isset($_POST[$key])) {

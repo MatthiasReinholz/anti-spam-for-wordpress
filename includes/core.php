@@ -112,6 +112,7 @@ class AntiSpamForWordPressPlugin
             'data-asfw-context' => array(),
             'data-asfw-field' => array(),
             'data-asfw-lazy' => array(),
+            'data-asfw-min-submit-time' => array(),
             'data-asfw-privacy-new-tab' => array(),
             'data-asfw-privacy-url' => array(),
             'data-asfw-provider' => array(),
@@ -378,10 +379,20 @@ class AntiSpamForWordPressPlugin
         return apply_filters('asfw_widget_tag_name', 'asfw-widget');
     }
 
+    /**
+     * Normalize a context string to a safe, consistent format.
+     *
+     * Lowercases, strips non-alphanumeric characters (except colons, dots,
+     * and dashes), and limits to 128 characters. Returns 'generic' for empty input.
+     *
+     * @param string $context Raw context identifier.
+     * @return string Normalized context string.
+     */
     public function normalize_context($context)
     {
         $context = strtolower((string) $context);
         $context = preg_replace('/[^a-z0-9:._-]/', '-', $context);
+        $context = substr((string) $context, 0, 128);
         $context = trim((string) $context, '-');
 
         if ($context === '') {
@@ -506,6 +517,16 @@ class AntiSpamForWordPressPlugin
         return sanitize_key($field_name) . '_website';
     }
 
+    public function get_context_field_name($field_name = 'asfw')
+    {
+        return sanitize_key($field_name) . '_context';
+    }
+
+    public function get_context_signature_field_name($field_name = 'asfw')
+    {
+        return sanitize_key($field_name) . '_context_sig';
+    }
+
     public function get_client_fingerprint()
     {
         $ip_address = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : 'unknown';
@@ -516,7 +537,41 @@ class AntiSpamForWordPressPlugin
 
     public function get_rate_limit_key($type, $context)
     {
-        return 'asfw_rl_' . sanitize_key($type) . '_' . md5($this->get_client_fingerprint() . '|' . $context);
+        $context_key = $type === 'challenge' ? 'global' : (string) $context;
+
+        return 'asfw_rl_' . sanitize_key($type) . '_' . md5($this->get_client_fingerprint() . '|' . $context_key);
+    }
+
+    public function sign_widget_context($context, $field_name = 'asfw')
+    {
+        $secret = $this->get_secret() ?: wp_salt('nonce');
+
+        return hash_hmac(
+            'sha256',
+            $this->normalize_context($context) . '|' . sanitize_key($field_name),
+            $secret
+        );
+    }
+
+    public function resolve_expected_context($expected_context, $field_name = 'asfw')
+    {
+        if ($expected_context !== null && $expected_context !== '') {
+            return $this->normalize_context($expected_context);
+        }
+
+        $posted_context = asfw_get_posted_value($this->get_context_field_name($field_name));
+        $posted_signature = asfw_get_posted_value($this->get_context_signature_field_name($field_name));
+        if ($posted_context === '' || $posted_signature === '') {
+            return new WP_Error('asfw_missing_context', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        $normalized_context = $this->normalize_context($posted_context);
+        $expected_signature = $this->sign_widget_context($normalized_context, $field_name);
+        if (!hash_equals($expected_signature, $posted_signature)) {
+            return new WP_Error('asfw_invalid_context_signature', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        return $normalized_context;
     }
 
     public function get_rate_limit_limit($type)
@@ -600,6 +655,15 @@ class AntiSpamForWordPressPlugin
         delete_transient($this->get_rate_limit_key($type, $context));
     }
 
+    /**
+     * Decode and validate a base64-encoded proof-of-work payload.
+     *
+     * Performs base64 decoding, JSON parsing, field presence checks,
+     * type validation, and number range verification.
+     *
+     * @param string $payload Base64-encoded JSON payload from the widget.
+     * @return array|WP_Error Decoded payload array on success, WP_Error on failure.
+     */
     public function decode_payload($payload)
     {
         if (!is_string($payload) || trim($payload) === '') {
@@ -637,11 +701,23 @@ class AntiSpamForWordPressPlugin
             return new WP_Error('asfw_invalid_number', __('Verification failed.', 'anti-spam-for-wordpress'));
         }
 
-        $data['number'] = (string) intval($data['number'], 10);
+        $number = intval($data['number'], 10);
+        if ($number < 0 || $number > 1000000) {
+            return new WP_Error('asfw_invalid_number', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        $data['number'] = (string) $number;
 
         return $data;
     }
 
+    /**
+     * Check pre-verification guards such as rate limits and honeypot presence.
+     *
+     * @param string $context  Normalized context identifier.
+     * @param string $field_name Form field name prefix.
+     * @return true|WP_Error True if all guards pass, WP_Error otherwise.
+     */
     public function validate_submission_guards($context, $field_name = 'asfw')
     {
         $rate_limited = $this->is_rate_limited('failure', $context);
@@ -650,6 +726,12 @@ class AntiSpamForWordPressPlugin
         }
 
         if ($this->get_honeypot()) {
+            if (!array_key_exists($this->get_honeypot_field_name($field_name), $_POST)) {
+                $this->increment_rate_limit('failure', $context);
+
+                return new WP_Error('asfw_missing_honeypot', __('Verification failed.', 'anti-spam-for-wordpress'));
+            }
+
             $honeypot = asfw_get_posted_value($this->get_honeypot_field_name($field_name));
             if ($honeypot !== '') {
                 $this->increment_rate_limit('failure', $context);
@@ -658,23 +740,20 @@ class AntiSpamForWordPressPlugin
             }
         }
 
-        $min_submit_time = $this->get_min_submit_time();
-        if ($min_submit_time > 0) {
-            $started_value = asfw_get_posted_value($this->get_started_field_name($field_name));
-            if ($started_value !== '' && preg_match('/^\d+$/', $started_value)) {
-                $started_at = intval($started_value, 10);
-                $elapsed_ms = round(microtime(true) * 1000) - $started_at;
-                if ($elapsed_ms >= 0 && $elapsed_ms < ($min_submit_time * 1000)) {
-                    $this->increment_rate_limit('failure', $context);
-
-                    return new WP_Error('asfw_submitted_too_fast', __('Verification failed.', 'anti-spam-for-wordpress'));
-                }
-            }
-        }
-
         return true;
     }
 
+    /**
+     * Validate a proof-of-work solution against the stored challenge state.
+     *
+     * Checks algorithm, expiration, transient state, client fingerprint,
+     * minimum submit time, replay protection, HMAC signature, and hash correctness.
+     *
+     * @param string      $payload          Base64-encoded JSON payload.
+     * @param string|null $hmac_key         HMAC secret key. Defaults to the stored secret.
+     * @param string|null $expected_context Expected context to match against the salt.
+     * @return true|WP_Error True on valid solution, WP_Error on failure.
+     */
     public function validate_solution($payload, $hmac_key = null, $expected_context = null)
     {
         if ($hmac_key === null) {
@@ -732,6 +811,21 @@ class AntiSpamForWordPressPlugin
             return new WP_Error('asfw_transient_context_mismatch', __('Verification failed.', 'anti-spam-for-wordpress'));
         }
 
+        if (
+            !empty($challenge_state['fingerprint']) &&
+            !hash_equals((string) $challenge_state['fingerprint'], $this->get_client_fingerprint())
+        ) {
+            return new WP_Error('asfw_client_mismatch', __('Verification failed.', 'anti-spam-for-wordpress'));
+        }
+
+        $min_submit_time = $this->get_min_submit_time();
+        if ($min_submit_time > 0 && !empty($challenge_state['issued_at'])) {
+            $issued_at = intval($challenge_state['issued_at'], 10);
+            if ($issued_at > 0 && (time() - $issued_at) < $min_submit_time) {
+                return new WP_Error('asfw_submitted_too_fast', __('Verification failed.', 'anti-spam-for-wordpress'));
+            }
+        }
+
         $lock_key = $this->get_challenge_lock_key($challenge_id);
         if (get_transient($lock_key) !== false) {
             return new WP_Error('asfw_replay_locked', __('Verification failed.', 'anti-spam-for-wordpress'));
@@ -758,26 +852,55 @@ class AntiSpamForWordPressPlugin
         return true;
     }
 
+    /**
+     * Full request validation: context resolution, submission guards, and solution verification.
+     *
+     * Combines resolve_expected_context(), validate_submission_guards(), and
+     * validate_solution() into a single call. Manages rate limit counters.
+     *
+     * @param string      $payload    Base64-encoded JSON payload.
+     * @param string|null $hmac_key   HMAC secret key. Defaults to the stored secret.
+     * @param string|null $context    Expected context. If null, resolved from POST data.
+     * @param string      $field_name Form field name prefix.
+     * @return true|WP_Error True on success, WP_Error on failure.
+     */
     public function validate_request($payload, $hmac_key = null, $context = null, $field_name = 'asfw')
     {
-        $context = $context === null ? null : $this->normalize_context($context);
-        $guard_result = $this->validate_submission_guards($context ?: 'generic', $field_name);
+        $context = $this->resolve_expected_context($context, $field_name);
+        if ($context instanceof WP_Error) {
+            $this->increment_rate_limit('failure', 'generic');
+
+            return $context;
+        }
+
+        $guard_result = $this->validate_submission_guards($context, $field_name);
         if ($guard_result instanceof WP_Error) {
             return $guard_result;
         }
 
         $result = $this->validate_solution($payload, $hmac_key, $context);
         if ($result instanceof WP_Error) {
-            $this->increment_rate_limit('failure', $context ?: 'generic');
+            $this->increment_rate_limit('failure', $context);
 
             return $result;
         }
 
-        $this->clear_rate_limit('failure', $context ?: 'generic');
+        $this->clear_rate_limit('failure', $context);
 
         return true;
     }
 
+    /**
+     * Verify a proof-of-work submission and fire the asfw_verify_result action.
+     *
+     * This is the primary entry point for integrations to verify form submissions.
+     *
+     * @param string      $payload    Base64-encoded JSON payload.
+     * @param string|null $hmac_key   HMAC secret key. Defaults to the stored secret.
+     * @param string|null $context    Expected context. If null, resolved from POST data.
+     * @param string      $field_name Form field name prefix.
+     * @return bool True if verification passed, false otherwise.
+     */
     public function verify($payload, $hmac_key = null, $context = null, $field_name = 'asfw')
     {
         $result = $this->validate_request($payload, $hmac_key, $context, $field_name);
@@ -788,11 +911,32 @@ class AntiSpamForWordPressPlugin
         return $success;
     }
 
+    /**
+     * Validate a proof-of-work payload without triggering actions or rate-limit updates.
+     *
+     * @param string      $payload          Base64-encoded JSON payload.
+     * @param string|null $hmac_key         HMAC secret key. Defaults to the stored secret.
+     * @param string|null $expected_context Expected context to match against the salt.
+     * @return bool True on valid solution, false otherwise.
+     */
     public function verify_solution($payload, $hmac_key = null, $expected_context = null)
     {
         return !($this->validate_solution($payload, $hmac_key, $expected_context) instanceof WP_Error);
     }
 
+    /**
+     * Generate a new proof-of-work challenge.
+     *
+     * Creates a SHA-256 challenge with HMAC signature, stores state in a transient,
+     * and enforces rate limits. Difficulty ranges: low (25k-50k), medium (100k-200k),
+     * high (300k-600k) iterations.
+     *
+     * @param string|null $hmac_key   HMAC secret key. Defaults to the stored secret.
+     * @param string|null $complexity Difficulty level: 'low', 'medium', or 'high'.
+     * @param int|null    $expires    Challenge TTL in seconds. Defaults to configured value.
+     * @param string|null $context    Context identifier. Defaults to 'generic'.
+     * @return array|WP_Error Challenge data array on success, WP_Error if rate limited.
+     */
     public function generate_challenge($hmac_key = null, $complexity = null, $expires = null, $context = null)
     {
         if ($hmac_key === null) {
@@ -830,20 +974,20 @@ class AntiSpamForWordPressPlugin
 
         switch ($complexity) {
             case 'low':
-                $min_secret = 100;
-                $max_secret = 1000;
+                $min_secret = 25000;
+                $max_secret = 50000;
                 break;
             case 'medium':
-                $min_secret = 1000;
-                $max_secret = 20000;
+                $min_secret = 100000;
+                $max_secret = 200000;
                 break;
             case 'high':
-                $min_secret = 10000;
-                $max_secret = 100000;
+                $min_secret = 300000;
+                $max_secret = 600000;
                 break;
             default:
-                $min_secret = 100;
-                $max_secret = 10000;
+                $min_secret = 25000;
+                $max_secret = 50000;
         }
 
         $secret_number = random_int($min_secret, $max_secret);
@@ -853,6 +997,7 @@ class AntiSpamForWordPressPlugin
             $this->get_challenge_transient_key($challenge_id),
             array(
                 'context' => $context,
+                'fingerprint' => $this->get_client_fingerprint(),
                 'issued_at' => time(),
             ),
             $transient_ttl
@@ -872,6 +1017,15 @@ class AntiSpamForWordPressPlugin
         return $challenge_data;
     }
 
+    /**
+     * Build the HTML attribute array for a widget element.
+     *
+     * @param string      $mode     Integration mode identifier.
+     * @param string|null $language Locale override for widget strings.
+     * @param string|null $name     Custom field name prefix.
+     * @param string|null $context  Custom context identifier.
+     * @return array Associative array of HTML attribute key-value pairs.
+     */
     public function get_widget_attrs($mode, $language = null, $name = null, $context = null)
     {
         $floating = $this->get_floating();
@@ -885,6 +1039,7 @@ class AntiSpamForWordPressPlugin
             'data-asfw-context' => $context,
             'data-asfw-field' => $field_name,
             'data-asfw-lazy' => $lazy ? '1' : '0',
+            'data-asfw-min-submit-time' => (string) max(0, $this->get_min_submit_time()),
             'data-asfw-provider' => $this->get_widget_provider(),
             'strings' => $strings,
         );
@@ -927,9 +1082,18 @@ class AntiSpamForWordPressPlugin
         return apply_filters('asfw_widget_attrs', $attrs, $mode, $language, $field_name, $context);
     }
 
-    public function render_widget_auxiliary_fields($field_name = 'asfw')
+    /**
+     * Render hidden auxiliary form fields: timestamp, context, signature, and honeypot.
+     *
+     * @param string $field_name Form field name prefix.
+     * @param string $context    Normalized context identifier.
+     * @return string HTML markup for the hidden fields.
+     */
+    public function render_widget_auxiliary_fields($field_name = 'asfw', $context = 'generic')
     {
         $html = '<input type="hidden" name="' . esc_attr($this->get_started_field_name($field_name)) . '" value="">';
+        $html .= '<input type="hidden" name="' . esc_attr($this->get_context_field_name($field_name)) . '" value="' . esc_attr($context) . '">';
+        $html .= '<input type="hidden" name="' . esc_attr($this->get_context_signature_field_name($field_name)) . '" value="' . esc_attr($this->sign_widget_context($context, $field_name)) . '">';
 
         if ($this->get_honeypot()) {
             $html .= '<div class="asfw-honeypot" aria-hidden="true" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;">';
@@ -940,13 +1104,27 @@ class AntiSpamForWordPressPlugin
         return $html;
     }
 
+    /**
+     * Render the complete widget markup including the custom element and auxiliary fields.
+     *
+     * @param string      $mode     Integration mode identifier.
+     * @param bool        $wrap     Whether to wrap in a container div.
+     * @param string|null $language Locale override for widget strings.
+     * @param string|null $name     Custom field name prefix.
+     * @param string|null $context  Custom context identifier.
+     * @return string Sanitized HTML markup.
+     */
     public function render_widget($mode, $wrap = false, $language = null, $name = null, $context = null)
     {
         asfw_enqueue_scripts();
         asfw_enqueue_styles();
 
         $field_name = sanitize_key($name ?: 'asfw');
-        $attrs = $this->get_widget_attrs($mode, $language, $field_name, $context);
+        $normalized_context = $this->get_widget_context($mode, $field_name, $context);
+        $attrs = $this->get_widget_attrs($mode, $language, $field_name, $normalized_context);
+        $signed_context = isset($attrs['data-asfw-context'])
+            ? $this->normalize_context($attrs['data-asfw-context'])
+            : $normalized_context;
         $attributes = join(
             ' ',
             array_map(
@@ -963,7 +1141,7 @@ class AntiSpamForWordPressPlugin
 
         $tag_name = $this->get_widget_tag_name();
         $html = '<' . $tag_name . ' ' . $attributes . '></' . $tag_name . '>';
-        $html .= $this->render_widget_auxiliary_fields($field_name);
+        $html .= $this->render_widget_auxiliary_fields($field_name, $signed_context);
         $html .= '<noscript><div class="asfw-no-javascript">';
         $html .= esc_html__('This form requires JavaScript.', 'anti-spam-for-wordpress');
         $html .= '</div></noscript>';
@@ -972,7 +1150,7 @@ class AntiSpamForWordPressPlugin
             $html = '<div class="asfw-widget-wrap">' . $html . '</div>';
         }
 
-        return apply_filters('asfw_widget_html', $html, $mode, $language, $field_name, $context);
+        return apply_filters('asfw_widget_html', $html, $mode, $language, $field_name, $signed_context);
     }
 }
 

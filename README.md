@@ -32,7 +32,6 @@ Originally based on [ALTCHA for WordPress](https://github.com/altcha-org/wordpre
 * HTML Forms
 * WPDiscuz
 * WPForms
-* WP-Members
 * WordPress login, registration, password reset
 * WordPress comments
 * WooCommerce
@@ -57,19 +56,87 @@ This plugin requires the WordPress REST API. If you are using any plugin that di
 
 ## Hooks
 
-Filters:
+### Filters
 
-* `apply_filters('asfw_challenge_url', $challenge_url)`
-* `apply_filters('asfw_integrations', $integrations)`
-* `apply_filters('asfw_plugin_active', false, $name)`
-* `apply_filters('asfw_widget_attrs', $attrs, $mode, $language, $name)`
-* `apply_filters('asfw_widget_html', $html, $mode, $language, $name)`
-* `apply_filters('asfw_translations', $translations, $language)`
+**`asfw_widget_provider`** — Override the widget provider identifier rendered into the custom element.
 
-Actions:
+```php
+apply_filters('asfw_widget_provider', string $provider): string
+```
 
-* `do_action('asfw_verify_result', $result)`
-* `do_action('asfw_settings_integrations')`
+**`asfw_widget_tag_name`** — Override the custom element tag name used for the widget.
+
+```php
+apply_filters('asfw_widget_tag_name', string $tag_name): string
+```
+
+**`asfw_challenge_url`** — Customize the REST API challenge endpoint URL.
+
+```php
+apply_filters('asfw_challenge_url', string $challenge_url, string|null $context): string
+```
+
+**`asfw_integrations`** — Override the list of active integration identifiers.
+
+```php
+apply_filters('asfw_integrations', array $integrations): array
+```
+
+**`asfw_plugin_active`** — Override plugin detection for integration availability checks.
+
+```php
+apply_filters('asfw_plugin_active', bool $active, string $plugin_name): bool
+```
+
+**`asfw_widget_attrs`** — Modify widget HTML attributes before rendering.
+
+```php
+apply_filters('asfw_widget_attrs', array $attrs, string $mode, string|null $language, string $field_name, string $context): array
+```
+
+**`asfw_widget_html`** — Modify the final widget HTML markup.
+
+```php
+apply_filters('asfw_widget_html', string $html, string $mode, string|null $language, string $field_name, string $context): string
+```
+
+**`asfw_translations`** — Override widget UI strings.
+
+```php
+apply_filters('asfw_translations', array $translations, string|null $language): array
+```
+
+**`asfw_widget_context`** — Override the normalized context identifier for a widget instance.
+
+```php
+apply_filters('asfw_widget_context', string $context, string $mode, string|null $name): string
+```
+
+### Actions
+
+**`asfw_rate_limited`** — Fires when challenge or verification throttling blocks a request.
+
+```php
+do_action('asfw_rate_limited', string $type, string $context, array $state)
+```
+
+**`asfw_verify_result`** — Fires after every verification attempt.
+
+```php
+do_action('asfw_verify_result', bool $success, true|WP_Error $result, string|null $context, string $field_name)
+```
+
+**`asfw_challenge_issued`** — Fires after a new challenge is generated.
+
+```php
+do_action('asfw_challenge_issued', array $challenge_data, string $context, string $challenge_id)
+```
+
+**`asfw_settings_integrations`** — Fires inside the settings page to allow adding custom integration fields.
+
+```php
+do_action('asfw_settings_integrations')
+```
 
 ## Notes
 
