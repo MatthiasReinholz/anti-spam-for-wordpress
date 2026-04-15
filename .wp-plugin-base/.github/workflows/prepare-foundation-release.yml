@@ -38,6 +38,7 @@ jobs:
   prepare:
     name: Prepare foundation release branch
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout base ref
@@ -45,6 +46,7 @@ jobs:
         with:
           ref: ${{ inputs.base_ref }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Resolve target version
         id: version
@@ -67,47 +69,30 @@ jobs:
       - name: Resolve source ref
         id: source
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
           RELEASE_BRANCH: release/${{ steps.version.outputs.value }}
         run: |
-          set -euo pipefail
-          if git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" >/dev/null 2>&1; then
-            api_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls?state=open&head=${GITHUB_REPOSITORY_OWNER}:${RELEASE_BRANCH}&base=${{ inputs.base_ref }}"
-            open_pr_count="$(
-              curl -fsSL \
-                -H "Accept: application/vnd.github+json" \
-                -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-                -H "X-GitHub-Api-Version: 2022-11-28" \
-                "$api_url" \
-                | jq 'length'
-            )"
-
-            echo "branch_exists=true" >> "$GITHUB_OUTPUT"
-
-            if [ "$open_pr_count" -gt 0 ]; then
-              echo "ref=$RELEASE_BRANCH" >> "$GITHUB_OUTPUT"
-              echo "open_pr_exists=true" >> "$GITHUB_OUTPUT"
-              echo "Refreshing existing release branch $RELEASE_BRANCH."
-            else
-              echo "ref=${{ inputs.base_ref }}" >> "$GITHUB_OUTPUT"
-              echo "open_pr_exists=false" >> "$GITHUB_OUTPUT"
-              echo "Existing release branch $RELEASE_BRANCH has no open PR. Recreating it from ${{ inputs.base_ref }}."
-            fi
-          else
-            echo "ref=${{ inputs.base_ref }}" >> "$GITHUB_OUTPUT"
-            echo "branch_exists=false" >> "$GITHUB_OUTPUT"
-            echo "open_pr_exists=false" >> "$GITHUB_OUTPUT"
-            echo "Preparing a new release branch from ${{ inputs.base_ref }}."
-          fi
+          bash scripts/update/resolve_release_branch_source.sh \
+            "${GITHUB_REPOSITORY}" \
+            "${GITHUB_REPOSITORY_OWNER}" \
+            "$RELEASE_BRANCH" \
+            "${{ inputs.base_ref }}" \
+            "$GITHUB_OUTPUT"
 
       - name: Checkout source ref
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           ref: ${{ steps.source.outputs.ref }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Bump foundation version metadata
         run: bash scripts/foundation/bump_version.sh "${{ steps.version.outputs.value }}"
+
+      - name: Validate release version contracts
+        run: |
+          bash scripts/foundation/check_version.sh "${{ steps.version.outputs.value }}"
+          bash scripts/foundation/check_version_contract_surfaces.sh "${{ steps.version.outputs.value }}"
 
       - name: Configure git identity
         run: |
@@ -139,6 +124,7 @@ jobs:
         id: cpr
         env:
           GH_TOKEN: ${{ github.token }}
+          GIT_ADD_PATHS: VERSION,CHANGELOG.md,templates/child/.wp-plugin-base.env.example
         run: |
           bash scripts/update/create_or_update_pr.sh \
             "release/${{ steps.version.outputs.value }}" \
