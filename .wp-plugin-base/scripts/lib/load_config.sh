@@ -2,11 +2,29 @@
 
 set -euo pipefail
 
+wp_plugin_base_is_supported_config_key() {
+  case "$1" in
+    FOUNDATION_REPOSITORY|FOUNDATION_VERSION|PLUGIN_NAME|PLUGIN_SLUG|MAIN_PLUGIN_FILE|README_FILE|ZIP_FILE|PHP_VERSION|NODE_VERSION|PRODUCTION_ENVIRONMENT|PHP_RUNTIME_MATRIX|PHP_RUNTIME_MATRIX_MODE|VERSION_CONSTANT_NAME|POT_FILE|POT_PROJECT_NAME|WORDPRESS_ORG_SLUG|WORDPRESS_READINESS_ENABLED|WORDPRESS_QUALITY_PACK_ENABLED|WORDPRESS_SECURITY_PACK_ENABLED|WOOCOMMERCE_QIT_ENABLED|WOOCOMMERCE_COM_PRODUCT_ID|WOOCOMMERCE_COM_ENDPOINT_TIMEOUT_SECONDS|GITHUB_RELEASE_UPDATER_ENABLED|GITHUB_RELEASE_UPDATER_REPO_URL|REST_OPERATIONS_PACK_ENABLED|REST_API_NAMESPACE|REST_ABILITIES_ENABLED|ADMIN_UI_PACK_ENABLED|ADMIN_UI_STARTER|ADMIN_UI_EXPERIMENTAL_DATAVIEWS|WP_PLUGIN_BASE_PLUGIN_CHECK_CHECKS|WP_PLUGIN_BASE_PLUGIN_CHECK_EXCLUDE_CHECKS|WP_PLUGIN_BASE_PLUGIN_CHECK_CATEGORIES|WP_PLUGIN_BASE_PLUGIN_CHECK_IGNORE_CODES|WP_PLUGIN_BASE_PLUGIN_CHECK_STRICT_WARNINGS|WP_PLUGIN_BASE_PLUGIN_CHECK_SEVERITY|WP_PLUGIN_BASE_PLUGIN_CHECK_ERROR_SEVERITY|WP_PLUGIN_BASE_PLUGIN_CHECK_WARNING_SEVERITY|EXTRA_ALLOWED_HOSTS|WP_PLUGIN_BASE_SECURITY_SUPPRESSIONS_FILE|PACKAGE_INCLUDE|PACKAGE_EXCLUDE|CHANGELOG_HEADING|CODEOWNERS_REVIEWERS|DISTIGNORE_FILE|BUILD_SCRIPT|BUILD_SCRIPT_ARGS|PHPDOC_VERSION_REPLACEMENT_ENABLED|PHPDOC_VERSION_PLACEHOLDER|CHANGELOG_MD_SYNC_ENABLED|CHANGELOG_SOURCE|SIMULATE_RELEASE_WORKFLOW_ENABLED|GLOTPRESS_TRIGGER_ENABLED|GLOTPRESS_URL|GLOTPRESS_PROJECT_SLUG|GLOTPRESS_FAIL_ON_ERROR|DEPLOY_NOTIFICATION_ENABLED)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 wp_plugin_base_trim() {
   local value="$1"
   value="${value#"${value%%[![:space:]]*}"}"
   value="${value%"${value##*[![:space:]]}"}"
   printf '%s' "$value"
+}
+
+wp_plugin_base_normalize_repo_relative_path() {
+  local path="$1"
+  path="${path#./}"
+  path="${path#/}"
+  printf '%s\n' "$path"
 }
 
 wp_plugin_base_root() {
@@ -35,6 +53,48 @@ wp_plugin_base_config_path() {
   printf '%s/%s\n' "$root_dir" "$config_path"
 }
 
+wp_plugin_base_config_error() {
+  local config_path="$1"
+  local line_number="$2"
+  local message="$3"
+
+  echo "${config_path}:${line_number}: ${message}" >&2
+  exit 1
+}
+
+wp_plugin_base_parse_config_value() {
+  local raw_value="$1"
+  local config_path="$2"
+  local line_number="$3"
+  local value
+
+  value="$(wp_plugin_base_trim "$raw_value")"
+
+  case "$value" in
+    \"*\")
+      if [ "${#value}" -lt 2 ] || [ "${value: -1}" != '"' ]; then
+        wp_plugin_base_config_error "$config_path" "$line_number" "unterminated double-quoted value"
+      fi
+      value="${value:1:${#value}-2}"
+      value="${value//\\\\/\\}"
+      value="${value//\\\"/\"}"
+      ;;
+    \'*\')
+      if [ "${#value}" -lt 2 ] || [ "${value: -1}" != "'" ]; then
+        wp_plugin_base_config_error "$config_path" "$line_number" "unterminated single-quoted value"
+      fi
+      value="${value:1:${#value}-2}"
+      ;;
+    *)
+      if [[ "$value" =~ [[:space:]] ]]; then
+        wp_plugin_base_config_error "$config_path" "$line_number" "unquoted values must not contain whitespace"
+      fi
+      ;;
+  esac
+
+  printf '%s' "$value"
+}
+
 wp_plugin_base_load_config() {
   ROOT_DIR="$(wp_plugin_base_root)"
   CONFIG_PATH="$(wp_plugin_base_config_path "$ROOT_DIR" "${1:-}")"
@@ -44,15 +104,102 @@ wp_plugin_base_load_config() {
     exit 1
   fi
 
-  set -a
-  # shellcheck disable=SC1090
-  . "$CONFIG_PATH"
-  set +a
+  ROOT_DIR="$(cd "$ROOT_DIR" && pwd -P)"
+  CONFIG_PATH="$(cd "$(dirname "$CONFIG_PATH")" && pwd -P)/$(basename "$CONFIG_PATH")"
+
+  local line=""
+  local line_number=0
+  local trimmed_line=""
+  local key=""
+  local raw_value=""
+  local parsed_value=""
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    line_number=$((line_number + 1))
+    trimmed_line="$(wp_plugin_base_trim "$line")"
+
+    if [ -z "$trimmed_line" ] || [[ "$trimmed_line" == \#* ]]; then
+      continue
+    fi
+
+    if [[ ! "$trimmed_line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+      wp_plugin_base_config_error "$CONFIG_PATH" "$line_number" "expected KEY=value syntax"
+    fi
+
+    key="${BASH_REMATCH[1]}"
+    if ! wp_plugin_base_is_supported_config_key "$key"; then
+      wp_plugin_base_config_error "$CONFIG_PATH" "$line_number" "unknown config key: $key"
+    fi
+    raw_value="${BASH_REMATCH[2]}"
+    parsed_value="$(wp_plugin_base_parse_config_value "$raw_value" "$CONFIG_PATH" "$line_number")"
+    export "$key=$parsed_value"
+  done < "$CONFIG_PATH"
 
   README_FILE="${README_FILE:-readme.txt}"
   CHANGELOG_HEADING="${CHANGELOG_HEADING:-Changelog}"
   DISTIGNORE_FILE="${DISTIGNORE_FILE:-.distignore}"
   PRODUCTION_ENVIRONMENT="${PRODUCTION_ENVIRONMENT:-production}"
+  PHP_RUNTIME_MATRIX="${PHP_RUNTIME_MATRIX:-}"
+  PHP_RUNTIME_MATRIX_MODE="${PHP_RUNTIME_MATRIX_MODE:-smoke}"
+  WORDPRESS_READINESS_ENABLED="${WORDPRESS_READINESS_ENABLED:-false}"
+  WORDPRESS_QUALITY_PACK_ENABLED="${WORDPRESS_QUALITY_PACK_ENABLED:-false}"
+  WORDPRESS_SECURITY_PACK_ENABLED="${WORDPRESS_SECURITY_PACK_ENABLED:-false}"
+  WOOCOMMERCE_QIT_ENABLED="${WOOCOMMERCE_QIT_ENABLED:-false}"
+  WOOCOMMERCE_COM_PRODUCT_ID="${WOOCOMMERCE_COM_PRODUCT_ID:-}"
+  WOOCOMMERCE_COM_ENDPOINT_TIMEOUT_SECONDS="${WOOCOMMERCE_COM_ENDPOINT_TIMEOUT_SECONDS:-30}"
+  GITHUB_RELEASE_UPDATER_ENABLED="${GITHUB_RELEASE_UPDATER_ENABLED:-false}"
+  GITHUB_RELEASE_UPDATER_REPO_URL="${GITHUB_RELEASE_UPDATER_REPO_URL:-}"
+  REST_OPERATIONS_PACK_ENABLED="${REST_OPERATIONS_PACK_ENABLED:-false}"
+  REST_API_NAMESPACE="${REST_API_NAMESPACE:-${PLUGIN_SLUG:-plugin}/v1}"
+  REST_ABILITIES_ENABLED="${REST_ABILITIES_ENABLED:-false}"
+  ADMIN_UI_PACK_ENABLED="${ADMIN_UI_PACK_ENABLED:-false}"
+  if [ "${ADMIN_UI_STARTER+x}" = x ]; then
+    ADMIN_UI_STARTER_WAS_SET="true"
+  else
+    ADMIN_UI_STARTER_WAS_SET="false"
+  fi
+  if [ "${ADMIN_UI_EXPERIMENTAL_DATAVIEWS+x}" = x ]; then
+    ADMIN_UI_EXPERIMENTAL_DATAVIEWS_WAS_SET="true"
+  else
+    ADMIN_UI_EXPERIMENTAL_DATAVIEWS_WAS_SET="false"
+  fi
+  ADMIN_UI_STARTER="${ADMIN_UI_STARTER:-}"
+  ADMIN_UI_EXPERIMENTAL_DATAVIEWS_RAW="${ADMIN_UI_EXPERIMENTAL_DATAVIEWS:-false}"
+  ADMIN_UI_EXPERIMENTAL_DATAVIEWS="${ADMIN_UI_EXPERIMENTAL_DATAVIEWS_RAW}"
+  if [ -z "$ADMIN_UI_STARTER" ]; then
+    if wp_plugin_base_is_true "$ADMIN_UI_EXPERIMENTAL_DATAVIEWS"; then
+      ADMIN_UI_STARTER="dataviews"
+    else
+      ADMIN_UI_STARTER="basic"
+    fi
+  fi
+
+  if [ "$ADMIN_UI_STARTER" = "dataviews" ]; then
+    ADMIN_UI_EXPERIMENTAL_DATAVIEWS="true"
+  else
+    ADMIN_UI_EXPERIMENTAL_DATAVIEWS="false"
+  fi
+  WP_PLUGIN_BASE_SECURITY_SUPPRESSIONS_FILE="${WP_PLUGIN_BASE_SECURITY_SUPPRESSIONS_FILE:-.wp-plugin-base-security-suppressions.json}"
+  WP_PLUGIN_BASE_PLUGIN_CHECK_CHECKS="${WP_PLUGIN_BASE_PLUGIN_CHECK_CHECKS:-}"
+  WP_PLUGIN_BASE_PLUGIN_CHECK_EXCLUDE_CHECKS="${WP_PLUGIN_BASE_PLUGIN_CHECK_EXCLUDE_CHECKS:-}"
+  WP_PLUGIN_BASE_PLUGIN_CHECK_CATEGORIES="${WP_PLUGIN_BASE_PLUGIN_CHECK_CATEGORIES:-}"
+  WP_PLUGIN_BASE_PLUGIN_CHECK_IGNORE_CODES="${WP_PLUGIN_BASE_PLUGIN_CHECK_IGNORE_CODES:-}"
+  WP_PLUGIN_BASE_PLUGIN_CHECK_STRICT_WARNINGS="${WP_PLUGIN_BASE_PLUGIN_CHECK_STRICT_WARNINGS:-false}"
+  WP_PLUGIN_BASE_PLUGIN_CHECK_SEVERITY="${WP_PLUGIN_BASE_PLUGIN_CHECK_SEVERITY:-}"
+  WP_PLUGIN_BASE_PLUGIN_CHECK_ERROR_SEVERITY="${WP_PLUGIN_BASE_PLUGIN_CHECK_ERROR_SEVERITY:-}"
+  WP_PLUGIN_BASE_PLUGIN_CHECK_WARNING_SEVERITY="${WP_PLUGIN_BASE_PLUGIN_CHECK_WARNING_SEVERITY:-}"
+  BUILD_SCRIPT="${BUILD_SCRIPT:-}"
+  BUILD_SCRIPT_ARGS="${BUILD_SCRIPT_ARGS:-}"
+  PHPDOC_VERSION_REPLACEMENT_ENABLED="${PHPDOC_VERSION_REPLACEMENT_ENABLED:-false}"
+  PHPDOC_VERSION_PLACEHOLDER="${PHPDOC_VERSION_PLACEHOLDER:-NEXT}"
+  CHANGELOG_MD_SYNC_ENABLED="${CHANGELOG_MD_SYNC_ENABLED:-false}"
+  CHANGELOG_SOURCE="${CHANGELOG_SOURCE:-commits}"
+  SIMULATE_RELEASE_WORKFLOW_ENABLED="${SIMULATE_RELEASE_WORKFLOW_ENABLED:-false}"
+  GLOTPRESS_TRIGGER_ENABLED="${GLOTPRESS_TRIGGER_ENABLED:-false}"
+  GLOTPRESS_URL="${GLOTPRESS_URL:-}"
+  GLOTPRESS_PROJECT_SLUG="${GLOTPRESS_PROJECT_SLUG:-}"
+  GLOTPRESS_FAIL_ON_ERROR="${GLOTPRESS_FAIL_ON_ERROR:-false}"
+  DEPLOY_NOTIFICATION_ENABLED="${DEPLOY_NOTIFICATION_ENABLED:-false}"
 }
 
 wp_plugin_base_require_vars() {
@@ -75,6 +222,54 @@ wp_plugin_base_resolve_path() {
   fi
 
   printf '%s/%s\n' "$ROOT_DIR" "$value"
+}
+
+wp_plugin_base_canonicalize_path() {
+  local path="$1"
+  local directory
+  local existing_dir
+  local suffix=""
+  local canonical_directory
+  local basename
+
+  directory="$(dirname "$path")"
+  existing_dir="$directory"
+  while [ ! -d "$existing_dir" ] && [ "$existing_dir" != "/" ]; do
+    suffix="/$(basename "$existing_dir")${suffix}"
+    existing_dir="$(dirname "$existing_dir")"
+  done
+
+  if [ ! -d "$existing_dir" ]; then
+    echo "Unable to resolve path: $path" >&2
+    exit 1
+  fi
+
+  canonical_directory="$(cd "$existing_dir" && pwd -P)${suffix}"
+  basename="$(basename "$path")"
+
+  if [ "$basename" = "." ]; then
+    printf '%s\n' "$canonical_directory"
+    return
+  fi
+
+  printf '%s/%s\n' "$canonical_directory" "$basename"
+}
+
+wp_plugin_base_assert_path_within_root() {
+  local path="$1"
+  local label="$2"
+  local canonical_path
+
+  canonical_path="$(wp_plugin_base_canonicalize_path "$path")"
+
+  case "$canonical_path" in
+    "$ROOT_DIR"|"$ROOT_DIR"/*)
+      ;;
+    *)
+      echo "${label} must stay within the repository root: ${path}" >&2
+      exit 1
+      ;;
+  esac
 }
 
 wp_plugin_base_read_header_value() {
@@ -116,4 +311,15 @@ wp_plugin_base_csv_to_lines() {
       printf '%s\n' "$item"
     fi
   done
+}
+
+wp_plugin_base_is_true() {
+  case "${1:-}" in
+    true|TRUE|1|yes|YES)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
 }

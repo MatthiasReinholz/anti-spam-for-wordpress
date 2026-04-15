@@ -38,6 +38,7 @@ jobs:
   prepare:
     name: Prepare release branch
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout base ref
@@ -66,38 +67,15 @@ jobs:
       - name: Resolve source ref
         id: source
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
           RELEASE_BRANCH: release/${{ steps.version.outputs.value }}
         run: |
-          set -euo pipefail
-          if git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" >/dev/null 2>&1; then
-            api_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls?state=open&head=${GITHUB_REPOSITORY_OWNER}:${RELEASE_BRANCH}&base=${{ inputs.base_ref }}"
-            open_pr_count="$(
-              curl -fsSL \
-                -H "Accept: application/vnd.github+json" \
-                -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-                -H "X-GitHub-Api-Version: 2022-11-28" \
-                "$api_url" \
-                | jq 'length'
-            )"
-
-            echo "branch_exists=true" >> "$GITHUB_OUTPUT"
-
-            if [ "$open_pr_count" -gt 0 ]; then
-              echo "ref=$RELEASE_BRANCH" >> "$GITHUB_OUTPUT"
-              echo "open_pr_exists=true" >> "$GITHUB_OUTPUT"
-              echo "Refreshing existing release branch $RELEASE_BRANCH."
-            else
-              echo "ref=${{ inputs.base_ref }}" >> "$GITHUB_OUTPUT"
-              echo "open_pr_exists=false" >> "$GITHUB_OUTPUT"
-              echo "Existing release branch $RELEASE_BRANCH has no open PR. Recreating it from ${{ inputs.base_ref }}."
-            fi
-          else
-            echo "ref=${{ inputs.base_ref }}" >> "$GITHUB_OUTPUT"
-            echo "branch_exists=false" >> "$GITHUB_OUTPUT"
-            echo "open_pr_exists=false" >> "$GITHUB_OUTPUT"
-            echo "Preparing a new release branch from ${{ inputs.base_ref }}."
-          fi
+          bash .wp-plugin-base/scripts/update/resolve_release_branch_source.sh \
+            "${GITHUB_REPOSITORY}" \
+            "${GITHUB_REPOSITORY_OWNER}" \
+            "$RELEASE_BRANCH" \
+            "${{ inputs.base_ref }}" \
+            "$GITHUB_OUTPUT"
 
       - name: Checkout source ref
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -106,7 +84,12 @@ jobs:
           fetch-depth: 0
 
       - name: Bump release metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: bash .wp-plugin-base/scripts/release/bump_version.sh "${{ steps.version.outputs.value }}"
+
+      - name: Regenerate POT file
+        run: bash .wp-plugin-base/scripts/release/generate_pot.sh
 
       - name: Configure git identity
         run: |
@@ -133,9 +116,17 @@ jobs:
           - PHP and JavaScript syntax
           - package build
 
+          ## Editing the changelog
+
+          The changelog in `readme.txt` was auto-generated. Before merging:
+          1. Review entries under `= ${{ steps.version.outputs.value }} =`
+          2. Edit entries directly on the release branch to reword or reorder
+          3. Keep each entry as a `* ` bullet with an `Add/Fix/Tweak/Update/Dev` prefix
+
           After merge:
           - the `finalize-release` workflow creates and pushes the annotated `${{ steps.version.outputs.value }}` tag automatically
-          - the same `finalize-release` workflow publishes the GitHub release, emits a build attestation for the ZIP, and optionally deploys to WordPress.org
+          - the same `finalize-release` workflow publishes the GitHub release, emits a build attestation for the ZIP, and runs enabled distribution channels
+          - release publication is GitHub-first; repair downstream channels post-publish with `release.yml` and `woocommerce-status.yml` when needed
           EOF
 
       - name: Create or update release pull request
@@ -143,6 +134,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          changed_paths="$(git status --porcelain | awk '{print $2}' | paste -sd, -)"
+          if [ -n "$changed_paths" ]; then
+            export GIT_ADD_PATHS="$changed_paths"
+          fi
           bash .wp-plugin-base/scripts/update/create_or_update_pr.sh \
             "release/${{ steps.version.outputs.value }}" \
             "${{ inputs.base_ref }}" \
