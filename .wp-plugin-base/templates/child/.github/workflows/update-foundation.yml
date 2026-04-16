@@ -87,6 +87,16 @@ jobs:
           git -C "$RUNNER_TEMP/wp-plugin-base" fetch --depth 1 origin "${{ steps.verify.outputs.commit_sha }}"
           git -C "$RUNNER_TEMP/wp-plugin-base" checkout --detach FETCH_HEAD
 
+      - name: Verify foundation release provenance
+        if: ${{ steps.latest.outputs.update_needed == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bash .wp-plugin-base/scripts/update/verify_foundation_release.sh \
+            "${{ steps.config.outputs.repository }}" \
+            "${{ steps.latest.outputs.version }}" \
+            "$RUNNER_TEMP/wp-plugin-base"
+
       - name: Refresh vendored foundation directory
         if: ${{ steps.latest.outputs.update_needed == 'true' }}
         run: |
