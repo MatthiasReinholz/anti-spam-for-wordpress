@@ -16,6 +16,12 @@ The challenge endpoint must not be cached:
 
 If you run a CDN, edge cache, or page cache, configure a bypass rule for that path.
 
+If your site sends Content Security Policy headers, allow the domain serving this plugin's scripts in `script-src` and permit the widget styles in `style-src`.
+
+If your site is behind Cloudflare, a load balancer, or another reverse proxy, add the proxy IPs or CIDR ranges to the **Trusted proxies** setting so the plugin can safely read forwarded client IP headers. For shared NAT environments, switch **Visitor binding** to **IP address + User Agent** to reduce false collisions in replay protection and rate limiting.
+
+If you place the widget manually with `[anti_spam_widget]` while the **Custom HTML** integration is disabled, pass `mode="captcha"` or `mode="shortcode"` explicitly so the shortcode still renders.
+
 ## Provenance
 
 Originally based on [ALTCHA for WordPress](https://github.com/altcha-org/wordpress-plugin).
@@ -110,6 +116,24 @@ apply_filters('asfw_translations', array $translations, string|null $language): 
 
 ```php
 apply_filters('asfw_widget_context', string $context, string $mode, string|null $name): string
+```
+
+**`asfw_trusted_proxies`** — Override the trusted reverse proxy IP or CIDR list used for forwarded client IP detection.
+
+```php
+apply_filters('asfw_trusted_proxies', array $trusted_proxies): array
+```
+
+**`asfw_client_ip`** — Override the resolved client IP after proxy handling.
+
+```php
+apply_filters('asfw_client_ip', string $client_ip, string $remote_addr, string $source_header): string
+```
+
+**`asfw_client_binding_components`** — Override the normalized components used to build the replay/rate-limit fingerprint.
+
+```php
+apply_filters('asfw_client_binding_components', array $components, string $binding_strategy): array
 ```
 
 ### Actions
