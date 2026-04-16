@@ -79,7 +79,7 @@ msgid "Custom URL"
 msgstr ""
 
 #: anti-spam-for-wordpress.php:118
-#: includes/core.php:180
+#: includes/class-antispamforwordpressplugin.php:180
 msgid "Protected by Anti Spam for WordPress"
 msgstr ""
 
@@ -87,72 +87,72 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: includes/core.php:446
+#: includes/class-antispamforwordpressplugin.php:446
 #: integrations/enfold-theme.php:53
 msgid "Verification failed. Try again later."
 msgstr ""
 
-#: includes/core.php:448
+#: includes/class-antispamforwordpressplugin.php:448
 msgid "I'm not a robot"
 msgstr ""
 
-#: includes/core.php:449
+#: includes/class-antispamforwordpressplugin.php:449
 msgid "Privacy"
 msgstr ""
 
-#: includes/core.php:450
+#: includes/class-antispamforwordpressplugin.php:450
 msgid "Please verify before submitting."
 msgstr ""
 
-#: includes/core.php:451
+#: includes/class-antispamforwordpressplugin.php:451
 msgid "Verified"
 msgstr ""
 
-#: includes/core.php:452
+#: includes/class-antispamforwordpressplugin.php:452
 msgid "Verifying..."
 msgstr ""
 
-#: includes/core.php:453
+#: includes/class-antispamforwordpressplugin.php:453
 msgid "Verifying... please wait."
 msgstr ""
 
-#: includes/core.php:565
-#: includes/core.php:571
-#: includes/core.php:670
-#: includes/core.php:675
-#: includes/core.php:680
-#: includes/core.php:686
-#: includes/core.php:697
-#: includes/core.php:701
-#: includes/core.php:706
-#: includes/core.php:732
-#: includes/core.php:739
-#: includes/core.php:764
-#: includes/core.php:773
-#: includes/core.php:778
-#: includes/core.php:789
-#: includes/core.php:793
-#: includes/core.php:807
-#: includes/core.php:811
-#: includes/core.php:818
-#: includes/core.php:825
-#: includes/core.php:831
-#: includes/core.php:839
-#: includes/core.php:846
-#: integrations/elementor/field.php:80
-#: integrations/formidable/AntiSpamWidgetFieldType.php:55
+#: includes/class-antispamforwordpressplugin.php:565
+#: includes/class-antispamforwordpressplugin.php:571
+#: includes/class-antispamforwordpressplugin.php:670
+#: includes/class-antispamforwordpressplugin.php:675
+#: includes/class-antispamforwordpressplugin.php:680
+#: includes/class-antispamforwordpressplugin.php:686
+#: includes/class-antispamforwordpressplugin.php:697
+#: includes/class-antispamforwordpressplugin.php:701
+#: includes/class-antispamforwordpressplugin.php:706
+#: includes/class-antispamforwordpressplugin.php:732
+#: includes/class-antispamforwordpressplugin.php:739
+#: includes/class-antispamforwordpressplugin.php:764
+#: includes/class-antispamforwordpressplugin.php:773
+#: includes/class-antispamforwordpressplugin.php:778
+#: includes/class-antispamforwordpressplugin.php:789
+#: includes/class-antispamforwordpressplugin.php:793
+#: includes/class-antispamforwordpressplugin.php:807
+#: includes/class-antispamforwordpressplugin.php:811
+#: includes/class-antispamforwordpressplugin.php:818
+#: includes/class-antispamforwordpressplugin.php:825
+#: includes/class-antispamforwordpressplugin.php:831
+#: includes/class-antispamforwordpressplugin.php:839
+#: includes/class-antispamforwordpressplugin.php:846
+#: integrations/elementor/class-elementor-form-antispamwidget-field.php:80
+#: integrations/formidable/class-antispamwidgetfieldtype.php:55
 msgid "Verification failed."
 msgstr ""
 
-#: includes/core.php:628
+#: includes/class-antispamforwordpressplugin.php:628
 msgid "Too many verification attempts. Please wait and try again."
 msgstr ""
 
-#: includes/core.php:801
+#: includes/class-antispamforwordpressplugin.php:801
 msgid "Verification expired."
 msgstr ""
 
-#: includes/core.php:1146
+#: includes/class-antispamforwordpressplugin.php:1146
 msgid "This form requires JavaScript."
 msgstr ""
 
@@ -481,9 +481,9 @@ msgstr ""
 msgid "Shortcode"
 msgstr ""
 
-#: integrations/elementor/field.php:20
+#: integrations/elementor/class-elementor-form-antispamwidget-field.php:20
 #: integrations/formidable.php:39
-#: integrations/gravityforms/field.php:13
+#: integrations/gravityforms/class-asfw-gfforms-field.php:13
 msgid "Anti Spam Widget"
 msgstr ""
 
@@ -496,7 +496,7 @@ msgid "Configure Anti Spam for WordPress in the plugin settings."
 msgstr ""
 
 #: integrations/forminator.php:35
-#: integrations/gravityforms/field.php:82
+#: integrations/gravityforms/class-asfw-gfforms-field.php:82
 #: integrations/html-forms.php:49
 #: integrations/woocommerce.php:29
 #: integrations/woocommerce.php:75
@@ -509,7 +509,7 @@ msgstr ""
 msgid "Could not verify you are not a robot."
 msgstr ""
 
-#: integrations/gravityforms/field.php:55
+#: integrations/gravityforms/class-asfw-gfforms-field.php:55
 msgid "Anti Spam Widget placeholder"
 msgstr ""
 
