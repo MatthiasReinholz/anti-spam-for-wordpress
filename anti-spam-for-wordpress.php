@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Author: Matthias Reinholz
  * Author URI: https://matthiasreinholz.com
  * Version: 0.3.2
- * Stable tag: 0.3.0
+ * Stable tag: 0.3.2
  * Requires at least: 5.0
  * Requires PHP: 8.0
  * Tested up to: 6.8
