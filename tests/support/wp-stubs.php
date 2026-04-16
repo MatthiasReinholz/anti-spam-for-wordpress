@@ -10,8 +10,25 @@ $GLOBALS['asfw_test_options'] = $GLOBALS['asfw_test_options'] ?? array();
 $GLOBALS['asfw_test_transients'] = $GLOBALS['asfw_test_transients'] ?? array();
 $GLOBALS['asfw_test_shortcodes'] = $GLOBALS['asfw_test_shortcodes'] ?? array();
 $GLOBALS['asfw_test_rest_routes'] = $GLOBALS['asfw_test_rest_routes'] ?? array();
+$GLOBALS['asfw_test_http_requests'] = $GLOBALS['asfw_test_http_requests'] ?? array();
+$GLOBALS['asfw_test_http_responses'] = $GLOBALS['asfw_test_http_responses'] ?? array();
+$GLOBALS['asfw_test_registered_settings'] = $GLOBALS['asfw_test_registered_settings'] ?? array();
+$GLOBALS['asfw_test_settings_sections'] = $GLOBALS['asfw_test_settings_sections'] ?? array();
+$GLOBALS['asfw_test_settings_fields'] = $GLOBALS['asfw_test_settings_fields'] ?? array();
+$GLOBALS['asfw_test_db_tables'] = $GLOBALS['asfw_test_db_tables'] ?? array();
+$GLOBALS['asfw_test_dbdelta_queries'] = $GLOBALS['asfw_test_dbdelta_queries'] ?? array();
+$GLOBALS['asfw_test_cron_events'] = $GLOBALS['asfw_test_cron_events'] ?? array();
+$GLOBALS['asfw_test_cli_commands'] = $GLOBALS['asfw_test_cli_commands'] ?? array();
 $GLOBALS['asfw_test_locale'] = $GLOBALS['asfw_test_locale'] ?? 'en_US';
-$GLOBALS['asfw_active_plugins'] = $GLOBALS['asfw_active_plugins'] ?? array();
+$GLOBALS['asfw_active_plugins'] = $GLOBALS['asfw_active_plugins'] ?? array(
+	'woocommerce/woocommerce.php',
+	'html-forms/html-forms.php',
+	'wpdiscuz/class.WpdiscuzCore.php',
+);
+
+if (!defined('DAY_IN_SECONDS')) {
+    define('DAY_IN_SECONDS', 86400);
+}
 
 function __($text, $domain = null)
 {
@@ -59,6 +76,13 @@ function wp_unslash($value)
     return stripslashes((string) $value);
 }
 
+function wp_verify_nonce($nonce, $action = -1)
+{
+    unset($action);
+
+    return is_string($nonce) && '' !== trim($nonce);
+}
+
 function wp_strip_all_tags($value)
 {
     return strip_tags((string) $value);
@@ -82,6 +106,25 @@ function wp_salt($scheme = 'auth')
 function wp_json_encode($value)
 {
     return json_encode($value);
+}
+
+function asfw_test_queue_http_response($response)
+{
+    $GLOBALS['asfw_test_http_responses'][] = $response;
+}
+
+function asfw_test_last_http_request()
+{
+    if (empty($GLOBALS['asfw_test_http_requests'])) {
+        return null;
+    }
+
+    return $GLOBALS['asfw_test_http_requests'][count($GLOBALS['asfw_test_http_requests']) - 1];
+}
+
+function is_wp_error($thing)
+{
+    return $thing instanceof WP_Error;
 }
 
 function get_locale()
@@ -119,6 +162,11 @@ function plugin_basename($file)
 function get_rest_url($blog_id = null, $path = '', $scheme = 'rest')
 {
     return 'https://example.test/wp-json' . $path;
+}
+
+function home_url($path = '', $scheme = null)
+{
+    return 'https://example.test' . ('' !== (string) $path ? '/' . ltrim((string) $path, '/') : '');
 }
 
 function add_query_arg($key, $value = null, $url = '')
@@ -253,6 +301,31 @@ function asfw_test_add_hook($hook_name, $callback, $priority, $accepted_args)
     return true;
 }
 
+function asfw_test_remove_hook($hook_name, $callback, $priority)
+{
+    if (empty($GLOBALS['asfw_test_hooks'][$hook_name][$priority])) {
+        return false;
+    }
+
+    $removed = false;
+    foreach ($GLOBALS['asfw_test_hooks'][$hook_name][$priority] as $index => $callback_config) {
+        if ($callback_config['callback'] === $callback) {
+            unset($GLOBALS['asfw_test_hooks'][$hook_name][$priority][$index]);
+            $removed = true;
+        }
+    }
+
+    if (empty($GLOBALS['asfw_test_hooks'][$hook_name][$priority])) {
+        unset($GLOBALS['asfw_test_hooks'][$hook_name][$priority]);
+    }
+
+    if (empty($GLOBALS['asfw_test_hooks'][$hook_name])) {
+        unset($GLOBALS['asfw_test_hooks'][$hook_name]);
+    }
+
+    return $removed;
+}
+
 function add_action($hook_name, $callback, $priority = 10, $accepted_args = 1)
 {
     return asfw_test_add_hook($hook_name, $callback, (int) $priority, (int) $accepted_args);
@@ -261,6 +334,16 @@ function add_action($hook_name, $callback, $priority = 10, $accepted_args = 1)
 function add_filter($hook_name, $callback, $priority = 10, $accepted_args = 1)
 {
     return asfw_test_add_hook($hook_name, $callback, (int) $priority, (int) $accepted_args);
+}
+
+function remove_action($hook_name, $callback, $priority = 10)
+{
+    return asfw_test_remove_hook($hook_name, $callback, (int) $priority);
+}
+
+function remove_filter($hook_name, $callback, $priority = 10)
+{
+    return asfw_test_remove_hook($hook_name, $callback, (int) $priority);
 }
 
 function do_action($hook_name, ...$args)
@@ -348,6 +431,43 @@ function register_deactivation_hook($file, $callback)
     return true;
 }
 
+function dbDelta($queries)
+{
+    $GLOBALS['asfw_test_dbdelta_queries'][] = $queries;
+
+    if (preg_match('/CREATE TABLE\s+([^\s(]+)/i', (string) $queries, $matches)) {
+        $table = trim($matches[1], '`');
+        if (!isset($GLOBALS['asfw_test_db_tables'][$table])) {
+            $GLOBALS['asfw_test_db_tables'][$table] = array();
+        }
+    }
+
+    return true;
+}
+
+function wp_next_scheduled($hook, $args = array())
+{
+    return isset($GLOBALS['asfw_test_cron_events'][$hook]) ? $GLOBALS['asfw_test_cron_events'][$hook]['timestamp'] : false;
+}
+
+function wp_schedule_event($timestamp, $recurrence, $hook, $args = array(), $wp_error = false)
+{
+    $GLOBALS['asfw_test_cron_events'][$hook] = array(
+        'timestamp' => (int) $timestamp,
+        'recurrence' => (string) $recurrence,
+        'args' => $args,
+    );
+
+    return true;
+}
+
+function wp_clear_scheduled_hook($hook, $args = array())
+{
+    unset($GLOBALS['asfw_test_cron_events'][$hook]);
+
+    return 1;
+}
+
 function is_admin()
 {
     return false;
@@ -376,6 +496,68 @@ function wp_register_script($handle, $src = '', $deps = array(), $ver = false, $
 function wp_add_inline_script($handle, $data, $position = 'after')
 {
     return true;
+}
+
+function wp_remote_request($url, $args = array())
+{
+    $GLOBALS['asfw_test_http_requests'][] = array(
+        'url'  => (string) $url,
+        'args' => $args,
+    );
+
+    if (!empty($GLOBALS['asfw_test_http_responses'])) {
+        return array_shift($GLOBALS['asfw_test_http_responses']);
+    }
+
+    return array(
+        'response' => array(
+            'code'    => 200,
+            'message' => 'OK',
+        ),
+        'headers'  => array(),
+        'body'     => '{}',
+    );
+}
+
+function wp_remote_get($url, $args = array())
+{
+    $args['method'] = 'GET';
+
+    return wp_remote_request($url, $args);
+}
+
+function wp_remote_post($url, $args = array())
+{
+    $args['method'] = 'POST';
+
+    return wp_remote_request($url, $args);
+}
+
+function wp_remote_retrieve_response_code($response)
+{
+    if (is_array($response) && isset($response['response']['code'])) {
+        return (int) $response['response']['code'];
+    }
+
+    return 0;
+}
+
+function wp_remote_retrieve_body($response)
+{
+    if (is_array($response) && isset($response['body'])) {
+        return (string) $response['body'];
+    }
+
+    return '';
+}
+
+function wp_remote_retrieve_headers($response)
+{
+    if (is_array($response) && isset($response['headers'])) {
+        return $response['headers'];
+    }
+
+    return array();
 }
 
 function get_post($post_id, $output = OBJECT, $filter = 'raw')
@@ -433,16 +615,38 @@ function submit_button($text = null)
 
 function register_setting($option_group, $option_name, $args = array())
 {
+    $GLOBALS['asfw_test_registered_settings'][] = array(
+        'option_group' => $option_group,
+        'option_name' => $option_name,
+        'args' => $args,
+    );
+
     return true;
 }
 
 function add_settings_section($id, $title, $callback, $page)
 {
+    $GLOBALS['asfw_test_settings_sections'][] = array(
+        'id' => $id,
+        'title' => $title,
+        'callback' => $callback,
+        'page' => $page,
+    );
+
     return true;
 }
 
 function add_settings_field($id, $title, $callback, $page, $section = 'default', $args = array())
 {
+    $GLOBALS['asfw_test_settings_fields'][] = array(
+        'id' => $id,
+        'title' => $title,
+        'callback' => $callback,
+        'page' => $page,
+        'section' => $section,
+        'args' => $args,
+    );
+
     return true;
 }
 
@@ -495,6 +699,16 @@ function asfw_test_reset_state(array $options = array(), ?array $active_plugins 
 
     $GLOBALS['asfw_test_options'] = array();
     $GLOBALS['asfw_test_transients'] = array();
+    $GLOBALS['asfw_test_http_requests'] = array();
+    $GLOBALS['asfw_test_http_responses'] = array();
+    $GLOBALS['asfw_test_cli_commands'] = array();
+    $GLOBALS['asfw_test_registered_settings'] = array();
+    $GLOBALS['asfw_test_settings_sections'] = array();
+    $GLOBALS['asfw_test_settings_fields'] = array();
+    $GLOBALS['asfw_test_db_tables'] = array();
+    $GLOBALS['asfw_test_dbdelta_queries'] = array();
+    $GLOBALS['asfw_test_cron_events'] = array();
+    $GLOBALS['asfw_test_rest_routes'] = array();
 
     foreach (array(
         'REMOTE_ADDR',
@@ -509,11 +723,27 @@ function asfw_test_reset_state(array $options = array(), ?array $active_plugins 
 
     if ($active_plugins !== null) {
         $GLOBALS['asfw_active_plugins'] = $active_plugins;
+    } else {
+        $GLOBALS['asfw_active_plugins'] = array(
+            'woocommerce/woocommerce.php',
+            'html-forms/html-forms.php',
+            'wpdiscuz/class.WpdiscuzCore.php',
+        );
+    }
+
+    if (class_exists('WP_CLI', false)) {
+        WP_CLI::$commands = array();
+        WP_CLI::$logs = array();
+        WP_CLI::$successes = array();
+        WP_CLI::$warnings = array();
+        WP_CLI::$errors = array();
     }
 
     if (function_exists('asfw_activate')) {
         asfw_activate();
     }
+
+    do_action('rest_api_init');
 
     foreach ($options as $name => $value) {
         update_option($name, $value);
@@ -602,6 +832,21 @@ class WP_REST_Request
     {
         return $this->params[$name] ?? null;
     }
+
+    public function get_params()
+    {
+        return $this->params;
+    }
+
+    public function get_query_params()
+    {
+        return $this->params;
+    }
+
+    public function set_param($name, $value)
+    {
+        $this->params[$name] = $value;
+    }
 }
 
 class WP_REST_Response
@@ -618,5 +863,274 @@ class WP_REST_Response
     public function set_headers(array $headers)
     {
         $this->headers = $headers;
+    }
+
+    public function get_data()
+    {
+        return $this->data;
+    }
+
+    public function get_headers()
+    {
+        return $this->headers;
+    }
+}
+
+class wpdb
+{
+    public $prefix = 'wp_';
+    public $insert_id = 0;
+
+    public function get_charset_collate()
+    {
+        return 'DEFAULT CHARSET=utf8mb4';
+    }
+
+    protected function ensure_table($table)
+    {
+        if (!isset($GLOBALS['asfw_test_db_tables'][$table])) {
+            $GLOBALS['asfw_test_db_tables'][$table] = array();
+        }
+    }
+
+    protected function asfw_row_value(array $row, array $keys, $default = '')
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $row) && null !== $row[$key] && '' !== $row[$key]) {
+                return $row[$key];
+            }
+        }
+
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $row)) {
+                return $row[$key];
+            }
+        }
+
+        return $default;
+    }
+
+    protected function asfw_normalize_event_row(array $row)
+    {
+        $created_at = (string) $this->asfw_row_value($row, array('created_at', 'created_at_gmt'), '');
+        if ('' === $created_at) {
+            $created_at = gmdate('Y-m-d H:i:s');
+        }
+
+        $context = (string) $this->asfw_row_value($row, array('context', 'event_context'), '');
+        $feature = (string) $this->asfw_row_value($row, array('feature', 'module_name', 'module'), '');
+        $decision = (string) $this->asfw_row_value($row, array('decision', 'event_status', 'status'), '');
+        $ip_hash = $this->asfw_row_value($row, array('ip_hash', 'actor_hash'), null);
+        $email_hash = $this->asfw_row_value($row, array('email_hash'), null);
+
+        $row['created_at'] = $created_at;
+        $row['created_at_gmt'] = $created_at;
+        $row['context'] = $context;
+        $row['event_context'] = $context;
+        $row['feature'] = $feature;
+        $row['module_name'] = $feature;
+        $row['decision'] = $decision;
+        $row['event_status'] = $decision;
+        $row['ip_hash'] = null === $ip_hash || '' === $ip_hash ? null : (string) $ip_hash;
+        $row['actor_hash'] = null === $ip_hash || '' === $ip_hash ? '' : (string) $ip_hash;
+        $row['email_hash'] = null === $email_hash || '' === $email_hash ? null : (string) $email_hash;
+        if (!array_key_exists('subject_hash', $row)) {
+            $row['subject_hash'] = '';
+        }
+
+        return $row;
+    }
+
+    public function asfw_insert_event($table, array $row)
+    {
+        $this->ensure_table($table);
+        $row['id'] = count($GLOBALS['asfw_test_db_tables'][$table]) + 1;
+        $GLOBALS['asfw_test_db_tables'][$table][] = $row;
+        $this->insert_id = $row['id'];
+
+        return true;
+    }
+
+    public function insert($table, $data, $format = array())
+    {
+        return $this->asfw_insert_event($table, (array) $data);
+    }
+
+    public function asfw_fetch_events($table, array $args)
+    {
+        $this->ensure_table($table);
+        $rows = array_map(array($this, 'asfw_normalize_event_row'), $GLOBALS['asfw_test_db_tables'][$table]);
+
+        foreach (array(
+            array('filter' => 'type', 'row' => 'event_type'),
+            array('filter' => 'feature', 'row' => 'feature'),
+            array('filter' => 'module', 'row' => 'feature'),
+            array('filter' => 'module_name', 'row' => 'feature'),
+            array('filter' => 'decision', 'row' => 'decision'),
+            array('filter' => 'status', 'row' => 'decision'),
+            array('filter' => 'event_status', 'row' => 'decision'),
+            array('filter' => 'context', 'row' => 'context'),
+            array('filter' => 'event_context', 'row' => 'context'),
+        ) as $mapping) {
+            if (!isset($args[$mapping['filter']]) || '' === trim((string) $args[$mapping['filter']])) {
+                continue;
+            }
+
+            $rows = array_values(array_filter($rows, static function ($row) use ($mapping, $args) {
+                return isset($row[$mapping['row']]) && (string) $row[$mapping['row']] === (string) $args[$mapping['filter']];
+            }));
+        }
+
+        usort($rows, static function ($left, $right) {
+            return ($right['id'] ?? 0) <=> ($left['id'] ?? 0);
+        });
+
+        $offset = max(0, (int) ($args['offset'] ?? 0));
+        $limit = max(0, (int) ($args['limit'] ?? 50));
+        if ($limit > 0) {
+            $rows = array_slice($rows, $offset, $limit);
+        }
+
+        return array_values($rows);
+    }
+
+    public function asfw_count_events($table, array $args)
+    {
+        return count($this->asfw_fetch_events($table, array_merge($args, array('limit' => PHP_INT_MAX, 'offset' => 0))));
+    }
+
+    public function asfw_type_counts($table)
+    {
+        $this->ensure_table($table);
+        $counts = array();
+
+        foreach ($GLOBALS['asfw_test_db_tables'][$table] as $row) {
+            $type = $row['event_type'] ?? '';
+            if ('' === $type) {
+                continue;
+            }
+
+            $counts[$type] = ($counts[$type] ?? 0) + 1;
+        }
+
+        arsort($counts);
+
+        return $counts;
+    }
+
+    public function asfw_module_counts($table)
+    {
+        $this->ensure_table($table);
+        $counts = array();
+
+        foreach (array_map(array($this, 'asfw_normalize_event_row'), $GLOBALS['asfw_test_db_tables'][$table]) as $row) {
+            $feature = $row['feature'] ?? '';
+            if ('' === $feature) {
+                $feature = 'core';
+            }
+
+            $counts[$feature] = ($counts[$feature] ?? 0) + 1;
+        }
+
+        arsort($counts);
+
+        return $counts;
+    }
+
+    public function asfw_daily_counts($table, $days)
+    {
+        $this->ensure_table($table);
+        $counts = array();
+        $today = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+
+        for ($offset = $days - 1; $offset >= 0; $offset--) {
+            $counts[$today->sub(new DateInterval('P' . $offset . 'D'))->format('Y-m-d')] = 0;
+        }
+
+        foreach (array_map(array($this, 'asfw_normalize_event_row'), $GLOBALS['asfw_test_db_tables'][$table]) as $row) {
+            if (empty($row['created_at'])) {
+                continue;
+            }
+
+            $day = substr((string) $row['created_at'], 0, 10);
+            if (isset($counts[$day])) {
+                $counts[$day]++;
+            }
+        }
+
+        return $counts;
+    }
+
+    public function asfw_prune_events($table, $cutoff)
+    {
+        $this->ensure_table($table);
+        $kept = array();
+        $deleted = 0;
+
+        foreach (array_map(array($this, 'asfw_normalize_event_row'), $GLOBALS['asfw_test_db_tables'][$table]) as $row) {
+            if (!empty($row['created_at']) && (string) $row['created_at'] < (string) $cutoff) {
+                $deleted++;
+                continue;
+            }
+
+            $kept[] = $row;
+        }
+
+        $GLOBALS['asfw_test_db_tables'][$table] = $kept;
+
+        return $deleted;
+    }
+
+    public function asfw_purge_events($table)
+    {
+        $this->ensure_table($table);
+        $deleted = count($GLOBALS['asfw_test_db_tables'][$table]);
+        $GLOBALS['asfw_test_db_tables'][$table] = array();
+
+        return $deleted;
+    }
+}
+
+if (!isset($GLOBALS['wpdb'])) {
+    $GLOBALS['wpdb'] = new wpdb();
+}
+
+if (!class_exists('WP_CLI', false)) {
+    class WP_CLI
+    {
+        public static $commands = array();
+        public static $logs = array();
+        public static $successes = array();
+        public static $warnings = array();
+        public static $errors = array();
+
+        public static function add_command($name, $callable)
+        {
+            self::$commands[(string) $name] = $callable;
+            $GLOBALS['asfw_test_cli_commands'][$name] = $callable;
+        }
+
+        public static function log($message)
+        {
+            self::$logs[] = (string) $message;
+        }
+
+        public static function success($message)
+        {
+            self::$successes[] = (string) $message;
+            self::log($message);
+        }
+
+        public static function warning($message)
+        {
+            self::$warnings[] = (string) $message;
+            self::log($message);
+        }
+
+        public static function error($message)
+        {
+            self::$errors[] = (string) $message;
+            throw new RuntimeException((string) $message);
+        }
     }
 }

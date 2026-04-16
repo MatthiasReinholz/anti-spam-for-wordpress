@@ -21,6 +21,7 @@ abstract class AsfwPluginTestCase extends TestCase
         update_option(AntiSpamForWordPressPlugin::$option_rate_limit_max_challenges, '30');
         update_option(AntiSpamForWordPressPlugin::$option_rate_limit_max_failures, '10');
         update_option(AntiSpamForWordPressPlugin::$option_honeypot, 1);
+        update_option(AntiSpamForWordPressPlugin::$option_kill_switch, 0);
         update_option(AntiSpamForWordPressPlugin::$option_min_submit_time, '0');
         update_option(AntiSpamForWordPressPlugin::$option_visitor_binding, 'ip');
         update_option(AntiSpamForWordPressPlugin::$option_trusted_proxies, '');
@@ -31,9 +32,9 @@ abstract class AsfwPluginTestCase extends TestCase
         return AntiSpamForWordPressPlugin::$instance;
     }
 
-    protected function generateChallenge(string $context): array
+    protected function generateChallenge(string $context, bool $countAgainstRateLimit = true): array
     {
-        $challenge = $this->plugin()->generate_challenge(null, 'low', 300, $context);
+        $challenge = $this->plugin()->generate_challenge(null, 'low', 300, $context, $countAgainstRateLimit);
 
         self::assertIsArray($challenge);
 

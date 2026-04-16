@@ -78,6 +78,8 @@ If this repository does not already have a `CHANGELOG.md`, the first sync also s
 
 The REST operations pack and admin UI pack also seed child-owned files on first enablement. Those seeded files stay project-owned after creation, but validation still expects them to remain present while the pack is enabled.
 
+Packaging policy: keep `ZIP_FILE` as a simple `.zip` filename, and keep `PACKAGE_INCLUDE`, `PACKAGE_EXCLUDE`, and `DISTIGNORE_FILE` repo-relative. Repo-root `packages/` and `routes/` stay out of the install ZIP and POT scan unless the project explicitly adds them through `PACKAGE_INCLUDE`.
+
 Before opening or merging changes, run:
 
 ```bash
@@ -111,6 +113,8 @@ Set `WP_ORG_DEPLOY_ENABLED` in GitHub Actions settings as either:
 If WordPress.org deploy is enabled, keep `SVN_USERNAME` and `SVN_PASSWORD` in GitHub Actions deployment-environment secrets, and protect the `PRODUCTION_ENVIRONMENT` environment with at least one reviewer. `PRODUCTION_ENVIRONMENT` defaults to `production` when unset. Readiness validation warns locally when that environment cannot be verified yet, and the generated GitHub Actions workflows fail strictly when deploy protection cannot be verified in CI.
 
 The manual `release.yml` workflow verifies that the requested tag already exists and skips WordPress.org redeploy by default so a repair run does not mutate an existing SVN tag. Only set `WP_PLUGIN_BASE_ALLOW_WPORG_TAG_REDEPLOY=true` for an intentional break-glass redeploy of the latest repository release tag.
+
+WooCommerce.com deploy is also opt-in. It only runs when `WOOCOMMERCE_COM_DEPLOY_ENABLED=true` and requires the WooCommerce.com deployment credentials/secrets expected by `.wp-plugin-base/scripts/release/validate_woocommerce_com_deploy.sh`. Keep that variable disabled unless the product mapping and credentials are verified for this repository.
 
 ## Security Expectations
 

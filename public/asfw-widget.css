@@ -216,8 +216,59 @@ asfw-widget {
   display: none;
 }
 
+.asfw-honeypot {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 @keyframes asfw-spin {
   to {
     transform: rotate(360deg);
   }
+}
+
+.asfw-math-challenge {
+  margin: 0.75rem 0 0.75rem;
+}
+
+.asfw-math-challenge label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 0.3rem;
+}
+
+.asfw-math-answer {
+  max-width: 9rem;
+}
+
+.asfw-submit-delay-status {
+  color: rgba(15, 23, 42, 0.72);
+  display: none;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  margin-top: 0.45rem;
+}
+
+.asfw-submit-delay-status.is-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.asfw-submit-delay-status.is-active::before {
+  content: "";
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  border: 2px solid rgba(15, 23, 42, 0.2);
+  border-top-color: #1d4ed8;
+  animation: asfw-spin 0.8s linear infinite;
+}
+
+.asfw-submit-delay-active {
+  opacity: 0.75;
 }

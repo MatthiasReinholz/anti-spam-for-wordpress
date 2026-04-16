@@ -379,10 +379,17 @@ class ASFWWidgetElement extends HTMLElement {
     }
 
     this._allowNextSubmit = true;
-    if (typeof this._form.requestSubmit === 'function') {
-      this._form.requestSubmit(submitter || undefined);
-    } else {
-      HTMLFormElement.prototype.submit.call(this._form);
+    try {
+      if (typeof this._form.requestSubmit === 'function') {
+        this._form.requestSubmit(submitter || undefined);
+      } else if (submitter && typeof submitter.click === 'function') {
+        submitter.click();
+      } else {
+        HTMLFormElement.prototype.submit.call(this._form);
+      }
+    } catch (error) {
+      this._allowNextSubmit = false;
+      throw error;
     }
   }
 

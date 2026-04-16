@@ -78,6 +78,8 @@ If this repository does not already have a `CHANGELOG.md`, the first sync also s
 
 The REST operations pack and admin UI pack also seed child-owned files on first enablement. Those seeded files stay project-owned after creation, but validation still expects them to remain present while the pack is enabled.
 
+Packaging policy: keep `ZIP_FILE` as a simple `.zip` filename, and keep `PACKAGE_INCLUDE`, `PACKAGE_EXCLUDE`, and `DISTIGNORE_FILE` repo-relative. Repo-root `packages/` and `routes/` stay out of the install ZIP and POT scan unless the project explicitly adds them through `PACKAGE_INCLUDE`.
+
 Before opening or merging changes, run:
 
 ```bash

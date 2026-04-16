@@ -37,8 +37,8 @@ class ASFW_GFForms_Field extends GF_Field {
 	}
 
 	public function get_field_input( $form, $value = '', $entry = null ) {
-		$plugin = AntiSpamForWordPressPlugin::$instance;
-		$mode   = $plugin->get_integration_gravityforms();
+		$plugin = asfw_plugin_instance();
+		$mode   = $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_gravityforms() : '';
 		if ( empty( $mode ) ) {
 			return '';
 		}
@@ -67,8 +67,8 @@ class ASFW_GFForms_Field extends GF_Field {
 			return;
 		}
 
-		$plugin = AntiSpamForWordPressPlugin::$instance;
-		$mode   = $plugin->get_integration_gravityforms();
+		$plugin = asfw_plugin_instance();
+		$mode   = $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_gravityforms() : '';
 		if ( ! empty( $mode ) && 'captcha' === $mode ) {
 			if ( asfw_verify_posted_widget( 'gravityforms' ) === false ) {
 				$this->failed_validation  = true;
@@ -77,5 +77,3 @@ class ASFW_GFForms_Field extends GF_Field {
 		}
 	}
 }
-
-GF_Fields::register( new ASFW_GFForms_Field() );
