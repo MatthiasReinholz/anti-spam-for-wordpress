@@ -2,23 +2,23 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Anti Spam for WordPress 0.3.2\n"
+"Project-Id-Version: Anti Spam for WordPress 0.4.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/anti-spam-for-wordpress\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-15T11:41:20+00:00\n"
+"POT-Creation-Date: 2026-04-16T12:24:00+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.12.0\n"
+"X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: anti-spam-for-wordpress\n"
 
 #. Plugin Name of the plugin
 #: anti-spam-for-wordpress.php
-#: admin/options.php:30
+#: admin/options.php:29
+#: includes/admin.php:15
 #: includes/admin.php:16
-#: includes/admin.php:17
 msgid "Anti Spam for WordPress"
 msgstr ""
 
@@ -37,24 +37,24 @@ msgstr ""
 msgid "https://matthiasreinholz.com"
 msgstr ""
 
-#: admin/options.php:31
+#: admin/options.php:30
 msgid "Self-hosted spam protection for WordPress forms."
 msgstr ""
 
+#. translators: 1: plugin version, 2: bundled widget version.
 #: admin/options.php:50
-#, php-format
 msgid "Anti Spam for WordPress, plugin version %1$s, bundled widget version %2$s"
 msgstr ""
 
-#: admin/options.php:60
+#: admin/options.php:63
 msgid "View the source on GitHub"
 msgstr ""
 
-#: admin/options.php:71
+#: admin/options.php:73
 msgid "This plugin runs fully inside your WordPress installation and does not require an external API."
 msgstr ""
 
-#: admin/options.php:78
+#: admin/options.php:79
 msgid "Customize the widget to fit your forms."
 msgstr ""
 
@@ -62,428 +62,451 @@ msgstr ""
 msgid "Harden verification with short-lived challenges, rate limits, and low-friction bot traps."
 msgstr ""
 
-#: admin/options.php:92
+#: admin/options.php:91
 msgid "Enable protection for these plugin integrations."
 msgstr ""
 
-#: admin/options.php:99
+#: admin/options.php:97
 msgid "Enable protection for core WordPress screens."
 msgstr ""
 
-#: admin/options.php:159
+#: admin/options.php:154
 msgid "No link"
 msgstr ""
 
-#: admin/options.php:160
+#: admin/options.php:155
 msgid "Custom URL"
 msgstr ""
 
-#: anti-spam-for-wordpress.php:118
-#: includes/class-antispamforwordpressplugin.php:180
+#: anti-spam-for-wordpress.php:122
+#: includes/class-antispamforwordpressplugin.php:178
 msgid "Protected by Anti Spam for WordPress"
 msgstr ""
 
-#: includes/admin.php:37
+#: includes/admin.php:35
 msgid "Settings"
 msgstr ""
 
-#: includes/class-antispamforwordpressplugin.php:446
+#: includes/class-antispamforwordpressplugin.php:420
 #: integrations/enfold-theme.php:53
 msgid "Verification failed. Try again later."
 msgstr ""
 
-#: includes/class-antispamforwordpressplugin.php:448
+#: includes/class-antispamforwordpressplugin.php:422
 msgid "I'm not a robot"
 msgstr ""
 
-#: includes/class-antispamforwordpressplugin.php:449
+#: includes/class-antispamforwordpressplugin.php:423
 msgid "Privacy"
 msgstr ""
 
-#: includes/class-antispamforwordpressplugin.php:450
+#: includes/class-antispamforwordpressplugin.php:424
 msgid "Please verify before submitting."
 msgstr ""
 
-#: includes/class-antispamforwordpressplugin.php:451
+#: includes/class-antispamforwordpressplugin.php:425
 msgid "Verified"
 msgstr ""
 
-#: includes/class-antispamforwordpressplugin.php:452
+#: includes/class-antispamforwordpressplugin.php:426
 msgid "Verifying..."
 msgstr ""
 
-#: includes/class-antispamforwordpressplugin.php:453
+#: includes/class-antispamforwordpressplugin.php:427
 msgid "Verifying... please wait."
 msgstr ""
 
-#: includes/class-antispamforwordpressplugin.php:565
-#: includes/class-antispamforwordpressplugin.php:571
-#: includes/class-antispamforwordpressplugin.php:670
-#: includes/class-antispamforwordpressplugin.php:675
-#: includes/class-antispamforwordpressplugin.php:680
-#: includes/class-antispamforwordpressplugin.php:686
-#: includes/class-antispamforwordpressplugin.php:697
-#: includes/class-antispamforwordpressplugin.php:701
-#: includes/class-antispamforwordpressplugin.php:706
-#: includes/class-antispamforwordpressplugin.php:732
-#: includes/class-antispamforwordpressplugin.php:739
-#: includes/class-antispamforwordpressplugin.php:764
-#: includes/class-antispamforwordpressplugin.php:773
-#: includes/class-antispamforwordpressplugin.php:778
-#: includes/class-antispamforwordpressplugin.php:789
-#: includes/class-antispamforwordpressplugin.php:793
-#: includes/class-antispamforwordpressplugin.php:807
-#: includes/class-antispamforwordpressplugin.php:811
-#: includes/class-antispamforwordpressplugin.php:818
-#: includes/class-antispamforwordpressplugin.php:825
-#: includes/class-antispamforwordpressplugin.php:831
-#: includes/class-antispamforwordpressplugin.php:839
-#: includes/class-antispamforwordpressplugin.php:846
-#: integrations/elementor/class-elementor-form-antispamwidget-field.php:80
-#: integrations/formidable/class-antispamwidgetfieldtype.php:55
+#: includes/class-antispamforwordpressplugin.php:745
+#: includes/class-antispamforwordpressplugin.php:751
+#: includes/class-antispamforwordpressplugin.php:864
+#: includes/class-antispamforwordpressplugin.php:870
+#: includes/class-antispamforwordpressplugin.php:875
+#: includes/class-antispamforwordpressplugin.php:881
+#: includes/class-antispamforwordpressplugin.php:892
+#: includes/class-antispamforwordpressplugin.php:896
+#: includes/class-antispamforwordpressplugin.php:901
+#: includes/class-antispamforwordpressplugin.php:927
+#: includes/class-antispamforwordpressplugin.php:934
+#: includes/class-antispamforwordpressplugin.php:958
+#: includes/class-antispamforwordpressplugin.php:967
+#: includes/class-antispamforwordpressplugin.php:972
+#: includes/class-antispamforwordpressplugin.php:983
+#: includes/class-antispamforwordpressplugin.php:987
+#: includes/class-antispamforwordpressplugin.php:1001
+#: includes/class-antispamforwordpressplugin.php:1005
+#: includes/class-antispamforwordpressplugin.php:1012
+#: includes/class-antispamforwordpressplugin.php:1019
+#: includes/class-antispamforwordpressplugin.php:1024
+#: includes/class-antispamforwordpressplugin.php:1031
+#: includes/class-antispamforwordpressplugin.php:1038
+#: integrations/elementor/class-elementor-form-antispamwidget-field.php:74
+#: integrations/formidable/class-antispamwidgetfieldtype.php:48
 msgid "Verification failed."
 msgstr ""
 
-#: includes/class-antispamforwordpressplugin.php:628
+#: includes/class-antispamforwordpressplugin.php:804
 msgid "Too many verification attempts. Please wait and try again."
 msgstr ""
 
-#: includes/class-antispamforwordpressplugin.php:801
+#: includes/class-antispamforwordpressplugin.php:995
 msgid "Verification expired."
 msgstr ""
 
-#: includes/class-antispamforwordpressplugin.php:1146
+#: includes/class-antispamforwordpressplugin.php:1338
 msgid "This form requires JavaScript."
 msgstr ""
 
-#: includes/settings.php:187
+#: includes/settings.php:224
 msgid "General"
 msgstr ""
 
-#: includes/settings.php:194
+#: includes/settings.php:231
 msgid "Secret key"
 msgstr ""
 
-#: includes/settings.php:200
+#: includes/settings.php:237
 msgid "Used to sign and verify local proof-of-work challenges."
 msgstr ""
 
-#: includes/settings.php:207
+#: includes/settings.php:244
 msgid "Complexity"
 msgstr ""
 
-#: includes/settings.php:213
+#: includes/settings.php:250
 msgid "Select the proof-of-work complexity for new challenges."
 msgstr ""
 
-#: includes/settings.php:215
+#: includes/settings.php:252
 msgid "Low"
 msgstr ""
 
-#: includes/settings.php:216
+#: includes/settings.php:253
 msgid "Medium"
 msgstr ""
 
-#: includes/settings.php:217
+#: includes/settings.php:254
 msgid "High"
 msgstr ""
 
-#: includes/settings.php:224
+#: includes/settings.php:261
 msgid "Expiration"
 msgstr ""
 
-#: includes/settings.php:230
+#: includes/settings.php:267
 msgid "How long a challenge stays valid."
 msgstr ""
 
-#: includes/settings.php:232
+#: includes/settings.php:269
 msgid "2 minutes"
 msgstr ""
 
-#: includes/settings.php:233
-#: includes/settings.php:271
+#: includes/settings.php:270
+#: includes/settings.php:308
 msgid "5 minutes"
 msgstr ""
 
-#: includes/settings.php:234
-#: includes/settings.php:272
+#: includes/settings.php:271
+#: includes/settings.php:309
 msgid "10 minutes"
 msgstr ""
 
-#: includes/settings.php:235
+#: includes/settings.php:272
 msgid "30 minutes"
 msgstr ""
 
-#: includes/settings.php:242
+#: includes/settings.php:279
 msgid "Security hardening"
 msgstr ""
 
-#: includes/settings.php:249
+#: includes/settings.php:286
 msgid "Lazy challenge loading"
 msgstr ""
 
-#: includes/settings.php:255
-#: includes/settings.php:324
-#: includes/settings.php:382
-#: includes/settings.php:396
-#: includes/settings.php:410
-#: includes/settings.php:461
-#: includes/settings.php:474
+#: includes/settings.php:292
+#: includes/settings.php:361
+#: includes/settings.php:448
+#: includes/settings.php:462
+#: includes/settings.php:476
+#: includes/settings.php:527
+#: includes/settings.php:540
 msgid "Yes"
 msgstr ""
 
-#: includes/settings.php:256
+#: includes/settings.php:293
 msgid "Load challenge data on first interaction instead of immediately on page load."
 msgstr ""
 
-#: includes/settings.php:263
+#: includes/settings.php:300
 msgid "Rate limit window"
 msgstr ""
 
-#: includes/settings.php:269
+#: includes/settings.php:306
 msgid "Window used for challenge and failure rate limits."
 msgstr ""
 
-#: includes/settings.php:273
+#: includes/settings.php:310
 msgid "15 minutes"
 msgstr ""
 
-#: includes/settings.php:280
+#: includes/settings.php:317
 msgid "Max challenges per window"
 msgstr ""
 
-#: includes/settings.php:286
+#: includes/settings.php:323
 msgid "Limit repeated challenge fetches from the same visitor."
 msgstr ""
 
-#: includes/settings.php:288
-#: includes/settings.php:307
-#: includes/settings.php:340
-#: includes/settings.php:366
+#: includes/settings.php:325
+#: includes/settings.php:344
+#: includes/settings.php:377
+#: includes/settings.php:432
 msgid "Disabled"
 msgstr ""
 
-#: includes/settings.php:299
+#: includes/settings.php:336
 msgid "Max failed verifications per window"
 msgstr ""
 
-#: includes/settings.php:305
+#: includes/settings.php:342
 msgid "Throttle repeated bad submissions from the same visitor."
 msgstr ""
 
-#: includes/settings.php:318
+#: includes/settings.php:355
 msgid "Honeypot field"
 msgstr ""
 
-#: includes/settings.php:325
+#: includes/settings.php:362
 msgid "Add an off-screen trap field to catch simple bots."
 msgstr ""
 
-#: includes/settings.php:332
+#: includes/settings.php:369
 msgid "Minimum submit time"
 msgstr ""
 
-#: includes/settings.php:338
+#: includes/settings.php:375
 msgid "Reject submissions that complete too quickly."
 msgstr ""
 
-#: includes/settings.php:341
+#: includes/settings.php:378
 msgid "2 seconds"
 msgstr ""
 
-#: includes/settings.php:342
+#: includes/settings.php:379
 msgid "3 seconds"
 msgstr ""
 
-#: includes/settings.php:343
+#: includes/settings.php:380
 msgid "5 seconds"
 msgstr ""
 
-#: includes/settings.php:344
+#: includes/settings.php:381
 msgid "10 seconds"
 msgstr ""
 
-#: includes/settings.php:351
-msgid "Widget customization"
+#: includes/settings.php:388
+msgid "Visitor binding"
 msgstr ""
 
-#: includes/settings.php:358
-msgid "Auto verification"
+#: includes/settings.php:394
+msgid "Choose how challenges and rate limits identify a visitor. IP + User Agent reduces collisions on shared IPs but is more sensitive to browser changes."
 msgstr ""
 
-#: includes/settings.php:364
-msgid "Choose when the widget should start verification."
-msgstr ""
-
-#: includes/settings.php:367
-msgid "On page load"
-msgstr ""
-
-#: includes/settings.php:368
-msgid "On form focus"
-msgstr ""
-
-#: includes/settings.php:369
-msgid "On form submit"
-msgstr ""
-
-#: includes/settings.php:376
-msgid "Floating UI"
-msgstr ""
-
-#: includes/settings.php:383
-msgid "Enable the widget floating UI."
-msgstr ""
-
-#: includes/settings.php:390
-msgid "Delay"
+#: includes/settings.php:396
+msgid "IP address"
 msgstr ""
 
 #: includes/settings.php:397
-msgid "Add a 1.5 second delay before verification completes."
+msgid "IP address + User Agent"
 msgstr ""
 
 #: includes/settings.php:404
-msgid "Hide logo"
+msgid "Trusted proxies"
+msgstr ""
+
+#: includes/settings.php:410
+msgid "Optional comma-separated IPs or CIDR ranges for reverse proxies. When a request comes from one of these proxies, the plugin will trust forwarded client IP headers."
 msgstr ""
 
 #: includes/settings.php:417
-msgid "Footer text"
+msgid "Widget customization"
 msgstr ""
 
-#: includes/settings.php:423
-msgid "Shown in the widget footer when the footer is visible."
+#: includes/settings.php:424
+msgid "Auto verification"
 msgstr ""
 
 #: includes/settings.php:430
-msgid "Privacy link"
+msgid "Choose when the widget should start verification."
 msgstr ""
 
-#: includes/settings.php:436
-msgid "Choose a page or switch to a custom URL for the footer privacy link."
+#: includes/settings.php:433
+msgid "On page load"
+msgstr ""
+
+#: includes/settings.php:434
+msgid "On form focus"
+msgstr ""
+
+#: includes/settings.php:435
+msgid "On form submit"
 msgstr ""
 
 #: includes/settings.php:442
+msgid "Floating UI"
+msgstr ""
+
+#: includes/settings.php:449
+msgid "Enable the widget floating UI."
+msgstr ""
+
+#: includes/settings.php:456
+msgid "Delay"
+msgstr ""
+
+#: includes/settings.php:463
+msgid "Add a 1.5 second delay before verification completes."
+msgstr ""
+
+#: includes/settings.php:470
+msgid "Hide logo"
+msgstr ""
+
+#: includes/settings.php:483
+msgid "Footer text"
+msgstr ""
+
+#: includes/settings.php:489
+msgid "Shown in the widget footer when the footer is visible."
+msgstr ""
+
+#: includes/settings.php:496
+msgid "Privacy link"
+msgstr ""
+
+#: includes/settings.php:502
+msgid "Choose a page or switch to a custom URL for the footer privacy link."
+msgstr ""
+
+#: includes/settings.php:508
 msgid "Privacy URL"
 msgstr ""
 
-#: includes/settings.php:448
+#: includes/settings.php:514
 msgid "Used when Custom URL is selected."
 msgstr ""
 
-#: includes/settings.php:455
+#: includes/settings.php:521
 msgid "Open privacy link in new tab"
 msgstr ""
 
-#: includes/settings.php:468
+#: includes/settings.php:534
 msgid "Hide footer"
 msgstr ""
 
-#: includes/settings.php:481
+#: includes/settings.php:547
 msgid "Integrations"
 msgstr ""
 
-#: includes/settings.php:488
+#: includes/settings.php:554
 msgid "CoBlocks"
 msgstr ""
 
-#: includes/settings.php:494
+#: includes/settings.php:560
 msgid "Contact Form 7"
 msgstr ""
 
-#: includes/settings.php:501
+#: includes/settings.php:567
 msgid "Elementor Pro Forms"
 msgstr ""
 
-#: includes/settings.php:507
+#: includes/settings.php:573
 msgid "Enfold Theme"
 msgstr ""
 
-#: includes/settings.php:515
+#: includes/settings.php:586
 msgid "Formidable Forms"
 msgstr ""
 
-#: includes/settings.php:521
+#: includes/settings.php:592
 msgid "Forminator"
 msgstr ""
 
-#: includes/settings.php:527
+#: includes/settings.php:598
 msgid "Gravity Forms"
 msgstr ""
 
-#: includes/settings.php:533
+#: includes/settings.php:604
 msgid "HTML Forms"
 msgstr ""
 
-#: includes/settings.php:540
+#: includes/settings.php:611
 msgid "WPDiscuz"
 msgstr ""
 
-#: includes/settings.php:546
+#: includes/settings.php:617
 msgid "WPForms"
 msgstr ""
 
-#: includes/settings.php:552
+#: includes/settings.php:623
 msgid "WooCommerce register page"
 msgstr ""
 
-#: includes/settings.php:558
+#: includes/settings.php:629
 msgid "WooCommerce reset password page"
 msgstr ""
 
-#: includes/settings.php:564
+#: includes/settings.php:635
 msgid "WooCommerce login page"
 msgstr ""
 
-#: includes/settings.php:570
+#: includes/settings.php:641
 msgid "Custom HTML"
 msgstr ""
 
 #. translators: %s is a shortcode tag.
-#: includes/settings.php:578
-#, php-format
+#: includes/settings.php:649
 msgid "Use the %s shortcode anywhere in your form markup."
 msgstr ""
 
-#: includes/settings.php:582
-#: includes/settings.php:622
-#: includes/settings.php:654
+#: includes/settings.php:653
+#: includes/settings.php:692
+#: includes/settings.php:723
 msgid "Disable"
 msgstr ""
 
-#: includes/settings.php:583
-#: includes/settings.php:623
-#: includes/settings.php:655
+#: includes/settings.php:654
+#: includes/settings.php:693
+#: includes/settings.php:724
 msgid "Captcha"
 msgstr ""
 
-#: includes/settings.php:592
+#: includes/settings.php:663
 msgid "WordPress"
 msgstr ""
 
-#: includes/settings.php:599
+#: includes/settings.php:670
 msgid "Register page"
 msgstr ""
 
-#: includes/settings.php:604
+#: includes/settings.php:675
 msgid "Reset password page"
 msgstr ""
 
-#: includes/settings.php:609
+#: includes/settings.php:680
 msgid "Login page"
 msgstr ""
 
-#: includes/settings.php:614
+#: includes/settings.php:685
 msgid "Comments"
 msgstr ""
 
-#: includes/settings.php:626
+#: includes/settings.php:696
 msgid "Shortcode"
 msgstr ""
 
-#: integrations/elementor/class-elementor-form-antispamwidget-field.php:20
-#: integrations/formidable.php:39
-#: integrations/gravityforms/class-asfw-gfforms-field.php:13
+#: integrations/elementor/class-elementor-form-antispamwidget-field.php:18
+#: integrations/formidable.php:35
+#: integrations/gravityforms/class-asfw-gfforms-field.php:12
 msgid "Anti Spam Widget"
 msgstr ""
 
@@ -495,27 +518,27 @@ msgstr ""
 msgid "Configure Anti Spam for WordPress in the plugin settings."
 msgstr ""
 
-#: integrations/forminator.php:35
-#: integrations/gravityforms/class-asfw-gfforms-field.php:82
+#: integrations/forminator.php:41
+#: integrations/gravityforms/class-asfw-gfforms-field.php:75
 #: integrations/html-forms.php:49
-#: integrations/woocommerce.php:29
-#: integrations/woocommerce.php:75
-#: integrations/woocommerce.php:115
+#: integrations/woocommerce.php:53
+#: integrations/woocommerce.php:98
+#: integrations/woocommerce.php:137
 #: integrations/wordpress.php:29
-#: integrations/wordpress.php:75
-#: integrations/wordpress.php:115
-#: integrations/wordpress.php:167
+#: integrations/wordpress.php:78
+#: integrations/wordpress.php:119
+#: integrations/wordpress.php:171
 #: integrations/wpforms.php:28
 msgid "Could not verify you are not a robot."
 msgstr ""
 
-#: integrations/gravityforms/class-asfw-gfforms-field.php:55
+#: integrations/gravityforms/class-asfw-gfforms-field.php:49
 msgid "Anti Spam Widget placeholder"
 msgstr ""
 
 #: integrations/wordpress.php:29
-#: integrations/wordpress.php:75
-#: integrations/wordpress.php:115
-#: integrations/wordpress.php:167
+#: integrations/wordpress.php:78
+#: integrations/wordpress.php:119
+#: integrations/wordpress.php:171
 msgid "Error"
 msgstr ""

@@ -1,3 +1,10 @@
 {
-  "suppressions": []
+  "suppressions": [
+    {
+      "kind": "rest_permission_callback_true",
+      "identifier": "__return_true",
+      "path": "includes/rest.php",
+      "justification": "The public challenge endpoint must stay accessible so the widget can fetch proof-of-work challenges without authentication."
+    }
+  ]
 }

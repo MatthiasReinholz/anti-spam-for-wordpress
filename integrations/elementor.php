@@ -4,16 +4,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( asfw_plugin_active( 'elementor' ) ) {
-	function asfw_register_form_field( $form_fields_registrar ) {
-		require_once __DIR__ . '/elementor/class-elementor-form-antispamwidget-field.php';
-
-		$form_fields_registrar->register( new \Elementor_Form_AntiSpamWidget_Field() );
+function asfw_bootstrap_elementor_integration() {
+	if ( ! asfw_plugin_active( 'elementor' ) ) {
+		return;
 	}
 
-	$asfw_plugin = AntiSpamForWordPressPlugin::$instance;
-	$asfw_mode   = $asfw_plugin->get_integration_elementor();
-	if ( 'captcha' === $asfw_mode ) {
-		add_action( 'elementor_pro/forms/fields/register', 'asfw_register_form_field' );
+	$plugin = asfw_plugin_instance();
+	if ( ! $plugin instanceof AntiSpamForWordPressPlugin ) {
+		return;
 	}
+
+	$mode   = $plugin->get_integration_elementor();
+	if ( 'captcha' !== $mode ) {
+		return;
+	}
+
+	add_action( 'elementor_pro/forms/fields/register', 'asfw_register_form_field' );
+}
+
+function asfw_register_form_field( $form_fields_registrar ) {
+	if ( ! class_exists( '\ElementorPro\Modules\Forms\Fields\Field_Base', false ) ) {
+		return;
+	}
+
+	require_once __DIR__ . '/elementor/class-elementor-form-antispamwidget-field.php';
+
+	if ( ! class_exists( '\Elementor_Form_AntiSpamWidget_Field', false ) ) {
+		return;
+	}
+
+	$form_fields_registrar->register( new \Elementor_Form_AntiSpamWidget_Field() );
 }

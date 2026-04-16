@@ -132,18 +132,6 @@ bash scripts/foundation/validate.sh --mode strict-local
 
 See [Security model](docs/security-model.md) for the full policy and the current approved action set.
 
-## Security Model
-
-`wp-plugin-base` assumes a locked-down GitHub Actions posture:
-
-- workflows are local to your project and run against the checked-out repository
-- every external action must be pinned to a full commit SHA
-- only a small approved action allowlist is permitted
-- release and update workflows use repo-local shell scripts where practical instead of additional third-party actions
-- foundation self-updates only trust published foundation releases that pass provenance checks
-
-See [Security model](docs/security-model.md) for the full policy and the current approved action set.
-
 ## Access Requirements
 
 For your project to consume this foundation successfully:

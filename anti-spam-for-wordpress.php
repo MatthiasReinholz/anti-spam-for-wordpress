@@ -9,8 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Description: Self-hosted spam protection for WordPress forms using a proof-of-work widget.
  * Author: Matthias Reinholz
  * Author URI: https://matthiasreinholz.com
- * Version: 0.3.2
- * Stable tag: 0.3.2
+ * Version: 0.4.0
  * Requires at least: 5.0
  * Requires PHP: 8.0
  * Tested up to: 6.8
@@ -21,31 +20,40 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 
 define( 'ASFW_FILE', __FILE__ );
-define( 'ASFW_VERSION', '0.3.2' );
+define( 'ASFW_VERSION', '0.4.0' );
 define( 'ASFW_WEBSITE', 'https://matthiasreinholz.com' );
 define( 'ASFW_WIDGET_VERSION', '1.0.0' );
+define( 'ASFW_DB_VERSION', 1 );
 
 // Required for is_plugin_active.
 require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
-require plugin_dir_path( __FILE__ ) . 'includes/helpers.php';
-require plugin_dir_path( __FILE__ ) . 'includes/class-antispamforwordpressplugin.php';
-require plugin_dir_path( __FILE__ ) . 'includes/rest.php';
-require plugin_dir_path( __FILE__ ) . 'public/widget.php';
+require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . '/includes/class-asfw-settings-schema.php';
+require_once __DIR__ . '/includes/class-asfw-settings-definitions.php';
+require_once __DIR__ . '/includes/class-asfw-settings-renderer.php';
+require_once __DIR__ . '/includes/class-asfw-settings-registrar.php';
+require_once __DIR__ . '/includes/class-antispamforwordpressplugin.php';
+require_once __DIR__ . '/includes/class-asfw-options.php';
+require_once __DIR__ . '/includes/class-asfw-context-helper.php';
+require_once __DIR__ . '/includes/class-asfw-client-identity.php';
+require_once __DIR__ . '/includes/class-asfw-rate-limiter.php';
+require_once __DIR__ . '/includes/class-asfw-challenge-manager.php';
+require_once __DIR__ . '/includes/class-asfw-verifier.php';
+require_once __DIR__ . '/includes/class-asfw-widget-renderer.php';
+require_once __DIR__ . '/includes/interface-asfw-integration-adapter.php';
+require_once __DIR__ . '/includes/class-asfw-integration-adapter-base.php';
+require_once __DIR__ . '/includes/class-asfw-integration-registry.php';
+require_once __DIR__ . '/includes/rest.php';
+require_once __DIR__ . '/includes/control-plane.php';
+require_once __DIR__ . '/includes/class-asfw-schema.php';
+require_once __DIR__ . '/includes/class-asfw-admin-events-page.php';
+require_once __DIR__ . '/includes/class-asfw-admin-analytics-page.php';
+require_once __DIR__ . '/public/widget.php';
 
-require plugin_dir_path( __FILE__ ) . 'integrations/class-asfw-plugin-coblocks.php';
-require plugin_dir_path( __FILE__ ) . 'integrations/contact-form-7.php';
-require plugin_dir_path( __FILE__ ) . 'integrations/custom.php';
-require plugin_dir_path( __FILE__ ) . 'integrations/elementor.php';
-require plugin_dir_path( __FILE__ ) . 'integrations/enfold-theme.php';
-require plugin_dir_path( __FILE__ ) . 'integrations/formidable.php';
-require plugin_dir_path( __FILE__ ) . 'integrations/forminator.php';
-require plugin_dir_path( __FILE__ ) . 'integrations/html-forms.php';
-require plugin_dir_path( __FILE__ ) . 'integrations/gravityforms.php';
-require plugin_dir_path( __FILE__ ) . 'integrations/wpdiscuz.php';
-require plugin_dir_path( __FILE__ ) . 'integrations/wpforms.php';
-require plugin_dir_path( __FILE__ ) . 'integrations/woocommerce.php';
-require plugin_dir_path( __FILE__ ) . 'integrations/wordpress.php';
+if ( function_exists( 'asfw_seed_control_plane_defaults' ) ) {
+	asfw_seed_control_plane_defaults();
+}
 
 AntiSpamForWordPressPlugin::$widget_script_src = plugin_dir_url( __FILE__ ) . 'public/asfw-widget.js';
 AntiSpamForWordPressPlugin::$widget_style_src  = plugin_dir_url( __FILE__ ) . 'public/asfw-widget.css';
@@ -60,14 +68,17 @@ register_deactivation_hook( __FILE__, 'asfw_deactivate' );
 add_action( 'init', 'asfw_init' );
 add_action( 'admin_init', 'asfw_maybe_migrate_legacy_settings' );
 
+ASFW_Integration_Loader::bootstrap( __DIR__ );
+asfw_initialize_control_plane();
+
 add_shortcode(
 	'anti_spam_widget',
 	function ( $attrs ) {
-		$plugin     = AntiSpamForWordPressPlugin::$instance;
+		$plugin     = asfw_plugin_instance();
 		$defaults   = array(
 			'context'  => null,
 			'language' => null,
-			'mode'     => $plugin->get_integration_custom(),
+			'mode'     => $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_custom() : '',
 			'name'     => 'asfw',
 		);
 		$attributes = shortcode_atts( $defaults, $attrs );
@@ -86,6 +97,8 @@ add_shortcode(
 );
 
 function asfw_init() {
+	asfw_initialize_control_plane();
+
 	load_plugin_textdomain(
 		'anti-spam-for-wordpress',
 		false,
@@ -94,10 +107,19 @@ function asfw_init() {
 }
 
 function asfw_activate() {
+	asfw_initialize_control_plane();
+	if ( function_exists( 'asfw_seed_control_plane_defaults' ) ) {
+		asfw_seed_control_plane_defaults();
+	}
 	asfw_maybe_migrate_legacy_settings( true );
 
 	if ( get_option( AntiSpamForWordPressPlugin::$option_secret, '' ) === '' ) {
-		update_option( AntiSpamForWordPressPlugin::$option_secret, AntiSpamForWordPressPlugin::$instance->random_secret() );
+		$plugin = asfw_plugin_instance();
+		if ( $plugin instanceof AntiSpamForWordPressPlugin ) {
+			update_option( AntiSpamForWordPressPlugin::$option_secret, $plugin->random_secret() );
+		} else {
+			update_option( AntiSpamForWordPressPlugin::$option_secret, bin2hex( random_bytes( 32 ) ) );
+		}
 	}
 
 	if ( get_option( AntiSpamForWordPressPlugin::$option_complexity, '' ) === '' ) {
@@ -162,9 +184,24 @@ function asfw_activate() {
 	if ( get_option( AntiSpamForWordPressPlugin::$option_trusted_proxies, null ) === null ) {
 		update_option( AntiSpamForWordPressPlugin::$option_trusted_proxies, '' );
 	}
+
+	$control_plane = ASFW_Control_Plane::instance();
+	if ( isset( $control_plane['store'] ) && $control_plane['store'] instanceof ASFW_Event_Store ) {
+		$control_plane['store']->install();
+	}
+
+	if ( isset( $control_plane['maintenance'] ) && $control_plane['maintenance'] instanceof ASFW_Maintenance ) {
+		$control_plane['maintenance']->maybe_schedule();
+	}
 }
 
 function asfw_deactivate() {
+	if ( class_exists( 'ASFW_Control_Plane', false ) ) {
+		$control_plane = ASFW_Control_Plane::instance();
+		if ( isset( $control_plane['maintenance'] ) && $control_plane['maintenance'] instanceof ASFW_Maintenance ) {
+			$control_plane['maintenance']->unschedule();
+		}
+	}
 }
 
 function asfw_normalize_migrated_mode( $value ) {

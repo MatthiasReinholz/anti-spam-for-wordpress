@@ -5,23 +5,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 function asfw_load_formidable_field() {
-	spl_autoload_register( 'asfw_forms_autoloader' );
+	if ( class_exists( 'FrmFieldType', false ) && ! class_exists( 'AntiSpamWidgetFieldType', false ) ) {
+		require_once __DIR__ . '/formidable/class-antispamwidgetfieldtype.php';
+	}
 }
 add_action( 'plugins_loaded', 'asfw_load_formidable_field' );
 
-function asfw_forms_autoloader( $class_name ) {
-	if ( 1 !== preg_match( '/^AntiSpam.+$/', $class_name ) ) {
-		return;
-	}
-
-	$filepath = __DIR__ . '/formidable/class-' . strtolower( $class_name ) . '.php';
-
-	if ( file_exists( $filepath ) ) {
-		require $filepath;
-	}
-}
-
 function asfw_get_field_type_class( $class_name, $field_type ) {
+	asfw_load_formidable_field();
+
 	if ( 'anti_spam_widget' === $field_type ) {
 		$class_name = 'AntiSpamWidgetFieldType';
 	}
