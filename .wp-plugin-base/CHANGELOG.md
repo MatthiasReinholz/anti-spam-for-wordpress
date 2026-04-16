@@ -1,5 +1,99 @@
 # Changelog
 
+## v1.6.3
+
+* Fix child prepare-release credential persistence
+
+## v1.6.2
+
+* Fix PR auth header reuse in release workflows
+* Keep child workflow artifact pins in sync
+* Allow upload-artifact v7.0.1 pin in workflow policy
+* Polish runtime follow-up consistency and admin UI resilience
+* Tighten validation helper naming consistency
+* Harden runtime pack review follow-ups
+* chore(deps): bump semgrep in /tools/python-semgrep
+* chore(deps-dev): bump phpstan/phpstan
+* chore(deps): bump actions/upload-artifact from 7.0.0 to 7.0.1
+
+## v1.6.1
+
+* Apply local workspace updates across updater automation, validation, and runtime packs
+
+## v1.6.0
+
+* Fix runtime pack negative fixture setup
+* Ignore seeded node_modules in forbidden-file scan
+* Fix runtime pack fixture marker syntax
+* Normalize shell script indentation
+* Fix REST contract scanner shellcheck warning
+* Harden runtime pack permission callbacks
+* Add REST operations and admin UI runtime packs
+
+## v1.5.1
+
+* feat: standardize external dependency updater and docs (#42)
+
+## v1.5.0
+
+* Exclude vendored updater runtime from editorconfig checks
+* Expand codespell ignore for vendored updater typo
+* Allow upstream misspelling in vendored updater parser
+* Exclude vendored updater runtime from codespell
+* Configure markdownlint ignores for vendored updater docs
+* Ignore vendored updater markdown in foundation lint
+* Exclude vendored updater docs from markdown lint
+* Fix updater template substitution shellcheck warnings
+* Add multi-channel distribution with WooCommerce and GitHub updater
+* fix(ci): address ShellCheck SC2155 in release notes generator
+
+## v1.4.0
+
+* feat: add release quality and automation enhancements
+* harden foundation release version contract automation (#37)
+* fix: align child env foundation pin with v1.3.1 release (#36)
+
+## v1.3.1
+
+* chore(deps): bump semgrep in /tools/python-semgrep (#31)
+* fix distignore negative fixture in validate-full (#34)
+* fix ci regressions in markdown and plugin-check timeout (#33)
+* harden release and api reliability controls (#32)
+* harden foundation validation and update controls (#29)
+* standardize external dependency trust notices
+* automate plugin-check updates with age gate
+* make plugin-check updater manual-only
+* harden composer-backed validation retries
+* chore: checkpoint outstanding local changes
+* harden config validation and update safety
+* fix: harden workflow audit and release trust paths (#23)
+* ci(audit): allow updated github/codeql-action upload-sarif pin
+* chore(deps-dev): bump @wordpress/env in /tools/wordpress-env
+* chore(deps): bump github/codeql-action from 4.34.1 to 4.35.1
+
+## Unreleased
+
+* No unreleased changes yet.
+
+## v1.3.0
+
+* Strengthen WordPress plugin security validation with Semgrep SARIF reporting, high-signal authorization pattern checks, and justified suppression workflow.
+* Introduce a minimal, focused security pack and reduce toolchain/lockfile bloat for faster, clearer security checks.
+* Add strict Sigstore consumer verification tooling and tighten release identity verification contracts.
+* Enforce deployment-environment reviewer protection in strict CI/release readiness mode.
+* Add SBOM and release-signing smoke validation in foundation CI.
+* Extend workflow URL-host audit policy with controlled `EXTRA_ALLOWED_HOSTS` overrides.
+* Remove mutable WooCommerce QIT CLI version input to improve reproducibility.
+* Improve packaging hygiene for child templates and managed security artifacts.
+* Add coding-agent-first secure plugin coding contract documentation for Codex/Claude style workflows.
+* Improve CI tooling robustness (Python tool isolation, safer lint/install handling, and readiness regression coverage).
+
+## v1.2.3
+
+* Harden workflow and release infrastructure with stricter action pinning, tighter workflow audit coverage, and stronger foundation update provenance verification.
+* Add WordPress readiness validation, Plugin Check integration, and an opt-in PHP quality pack for child plugin repositories.
+* Make the foundation more portable by relaxing the `rg` requirement in validation paths and carrying the `tools/wordpress-env/.npmrc` policy with temporary installs.
+
 ## v1.2.2
 
 * Update generated project workflow pins for actions/checkout and shivammathur/setup-php.

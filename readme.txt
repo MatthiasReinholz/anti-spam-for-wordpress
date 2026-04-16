@@ -1,9 +1,10 @@
 === Anti Spam for WordPress ===
+Contributors: matthiasreinholz
 Tags: spam, anti-spam, antispam, captcha, proof-of-work, gdpr, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.3.0
-Stable tag: 0.3.0
+Version: 0.3.2
+Stable tag: 0.3.2
 Requires at least: 5.0
 Requires PHP: 8.0
 Tested up to: 6.8
@@ -59,6 +60,10 @@ This plugin requires the WordPress REST API. If you use a plugin that disables t
 
 If you use a CDN or edge cache, bypass caching for `/wp-json/anti-spam-for-wordpress/v1/challenge`.
 
+If your site sends Content Security Policy headers, allow the domain serving the plugin scripts in `script-src` and permit the widget styles in `style-src`.
+
+If your site is behind Cloudflare, a load balancer, or another reverse proxy, add the proxy IPs or CIDR ranges to the Trusted proxies setting so the plugin can safely read forwarded client IP headers.
+
 = Source Code =
 
 * Plugin: https://github.com/MatthiasReinholz/anti-spam-for-wordpress
@@ -79,7 +84,11 @@ If your site sends strict CSP headers, ensure that `script-src` allows the domai
 
 = Users behind a shared IP or proxy are being blocked =
 
-The plugin uses IP-based client fingerprinting to prevent challenge replay. Users behind a shared NAT gateway or corporate proxy may share an IP, which can cause false lockouts under heavy rate limiting. Lower the rate limit thresholds or disable rate limiting if this is a problem.
+The plugin uses client fingerprinting to prevent challenge replay. Users behind a shared NAT gateway or corporate proxy may share an IP, which can cause false lockouts under heavy rate limiting. Add your reverse proxies to the Trusted proxies setting and consider switching Visitor binding to "IP address + User Agent" to reduce collisions. Lower the rate limit thresholds or disable rate limiting if this is still a problem.
+
+= I use the shortcode manually and the widget disappeared =
+
+If you disable the Custom HTML integration, pass `mode="captcha"` or `mode="shortcode"` in `[anti_spam_widget]` so the shortcode still renders explicitly.
 
 = How does proof-of-work differ from a CAPTCHA? =
 
@@ -94,6 +103,17 @@ Instead of asking the user to solve a visual puzzle, the widget asks the browser
 5. Floating UI example
 
 == Changelog ==
+
+= 0.3.2 =
+* Fix - Polish docs and compatibility fixes.
+* Update - Harden anti-spam verification flow.
+
+
+= 0.3.1 =
+* Fix - fix(ci): disable persisted checkout credentials in prepare-release.
+* Update - chore: update wp-plugin-base to v1.6.2.
+* Update - chore: update wp-plugin-base to v1.2.3.
+
 
 = 0.3.0 =
 * Updated CI dependencies (shivammathur/setup-php, actions/checkout 6.0.2).
