@@ -2,18 +2,17 @@
 
 Your project should keep a vendored copy of `wp-plugin-base` in `.wp-plugin-base/`.
 
-The scheduled `update-foundation` workflow:
+The scheduled `update-foundation` automation:
 
 - reads `FOUNDATION_VERSION`
+- resolves the authoritative foundation release source from `FOUNDATION_RELEASE_SOURCE_PROVIDER`, `FOUNDATION_RELEASE_SOURCE_REFERENCE`, and `FOUNDATION_RELEASE_SOURCE_API_BASE`
 - checks for a newer compatible published foundation release in the same major series
 - verifies the candidate release provenance by checking the published release metadata asset, its Sigstore bundle, and the tag commit's relationship to `main`
 - refreshes the vendored `.wp-plugin-base/` directory from the exact verified commit SHA instead of trusting the mutable tag name twice
 - regenerates managed files from templates
-- opens a pull request
+- opens a reviewable change request on the selected automation host
 
-When the regenerated managed files include `.github/workflows/*`, GitHub will reject a branch push authenticated only with the default Actions app token. Repositories that want fully automated workflow-file updates should configure the repository or organization secret `WP_PLUGIN_BASE_PR_TOKEN` with a token that can write contents, pull requests, and workflows. The managed updater workflows prefer that secret automatically when it is present.
-
-Existing child repositories on older foundation versions may still need a one-time manual bootstrap edit to their local `update-foundation.yml` workflow so it passes `WP_PLUGIN_BASE_PR_TOKEN` through before the first workflow-changing foundation update can land automatically.
+This flow consumes the authoritative foundation release source only. Optional runtime updater settings such as `PLUGIN_RUNTIME_UPDATE_PROVIDER` do not change which release surface managed automation uses.
 
 Major-version updates are intentionally manual.
 
@@ -25,6 +24,8 @@ The foundation repository runs a single scheduled updater workflow for external 
 - workflow display name in Actions UI: `update-external-dependencies`
 
 It applies the same PR-based governance model used by `update-foundation`: detect update candidates, refresh managed pins, validate, and open reviewable PRs.
+
+For GitHub-hosted repos, managed update workflows prefer an optional repository secret named `WP_PLUGIN_BASE_PR_TOKEN` when they need to push or open a PR that includes `.github/workflows/*` changes. If that secret is absent, they fall back to `github.token`.
 
 ## External Dependency Coverage
 

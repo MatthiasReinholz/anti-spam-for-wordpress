@@ -9,16 +9,11 @@ wp_plugin_base_child_template_dir() {
 wp_plugin_base_print_base_managed_template_pairs() {
   local template_dir="${1:-$(wp_plugin_base_child_template_dir)}"
   local relative_path
+  local automation_provider="${AUTOMATION_PROVIDER:-github}"
 
   for relative_path in \
     ".editorconfig" \
     ".gitattributes" \
-    ".github/dependabot.yml" \
-    ".github/workflows/ci.yml" \
-    ".github/workflows/finalize-release.yml" \
-    ".github/workflows/prepare-release.yml" \
-    ".github/workflows/release.yml" \
-    ".github/workflows/update-foundation.yml" \
     ".gitignore" \
     "CONTRIBUTING.md" \
     "SECURITY.md" \
@@ -27,10 +22,35 @@ wp_plugin_base_print_base_managed_template_pairs() {
     printf '%s\t%s\n' "$template_dir/$relative_path" "$relative_path"
   done
 
+  case "$automation_provider" in
+    gitlab)
+      printf '%s\t%s\n' "$template_dir/.gitlab-ci.yml" ".gitlab-ci.yml"
+      ;;
+    *)
+      for relative_path in \
+        ".github/dependabot.yml" \
+        ".github/workflows/ci.yml" \
+        ".github/workflows/finalize-release.yml" \
+        ".github/workflows/prepare-release.yml" \
+        ".github/workflows/release.yml" \
+        ".github/workflows/update-foundation.yml"
+      do
+        printf '%s\t%s\n' "$template_dir/$relative_path" "$relative_path"
+      done
+      ;;
+  esac
+
   printf '%s\t%s\n' "$template_dir/.distignore" "$DISTIGNORE_FILE"
 
   if [ -n "${CODEOWNERS_REVIEWERS:-}" ]; then
-    printf '%s\t%s\n' "$template_dir/.github/CODEOWNERS" ".github/CODEOWNERS"
+    case "$automation_provider" in
+      gitlab)
+        printf '%s\t%s\n' "$template_dir/.gitlab/CODEOWNERS" ".gitlab/CODEOWNERS"
+        ;;
+      *)
+        printf '%s\t%s\n' "$template_dir/.github/CODEOWNERS" ".github/CODEOWNERS"
+        ;;
+    esac
   fi
 
   printf '%s\t%s\n' \
@@ -74,10 +94,12 @@ wp_plugin_base_print_managed_template_pairs() {
   fi
 
   if [ -n "${WOOCOMMERCE_COM_PRODUCT_ID:-}" ]; then
-    printf '%s\t%s\n' "$template_dir/.github/workflows/woocommerce-status.yml" ".github/workflows/woocommerce-status.yml"
+    if [ "${AUTOMATION_PROVIDER:-github}" = "github" ]; then
+      printf '%s\t%s\n' "$template_dir/.github/workflows/woocommerce-status.yml" ".github/workflows/woocommerce-status.yml"
+    fi
   fi
 
-  if wp_plugin_base_is_true "${GITHUB_RELEASE_UPDATER_ENABLED:-false}"; then
+  if [ "${PLUGIN_RUNTIME_UPDATE_PROVIDER:-none}" != "none" ] || wp_plugin_base_is_true "${GITHUB_RELEASE_UPDATER_ENABLED:-false}"; then
     wp_plugin_base_print_optional_managed_template_pairs "github-release-updater-pack" "$template_dir"
   fi
 
@@ -90,7 +112,9 @@ wp_plugin_base_print_managed_template_pairs() {
   fi
 
   if wp_plugin_base_is_true "${SIMULATE_RELEASE_WORKFLOW_ENABLED:-false}"; then
-    printf '%s\t%s\n' "$template_dir/.github/workflows/simulate-release.yml" ".github/workflows/simulate-release.yml"
+    if [ "${AUTOMATION_PROVIDER:-github}" = "github" ]; then
+      printf '%s\t%s\n' "$template_dir/.github/workflows/simulate-release.yml" ".github/workflows/simulate-release.yml"
+    fi
   fi
 }
 

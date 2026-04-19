@@ -9,9 +9,14 @@ if (! file_exists($plugin_file)) {
 }
 
 $tests_dir = getenv('WP_TESTS_DIR');
+$child_bootstrap_file = __DIR__ . '/wp-plugin-base/bootstrap-child.php';
 
 if ($tests_dir && file_exists($tests_dir . '/includes/functions.php')) {
 	require_once $tests_dir . '/includes/functions.php';
+
+	if (file_exists($child_bootstrap_file)) {
+		require_once $child_bootstrap_file;
+	}
 
 	tests_add_filter(
 		'muplugins_loaded',
@@ -22,6 +27,10 @@ if ($tests_dir && file_exists($tests_dir . '/includes/functions.php')) {
 
 	require $tests_dir . '/includes/bootstrap.php';
 	return;
+}
+
+if (file_exists($child_bootstrap_file)) {
+	require_once $child_bootstrap_file;
 }
 
 if (! defined('ABSPATH')) {

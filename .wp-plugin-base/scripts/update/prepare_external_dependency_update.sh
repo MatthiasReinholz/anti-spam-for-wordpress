@@ -370,17 +370,17 @@ prepare_puc_runtime_update() {
   rm -rf "$target_dir"
   mv "$extracted_dir" "$target_dir"
 
-  perl -0pi -e "s/(currently vendors \\x60YahnisElsts\\/plugin-update-checker\\x60 \\x60)v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?(\\x60\\.)/\${1}v${latest_version}\${2}/" "$ROOT_DIR/docs/distribution-github-release-updater.md"
-  perl -0pi -e "s#\\[v[0-9]+\\.[0-9]+(?:\\.[0-9]+)? tar\\.gz\\]\\(https://github.com/YahnisElsts/plugin-update-checker/archive/refs/tags/v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?\\.tar\\.gz\\)#[v${latest_version} tar.gz](https://github.com/YahnisElsts/plugin-update-checker/archive/refs/tags/v${latest_version}.tar.gz)#" "$ROOT_DIR/docs/distribution-github-release-updater.md"
-  perl -0pi -e "s/- SHA256: \\x60[0-9a-f]{64}\\x60/- SHA256: \\x60${tarball_sha}\\x60/" "$ROOT_DIR/docs/distribution-github-release-updater.md"
+  perl -0pi -e "s/(currently vendors \\x60YahnisElsts\\/plugin-update-checker\\x60 \\x60)v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?(\\x60\\.)/\${1}v${latest_version}\${2}/" "$ROOT_DIR/docs/distribution-runtime-updater.md"
+  perl -0pi -e "s#\\[v[0-9]+\\.[0-9]+(?:\\.[0-9]+)? tar\\.gz\\]\\(https://github.com/YahnisElsts/plugin-update-checker/archive/refs/tags/v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?\\.tar\\.gz\\)#[v${latest_version} tar.gz](https://github.com/YahnisElsts/plugin-update-checker/archive/refs/tags/v${latest_version}.tar.gz)#" "$ROOT_DIR/docs/distribution-runtime-updater.md"
+  perl -0pi -e "s/- SHA256: \\x60[0-9a-f]{64}\\x60/- SHA256: \\x60${tarball_sha}\\x60/" "$ROOT_DIR/docs/distribution-runtime-updater.md"
   perl -0pi -e "s/(Plugin Update Checker Library )[0-9]+\\.[0-9]+(?:\\.[0-9]+)?/\${1}${latest_version}/" "$ROOT_DIR/docs/dependency-inventory.json"
 
-  if ! grep -Fq "v${latest_version} tar.gz" "$ROOT_DIR/docs/distribution-github-release-updater.md"; then
-    echo "Failed to update plugin-update-checker tarball version reference in docs/distribution-github-release-updater.md" >&2
+  if ! grep -Fq "v${latest_version} tar.gz" "$ROOT_DIR/docs/distribution-runtime-updater.md"; then
+    echo "Failed to update plugin-update-checker tarball version reference in docs/distribution-runtime-updater.md" >&2
     exit 1
   fi
-  if ! grep -Fq "$tarball_sha" "$ROOT_DIR/docs/distribution-github-release-updater.md"; then
-    echo "Failed to update plugin-update-checker tarball SHA256 in docs/distribution-github-release-updater.md" >&2
+  if ! grep -Fq "$tarball_sha" "$ROOT_DIR/docs/distribution-runtime-updater.md"; then
+    echo "Failed to update plugin-update-checker tarball SHA256 in docs/distribution-runtime-updater.md" >&2
     exit 1
   fi
   if ! grep -Fq "Plugin Update Checker Library ${latest_version}" "$ROOT_DIR/docs/dependency-inventory.json"; then
@@ -397,14 +397,14 @@ prepare_puc_runtime_update() {
     "$latest_version" \
     'used by the opt-in GitHub Release updater runtime pack' \
     'metadata-only' \
-    $'selected from published, non-draft, non-prerelease releases\nvendored runtime refreshed from the upstream release tarball\nrelease tarball SHA256 pinned in docs/distribution-github-release-updater.md\ndependency inventory pin pattern refreshed'
+    $'selected from published, non-draft, non-prerelease releases\nvendored runtime refreshed from the upstream release tarball\nrelease tarball SHA256 pinned in docs/distribution-runtime-updater.md\ndependency inventory pin pattern refreshed'
 
   emit_update_outputs \
     "chore/update-plugin-update-checker-${latest_version}" \
     "chore: update plugin-update-checker runtime to v${latest_version}" \
     "chore: update plugin-update-checker runtime to v${latest_version}" \
     "$body_file" \
-    'templates/child/github-release-updater-pack/lib/wp-plugin-base/plugin-update-checker,docs/distribution-github-release-updater.md,docs/dependency-inventory.json' \
+    'templates/child/github-release-updater-pack/lib/wp-plugin-base/plugin-update-checker,docs/distribution-runtime-updater.md,docs/dependency-inventory.json' \
     "$current_version" \
     "$latest_version"
 }
