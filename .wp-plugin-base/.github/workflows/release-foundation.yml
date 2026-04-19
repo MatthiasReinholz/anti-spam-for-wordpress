@@ -14,17 +14,31 @@ env:
 permissions:
   contents: write
   pull-requests: read
+  attestations: write
+  id-token: write
 
 jobs:
   release:
     name: Release foundation
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      - name: Checkout
+      - name: Verify target tag exists on origin
+        env:
+          REPOSITORY_GIT_URL: ${{ github.server_url }}/${{ github.repository }}.git
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if ! git ls-remote --exit-code --tags "$REPOSITORY_GIT_URL" "refs/tags/${VERSION}" >/dev/null 2>&1; then
+            echo "Foundation tag ${VERSION} does not exist on origin." >&2
+            exit 1
+          fi
+
+      - name: Checkout existing tag
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
-          ref: ${{ inputs.version }}
+          ref: refs/tags/${{ inputs.version }}
           fetch-depth: 0
 
       - name: Validate target version
@@ -55,8 +69,40 @@ jobs:
         run: |
           bash scripts/foundation/generate_github_release_body.sh "${{ steps.version.outputs.value }}" > dist-foundation-release.md
 
+      - name: Create foundation release metadata asset
+        run: |
+          bash scripts/foundation/write_release_metadata.sh \
+            "${{ steps.version.outputs.value }}" \
+            "$(git rev-parse HEAD)" \
+            dist-foundation-release.json \
+            github-release \
+            "${GITHUB_REPOSITORY}" \
+            https://api.github.com
+
+      - name: Install SBOM and signing tools
+        run: |
+          bash scripts/release/install_release_security_tools.sh "$RUNNER_TEMP/wp-plugin-base-release-tools"
+          echo "$RUNNER_TEMP/wp-plugin-base-release-tools" >> "$GITHUB_PATH"
+
+      - name: Generate foundation SBOM
+        run: bash scripts/release/generate_sbom.sh "." dist-foundation-release.sbom.cdx.json
+
+      - name: Sign foundation release metadata
+        run: bash scripts/release/sign_release.sh dist-foundation-release.json dist-foundation-release.json.sigstore.json
+
       - name: Create GitHub release
-        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bash scripts/release/publish_github_release.sh --repair \
+            "${{ steps.version.outputs.value }}" \
+            "${{ steps.version.outputs.value }}" \
+            dist-foundation-release.md \
+            dist-foundation-release.json \
+            dist-foundation-release.sbom.cdx.json \
+            dist-foundation-release.json.sigstore.json
+
+      - name: Attest foundation release metadata
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32
         with:
-          tag_name: ${{ steps.version.outputs.value }}
-          body_path: dist-foundation-release.md
+          subject-path: dist-foundation-release.json
