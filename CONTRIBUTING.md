@@ -33,7 +33,7 @@ Hotfixes use the same model from `hotfix/x.y.z` branches.
 
 ## CI And Release Automation
 
-This project uses local managed workflow files generated from `wp-plugin-base` version `v1.7.1`.
+This project uses local managed workflow files generated from `wp-plugin-base` version `v1.7.2`.
 
 If you use a coding agent in this repository, treat `.wp-plugin-base/` as authoritative infrastructure code and avoid hand-editing generated managed files directly. Make behavior changes in the vendored foundation source/templates, then rerun sync.
 
@@ -96,7 +96,7 @@ Set `WP_ORG_DEPLOY_ENABLED` in your CI settings as either:
 
 If WordPress.org deploy is enabled, keep `SVN_USERNAME` and `SVN_PASSWORD` in protected CI secrets, and protect the `PRODUCTION_ENVIRONMENT` environment with at least one reviewer. `PRODUCTION_ENVIRONMENT` defaults to `production` when unset. GitHub validation checks that protection automatically. GitLab validation fails closed until you rerun with `WP_PLUGIN_BASE_GITLAB_DEPLOY_ENV_ACKNOWLEDGED=true` after reviewing the environment manually.
 
-The manual `release.yml` workflow verifies that the requested tag already exists and skips WordPress.org redeploy by default so a repair run does not mutate an existing SVN tag. Only set `WP_PLUGIN_BASE_ALLOW_WPORG_TAG_REDEPLOY=true` for an intentional break-glass redeploy of the latest repository release tag.
+Repair release flows verify that the requested tag already exists and skip WordPress.org redeploy by default so a repair run does not mutate an existing SVN tag. GitHub uses the manual `release.yml` workflow. GitLab uses the tagged `release` job in the managed `.gitlab-ci.yml`. Only set `WP_PLUGIN_BASE_ALLOW_WPORG_TAG_REDEPLOY=true` for an intentional break-glass redeploy of the latest repository release tag.
 
 ## Security Expectations
 
