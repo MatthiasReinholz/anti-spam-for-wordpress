@@ -1,22 +1,35 @@
 # wp-plugin-base
 
-`wp-plugin-base` is a GitHub-centric foundation for WordPress plugin repositories.
+`wp-plugin-base` is a multi-host foundation for WordPress plugin repositories.
 
 It is the **delivery and governance layer** for plugin repos:
 
-- managed local GitHub Actions workflows
+- managed local GitHub or GitLab automation scaffolding
 - release, packaging, and optional WordPress.org deployment automation
 - workflow hardening and provenance checks
 - vendored scripts, templates, and documentation under `.wp-plugin-base/`
 
 It is **not** a general plugin runtime framework. It does not provide plugin-side DI, PSR-4 runtime scaffolding, settings abstractions, REST controllers, or block architecture. Those concerns should remain outside this repo or move into a future companion runtime layer.
 
-It provides two reuse surfaces:
+Each downstream project is expected to use one supported automation host profile:
 
-- managed repository files generated into your project (including `.github/workflows/*` and `.github/dependabot.yml`)
+- GitHub downstream repo
+- GitLab downstream repo
+
+Host-backed runtime updates follow that same downstream host:
+
+- `AUTOMATION_PROVIDER=github` pairs with `PLUGIN_RUNTIME_UPDATE_PROVIDER=github-release`
+- `AUTOMATION_PROVIDER=gitlab` pairs with `PLUGIN_RUNTIME_UPDATE_PROVIDER=gitlab-release`
+- `PLUGIN_RUNTIME_UPDATE_PROVIDER=generic-json` remains host-agnostic
+
+The only normal cross-host case is the authoritative foundation release source: `FOUNDATION_RELEASE_SOURCE_*` may point at a different host because it describes where `wp-plugin-base` itself is officially published.
+
+It also provides two reuse surfaces:
+
+- managed repository files generated into your project (for example `.github/workflows/*` on GitHub or `.gitlab-ci.yml` on GitLab)
 - vendored source under `.wp-plugin-base/` inside your project for scripts, templates, and documentation
 
-The foundation is a development dependency only. The default baseline must never become a runtime dependency of the released plugin ZIP. A small, explicit opt-in runtime pack exists for GitHub Release in-dashboard updates and is disabled by default.
+The foundation is a development dependency only. The default baseline must never become a runtime dependency of the released plugin ZIP. A small, explicit opt-in runtime updater pack exists for GitHub Releases, GitLab Releases, or generic JSON metadata and is disabled by default.
 
 The repository also enforces a tracked-file hygiene policy. Files such as `.DS_Store`, `Thumbs.db`, `Desktop.ini`, editor workspace folders, and transient debug logs are treated as forbidden repository content and fail validation if present.
 
@@ -25,7 +38,7 @@ The repository also enforces a tracked-file hygiene policy. Files such as `.DS_S
 `wp-plugin-base` is optimized first for product teams and maintainers who need:
 
 - repeatable release automation across plugin repositories
-- a hardened GitHub Actions policy by default
+- a hardened Git-host automation policy by default
 - a vendored, reviewable infrastructure layer instead of opaque reusable workflows
 - a clear update path for shared repo automation
 
@@ -37,10 +50,10 @@ Default behavior is intentionally conservative. Optional channels and packs are 
 
 | Capability | Type | Default | Enablement Surface |
 | --- | --- | --- | --- |
-| GitHub Release publication | Layer 1 core | enabled | built into managed release workflows |
-| WordPress.org deploy | distribution channel | disabled | GitHub Actions variable `WP_ORG_DEPLOY_ENABLED=true` |
-| WooCommerce.com deploy | distribution channel | disabled | GitHub Actions variable `WOOCOMMERCE_COM_DEPLOY_ENABLED=true` + `.wp-plugin-base.env` `WOOCOMMERCE_COM_PRODUCT_ID` |
-| GitHub Release updater runtime pack | Layer 2 runtime pack | disabled | `.wp-plugin-base.env` `GITHUB_RELEASE_UPDATER_ENABLED=true` |
+| Selected Git-host release publication | Layer 1 core | GitHub by default | managed GitHub workflow or managed GitLab CI scaffold, depending on `AUTOMATION_PROVIDER` |
+| WordPress.org deploy | distribution channel | disabled | CI variable `WP_ORG_DEPLOY_ENABLED=true` |
+| WooCommerce.com deploy | distribution channel | disabled | CI variable `WOOCOMMERCE_COM_DEPLOY_ENABLED=true` + `.wp-plugin-base.env` `WOOCOMMERCE_COM_PRODUCT_ID` |
+| Runtime updater pack | Layer 2 runtime pack | disabled | `.wp-plugin-base.env` `PLUGIN_RUNTIME_UPDATE_PROVIDER` + `PLUGIN_RUNTIME_UPDATE_SOURCE_URL` |
 | REST operations pack | Layer 2 runtime pack | disabled | `.wp-plugin-base.env` `REST_OPERATIONS_PACK_ENABLED=true` |
 | Admin UI pack | Layer 2 runtime pack | disabled | `.wp-plugin-base.env` `ADMIN_UI_PACK_ENABLED=true` |
 | WooCommerce QIT workflow pack | optional workflow pack | disabled | `.wp-plugin-base.env` `WOOCOMMERCE_QIT_ENABLED=true` |
@@ -121,7 +134,7 @@ bash scripts/foundation/validate.sh --mode strict-local
 
 ## Security Model
 
-`wp-plugin-base` assumes a locked-down GitHub Actions posture:
+`wp-plugin-base` assumes a locked-down automation posture:
 
 - workflows are local to your project and run against the checked-out repository
 - every external action must be pinned to a full commit SHA
@@ -130,6 +143,8 @@ bash scripts/foundation/validate.sh --mode strict-local
 - release and update workflows use repo-local shell scripts where practical instead of additional third-party actions
 - foundation self-updates only trust published foundation releases that pass provenance checks
 
+GitHub is still the default automation host. GitLab is the other supported downstream host in this release. Gitea, Forgejo, and Bitbucket are not supported in this release.
+
 See [Security model](docs/security-model.md) for the full policy and the current approved action set.
 
 ## Access Requirements
@@ -137,13 +152,12 @@ See [Security model](docs/security-model.md) for the full policy and the current
 For your project to consume this foundation successfully:
 
 - your project must commit both `.wp-plugin-base/` and `.wp-plugin-base.env` before the shared workflows can run
-- if you use the automated foundation self-update workflow, the GitHub Actions runner must be able to read releases from `FOUNDATION_REPOSITORY`
-- if you want workflows such as `prepare-release` or `update-foundation` to open pull requests, the repository must allow GitHub Actions to create and approve pull requests
-- if foundation or managed dependency updates may change `.github/workflows/*`, set the repository or organization secret `WP_PLUGIN_BASE_PR_TOKEN` to a token that can write contents, pull requests, and workflows
+- if you use automated foundation self-updates, your selected automation host must be able to read releases from `FOUNDATION_RELEASE_SOURCE_REFERENCE`
+- if you want release preparation or foundation updates to open change requests automatically, your selected automation host must allow that bot identity to push branches and create PRs or MRs
 
 If those conditions are not met, the local project workflows will either fail to find `.wp-plugin-base/` or, for self-update only, fail to reach the foundation release source.
 
-To enable pull request creation in GitHub:
+For GitHub-hosted repositories, enable pull request creation in GitHub:
 
 1. Open your repository on GitHub.
 2. Go to `Settings` -> `Actions` -> `General`.
@@ -161,6 +175,8 @@ If `Allow GitHub Actions to create and approve pull requests` is greyed out:
 
 See [Troubleshooting](docs/troubleshooting.md) for the failure modes and the organization-level case.
 
+For GitLab-hosted repositories, configure a project or group token with the permissions needed to push release/update branches and open merge requests. When WordPress.org deploy is enabled on GitLab, local and CI validation fail closed until you explicitly acknowledge that the protected deployment environment has been reviewed manually.
+
 ## Project Contract
 
 Each project repository should contain:
@@ -168,7 +184,7 @@ Each project repository should contain:
 - `.wp-plugin-base/` populated from this repo as vendored source
 - `.wp-plugin-base.env` with project-specific metadata
 - plugin-local code and assets
-- managed local workflow files in `.github/workflows/`
+- managed automation files for the selected host
 
 Managed files are generated from `templates/child/` by running:
 
@@ -188,7 +204,7 @@ You can bootstrap `.wp-plugin-base/` with `git subtree` if you want that history
 
 If your plugin ships files from nested directories, keep `PACKAGE_INCLUDE`, `PACKAGE_EXCLUDE`, and `DISTIGNORE_FILE` as explicit repo-relative paths. Absolute paths are rejected. The default package excludes repo-root `packages/` and `routes/`, which keeps build-only workspaces out of the install ZIP and translation scan; include those directories explicitly if they are part of the shipped plugin.
 
-The managed `.github/dependabot.yml` file checks for GitHub Actions updates every week. Projects should keep Dependabot enabled so pinned action SHAs keep moving forward through normal review PRs.
+GitHub-managed repos receive `.github/dependabot.yml` and should keep Dependabot enabled so pinned action SHAs keep moving forward through normal review PRs. GitLab repos do not get a managed Dependabot equivalent in this release.
 
 Managed child CI also runs a separate `gitleaks` secret-scan job by default. That job installs only the pinned scanner binary, scans the project checkout, and fails the workflow if secrets are detected.
 
@@ -219,7 +235,7 @@ This foundation already generates workflows that match that policy. Keeping the 
 Foundation releases use semver tags with a `v` prefix such as `v1.0.1`.
 
 - your project pins `FOUNDATION_VERSION` to one exact foundation release
-- automated foundation update PRs only consider published GitHub Releases, not arbitrary tags or branch heads
+- automated foundation update change requests only consider published releases from the configured authoritative foundation source, not arbitrary tags or branch heads
 - automatic updates stay within the current major series
 - major foundation upgrades are manual
 
@@ -246,7 +262,8 @@ For a maintainer-oriented change map, see [Maintainer and agent map](docs/mainta
 
 Required keys in `.wp-plugin-base.env`:
 
-- `FOUNDATION_REPOSITORY`
+- `FOUNDATION_RELEASE_SOURCE_PROVIDER`
+- `FOUNDATION_RELEASE_SOURCE_REFERENCE`
 - `FOUNDATION_VERSION`
 - `PLUGIN_NAME`
 - `PLUGIN_SLUG`
@@ -256,8 +273,18 @@ Required keys in `.wp-plugin-base.env`:
 - `PHP_VERSION`
 - `NODE_VERSION`
 
+Legacy compatibility alias: `FOUNDATION_REPOSITORY` remains accepted for GitHub-hosted foundations.
+
 Optional keys:
 
+- `FOUNDATION_RELEASE_SOURCE_API_BASE`
+- `FOUNDATION_RELEASE_SOURCE_SIGSTORE_ISSUER`
+- `FOUNDATION_REPOSITORY`
+- `AUTOMATION_PROVIDER`
+- `AUTOMATION_API_BASE`
+- `TRUSTED_GIT_HOSTS`
+- `PLUGIN_RUNTIME_UPDATE_PROVIDER`
+- `PLUGIN_RUNTIME_UPDATE_SOURCE_URL`
 - `PHP_RUNTIME_MATRIX`
 - `PHP_RUNTIME_MATRIX_MODE`
 - `VERSION_CONSTANT_NAME`
@@ -321,7 +348,7 @@ The canonical machine-readable config contract is tracked in [`docs/config-schem
 
 `CHANGELOG_MD_SYNC_ENABLED=true` mirrors generated release notes into `CHANGELOG.md` when the file uses `## x.y.z` or `## vx.y.z` headings. Unknown heading layouts are left untouched.
 
-`CHANGELOG_SOURCE=commits` preserves the existing commit-subject changelog generation. Set `CHANGELOG_SOURCE=prs_titles` to generate notes from merged PR titles using GitHub metadata.
+`CHANGELOG_SOURCE=commits` preserves the existing commit-subject changelog generation. Set `CHANGELOG_SOURCE=change_request_titles` to generate notes from merged PR or MR titles using the selected automation host metadata. `CHANGELOG_SOURCE=prs_titles` remains accepted as a legacy alias and is normalized to `change_request_titles`.
 
 `SIMULATE_RELEASE_WORKFLOW_ENABLED=true` includes an optional managed `simulate-release.yml` workflow for dry-run release previews.
 
@@ -330,7 +357,11 @@ The canonical machine-readable config contract is tracked in [`docs/config-schem
 `DEPLOY_NOTIFICATION_ENABLED=true` enables post-release webhook notifications. The webhook URL must come from `DEPLOY_NOTIFICATION_WEBHOOK_URL` GitHub secret and failures are non-blocking by default.
 Because the webhook destination is secret-sourced at runtime, workflow audit host allowlisting cannot statically validate that destination.
 
-Set `CODEOWNERS_REVIEWERS` only if you want the generated project files to include a `.github/CODEOWNERS` file. Use one or more GitHub handles or teams separated by spaces, for example `CODEOWNERS_REVIEWERS="@your-org/platform @your-user"`.
+Set `CODEOWNERS_REVIEWERS` only if you want the generated project files to include a managed CODEOWNERS file for the selected host. Use one or more reviewer handles or teams separated by spaces, for example `CODEOWNERS_REVIEWERS="@your-org/platform @your-user"`.
+
+`TRUSTED_GIT_HOSTS` allows explicitly trusted Git API/auth hosts for self-managed GitLab or GitHub Enterprise instances. Use hostnames only. Private-network, link-local, localhost, and `*.internal` hosts are rejected.
+
+`FOUNDATION_RELEASE_SOURCE_SIGSTORE_ISSUER` is only needed for self-managed GitLab foundation sources. `gitlab.com` uses its standard issuer automatically; self-managed GitLab must set the issuer explicitly.
 
 `WORDPRESS_QUALITY_PACK_ENABLED=true` enables the broader PHP quality pack during WordPress readiness validation. It is a readiness submode and therefore requires `WORDPRESS_READINESS_ENABLED=true`.
 
@@ -355,11 +386,11 @@ Workflow files use the `.yml` extension. `.yaml` workflow files are rejected by 
 
 `WOOCOMMERCE_QIT_ENABLED=true` syncs an optional manual WooCommerce QIT workflow into the child repository. That workflow is intended for WooCommerce Marketplace/partner use, expects `QIT_USER` and `QIT_APP_PASSWORD` secrets plus a manually provided WooCommerce extension slug, and uses a pinned internal `woocommerce/qit-cli` version.
 
-`WOOCOMMERCE_COM_PRODUCT_ID` enables WooCommerce.com Marketplace release deploy preflight and upload when the GitHub Actions variable `WOOCOMMERCE_COM_DEPLOY_ENABLED=true` is set. Keep `WOO_COM_USERNAME` and `WOO_COM_APP_PASSWORD` in deployment-environment secrets. Leave the product ID empty during Woo onboarding approval and the workflow soft-skips Woo deploy.
+`WOOCOMMERCE_COM_PRODUCT_ID` enables WooCommerce.com Marketplace release deploy preflight and upload when the CI variable `WOOCOMMERCE_COM_DEPLOY_ENABLED=true` is set. Keep `WOO_COM_USERNAME` and `WOO_COM_APP_PASSWORD` in protected CI secrets. Leave the product ID empty during Woo onboarding approval and the release flow soft-skips Woo deploy.
 
 `WOOCOMMERCE_COM_ENDPOINT_TIMEOUT_SECONDS` controls WooCommerce.com API request timeouts for deploy and status checks (default `30` seconds).
 
-`GITHUB_RELEASE_UPDATER_ENABLED=true` enables an opt-in runtime pack that ships YahnisElsts Plugin Update Checker in `lib/wp-plugin-base/plugin-update-checker/` and a managed bootstrap in `lib/wp-plugin-base/wp-plugin-base-github-updater.php`. Set `GITHUB_RELEASE_UPDATER_REPO_URL=https://github.com/<owner>/<repo>` and add `require_once __DIR__ . '/lib/wp-plugin-base/wp-plugin-base-github-updater.php';` to the plugin main file.
+`PLUGIN_RUNTIME_UPDATE_PROVIDER=github-release|gitlab-release|generic-json` enables an opt-in runtime pack that ships YahnisElsts Plugin Update Checker in `lib/wp-plugin-base/plugin-update-checker/` and a managed bootstrap in `lib/wp-plugin-base/wp-plugin-base-runtime-updater.php`. Set `PLUGIN_RUNTIME_UPDATE_SOURCE_URL` to the matching repository or JSON metadata URL and add `require_once __DIR__ . '/lib/wp-plugin-base/wp-plugin-base-runtime-updater.php';` to the plugin main file. `github-release` requires `AUTOMATION_PROVIDER=github`. `gitlab-release` requires `AUTOMATION_PROVIDER=gitlab`. `generic-json` is host-agnostic, but it is a runtime updater transport only, not a supported `FOUNDATION_RELEASE_SOURCE_PROVIDER` or native source contract for managed downstream automation. Systems such as `wp-core-base` should keep consuming the authoritative Git host release surface. Do not ship secrets in `PLUGIN_RUNTIME_UPDATE_SOURCE_URL`. `GITHUB_RELEASE_UPDATER_ENABLED` and `GITHUB_RELEASE_UPDATER_REPO_URL` remain accepted as GitHub-only compatibility aliases.
 
 `REST_OPERATIONS_PACK_ENABLED=true` enables an opt-in runtime pack that manages a shared REST operation registry and adapters in `lib/wp-plugin-base/rest-operations/` while seeding child-owned examples in `includes/rest-operations/`. Set `REST_API_NAMESPACE=<plugin-slug>/v1` to override the default namespace and add `require_once __DIR__ . '/lib/wp-plugin-base/rest-operations/bootstrap.php';` to the plugin main file.
 
@@ -387,20 +418,18 @@ WordPress.org deploy is built into the shared release workflow and is disabled b
 
 To enable it in your project:
 
-1. set `WP_ORG_DEPLOY_ENABLED=true` as either:
-   - a GitHub Actions repository variable in the repository settings, or
-   - a GitHub Actions environment variable on the selected deployment environment
+1. set `WP_ORG_DEPLOY_ENABLED=true` in the selected CI host
 2. set `WORDPRESS_ORG_SLUG` in `.wp-plugin-base.env`
-3. provide `SVN_USERNAME` and `SVN_PASSWORD` as GitHub Actions deployment-environment secrets
+3. provide `SVN_USERNAME` and `SVN_PASSWORD` as protected CI secrets on that host
 
 If `WP_ORG_DEPLOY_ENABLED` is unset or any value other than `true`, the release workflow skips SVN deploy.
 
-Release publication uses GitHub-first ordering: the annotated tag and GitHub release are published first, then enabled distribution channels (WordPress.org and WooCommerce.com) run post-publish.
+Release publication uses host-release-first ordering: the selected Git host release publishes first, then enabled distribution channels (WordPress.org and WooCommerce.com) run post-publish.
 
-WordPress.org can therefore fail after the GitHub release is already public. Use `release.yml` plus `woocommerce-status.yml` as the post-publish channel repair runbook.
+WordPress.org can therefore fail after the selected Git host release is already public. Use the selected host's repair release flow plus `woocommerce-status.yml` as the post-publish channel repair runbook.
 If you are migrating from older internal release ordering where WordPress.org deploy blocked tag publication, treat this as a behavior change and update release runbooks.
 
-For stronger review on production publishing, protect the deployment environment named by `PRODUCTION_ENVIRONMENT` and require at least one reviewer before the workflow can access deploy credentials. CI and release readiness checks now fail when WordPress.org deploy is enabled and reviewer protection cannot be verified.
+For stronger review on production publishing, protect the deployment environment named by `PRODUCTION_ENVIRONMENT` and require at least one reviewer before the workflow can access deploy credentials. GitHub validation checks this automatically. GitLab validation fails closed until you rerun with `WP_PLUGIN_BASE_GITLAB_DEPLOY_ENV_ACKNOWLEDGED=true` after manually reviewing the protected environment rules.
 
 The manual `release.yml` workflow is a recovery path for an already existing Git tag. It verifies that the tag exists remotely, checks out that exact tag, and skips WordPress.org redeploy by default so an existing `tags/<version>` entry is not mutated during a repair run. Only set the repository or environment variable `WP_PLUGIN_BASE_ALLOW_WPORG_TAG_REDEPLOY=true` for an intentional break-glass redeploy of the latest repository release tag.
 
@@ -419,7 +448,7 @@ Start here by intent:
 - [Product layers](docs/layers.md)
 - [Release model](docs/release-model.md)
 - [WooCommerce.com distribution](docs/distribution-woocommerce-com.md)
-- [GitHub Release updater distribution](docs/distribution-github-release-updater.md)
+- [Runtime in-dashboard updater](docs/distribution-runtime-updater.md)
 - [Security model](docs/security-model.md)
 - [Secure plugin coding contract](docs/secure-plugin-coding-contract.md)
 - [Compatibility and public contract](docs/compatibility.md)

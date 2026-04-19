@@ -15,14 +15,10 @@ wp_plugin_base_load_config "${1:-}"
 while IFS= read -r file; do
   node --check "$file"
 done < <(find "$ROOT_DIR" \
-  -type d \( \
-    -name '.git' -o \
-    -name '.github' -o \
-    -name '.wp-plugin-base' -o \
-    -name '.wp-plugin-base-quality-pack' -o \
-    -name '.wp-plugin-base-security-pack' -o \
-    -name 'dist' -o \
-    -name 'node_modules' -o \
-    -name 'vendor' \
-  \) -prune -o \
+  -path "$ROOT_DIR/.git" -prune -o \
+  -path "$ROOT_DIR/.github" -prune -o \
+  -path "$ROOT_DIR/.wp-plugin-base" -prune -o \
+  -path "$ROOT_DIR/.wp-plugin-base-admin-ui/node_modules" -prune -o \
+  -path "$ROOT_DIR/dist" -prune -o \
+  -path "$ROOT_DIR/node_modules" -prune -o \
   -name '*.js' -print | sort)

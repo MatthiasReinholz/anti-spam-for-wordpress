@@ -1,5 +1,34 @@
 # Changelog
 
+## v1.7.1
+
+* chore(deps-dev): bump phpstan/phpstan (#85)
+* Close dependency backlog and refresh reviewed CodeQL pin (#84)
+* chore(deps): bump python-multipart in /tools/python-semgrep (#61)
+* chore(deps-dev): bump phpstan/phpstan (#65)
+* Clarify downstream release and runtime updater contracts
+
+## v1.7.0
+
+* Fix remaining auth fixture wrapper handling
+* Restore GitHub workflow token remediation guidance
+* Fix auth fixture git wrapper argument matching
+* Normalize GitHub HTTPS auth before fetch and push (#80)
+* Sync child env example foundation version with VERSION (#79)
+* Run runtime-pack and admin UI policy tests in foundation checks (#78)
+* Declare optional GitLab secret in reusable update workflow (#77)
+* Align workflow auth contracts with foundation policy checks (#76)
+* Disable checkout credential persistence in update workflows (#75)
+* Restore complete schema defaults after config-schema regression (#74)
+* Align schema defaults for REST and admin UI config (#73)
+* Align schema API base defaults with config loader (#72)
+* Fix foundation CI blockers before v1.7.0 release (#71)
+* Fix GitHub release-branch push auth in change request helper (#70)
+* Add single-host multi-platform GitHub/GitLab support contract (#69)
+* fix: load quality-pack child hooks after WP test helpers (#67)
+* feat: add quality pack overlays and PHPUnit bridge (#66)
+* chore: tighten foundation contracts and runtime tooling (#62)
+
 ## v1.6.3
 
 * Fix child prepare-release credential persistence
