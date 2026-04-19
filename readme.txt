@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, antispam, captcha, proof-of-work, gdpr, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.4.0
-Stable tag: 0.4.0
+Version: 0.4.1
+Stable tag: 0.4.1
 Requires at least: 5.0
 Requires PHP: 8.0
 Tested up to: 6.8
@@ -166,6 +166,17 @@ Instead of asking the user to solve a visual puzzle, the widget asks the browser
 5. Floating UI example
 
 == Changelog ==
+
+= 0.4.1 =
+* Update - chore: update wp-plugin-base to v1.7.1 and resync managed files (#27).
+* Update - chore(deps): bump github/codeql-action from 4.35.1 to 4.35.2 (#25).
+* Update - release: 0.4.0 with context-scoped math challenge and submit-delay hardening (#24).
+* Update - chore: align plugin stable tag metadata.
+* Update - chore: sync local workspace updates and integration refactors.
+* Update - plugin base updates.
+* Fix - Polish docs and compatibility fixes.
+* Update - Harden anti-spam verification flow.
+
 
 = 0.4.0 =
 * Feature - Add optional per-context math challenge and submit-delay guards for WordPress and WooCommerce auth/comments flows.
