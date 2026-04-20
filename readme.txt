@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, antispam, captcha, proof-of-work, gdpr, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.4.7
-Stable tag: 0.4.7
+Version: 0.4.8
+Stable tag: 0.4.8
 Requires at least: 5.0
 Requires PHP: 8.0
 Tested up to: 6.8
@@ -166,6 +166,11 @@ Instead of asking the user to solve a visual puzzle, the widget asks the browser
 5. Floating UI example
 
 == Changelog ==
+
+= 0.4.8 =
+* Update - chore: update wp-plugin-base to v1.7.3 (#42).
+* Fix - fix(ci): install cosign before foundation provenance check (#41).
+
 
 = 0.4.7 =
 * Update - chore: update wp-plugin-base to v1.7.2 and resync managed files (#39).
