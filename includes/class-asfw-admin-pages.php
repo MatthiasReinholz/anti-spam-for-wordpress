@@ -17,22 +17,22 @@ class ASFW_Admin_Pages {
 	}
 
 	public function register() {
-		add_options_page(
+		add_submenu_page(
+			null,
 			__( 'Events', 'anti-spam-for-wordpress' ),
 			__( 'Events', 'anti-spam-for-wordpress' ),
 			'manage_options',
 			'asfw_events',
-			array( $this, 'render_events_page' ),
-			31
+			array( $this, 'render_events_page' )
 		);
 
-		add_options_page(
+		add_submenu_page(
+			null,
 			__( 'Analytics', 'anti-spam-for-wordpress' ),
 			__( 'Analytics', 'anti-spam-for-wordpress' ),
 			'manage_options',
 			'asfw_analytics',
-			array( $this, 'render_analytics_page' ),
-			32
+			array( $this, 'render_analytics_page' )
 		);
 	}
 

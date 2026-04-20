@@ -56,9 +56,8 @@ Important: client-only button disable behavior is **not** a security control. Pr
 
 After activation, review these settings/admin surfaces:
 
-- `Settings -> Anti Spam`: control plane, security hardening, integrations, Bunny Shield, and context catalog.
-- `Settings -> Events`: read-only event log (latest 50 entries).
-- `Settings -> Analytics`: server-rendered aggregates for challenge, verification, and feature events.
+- `Anti Spam for WordPress` (top-level admin menu): tabbed admin app with `Settings`, `Events`, and `Analytics`.
+- Legacy links (`Settings -> Anti Spam`, `Settings -> Events`, `Settings -> Analytics`) are preserved and redirect to the matching tab.
 
 Event logging is disabled by default. Enable `Event logging` and set its mode to `log` or `block` before expecting Events/Analytics pages and event-based CLI reporting to populate.
 
