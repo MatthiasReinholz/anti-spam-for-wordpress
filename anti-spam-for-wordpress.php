@@ -49,6 +49,8 @@ require_once __DIR__ . '/includes/control-plane.php';
 require_once __DIR__ . '/includes/class-asfw-schema.php';
 require_once __DIR__ . '/includes/class-asfw-admin-events-page.php';
 require_once __DIR__ . '/includes/class-asfw-admin-analytics-page.php';
+require_once __DIR__ . '/lib/wp-plugin-base/rest-operations/bootstrap.php';
+require_once __DIR__ . '/lib/wp-plugin-base/admin-ui/bootstrap.php';
 require_once __DIR__ . '/public/widget.php';
 
 if ( function_exists( 'asfw_seed_control_plane_defaults' ) ) {

@@ -5,6 +5,12 @@
       "identifier": "__return_true",
       "path": "includes/rest.php",
       "justification": "The public challenge endpoint must stay accessible so the widget can fetch proof-of-work challenges without authentication."
+    },
+    {
+      "kind": "rest_route_bypass",
+      "identifier": "register_rest_route",
+      "path": "includes/rest.php",
+      "justification": "Challenge and submit-delay public routes intentionally remain direct register_rest_route endpoints while the admin UI uses the managed operation registry."
     }
   ]
 }

@@ -225,7 +225,9 @@ function get_option($option, $default = false)
 
 function update_option($option, $value, $autoload = null)
 {
+    $old_value = array_key_exists($option, $GLOBALS['asfw_test_options']) ? $GLOBALS['asfw_test_options'][$option] : null;
     $GLOBALS['asfw_test_options'][$option] = $value;
+    do_action('updated_option', $option, $old_value, $value);
 
     return true;
 }
@@ -655,9 +657,30 @@ function add_options_page($page_title, $menu_title, $capability, $menu_slug, $ca
     return true;
 }
 
+function add_submenu_page($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback = '', $position = null)
+{
+    return true;
+}
+
 function get_admin_url($blog_id = null, $path = '', $scheme = 'admin')
 {
     return 'https://example.test/wp-admin/';
+}
+
+function admin_url($path = '', $scheme = 'admin')
+{
+    return 'https://example.test/wp-admin/' . ltrim((string) $path, '/');
+}
+
+function wp_safe_redirect($location, $status = 302, $x_redirect_by = 'WordPress')
+{
+    $GLOBALS['asfw_last_safe_redirect'] = array(
+        'location' => (string) $location,
+        'status' => (int) $status,
+        'x_redirect_by' => (string) $x_redirect_by,
+    );
+
+    return true;
 }
 
 function wp_get_themes($args = array())
@@ -834,6 +857,11 @@ class WP_REST_Request
     }
 
     public function get_params()
+    {
+        return $this->params;
+    }
+
+    public function get_json_params()
     {
         return $this->params;
     }

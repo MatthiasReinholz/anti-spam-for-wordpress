@@ -117,9 +117,8 @@ Commands that mutate or delete data require `--yes` (`events prune`, `events pur
 
 Admin pages:
 
-* `Settings -> Anti Spam` for control-plane, security, integration, Bunny Shield, and context-catalog settings.
-* `Settings -> Events` for read-only event logs (latest 50 entries).
-* `Settings -> Analytics` for server-rendered aggregate metrics.
+* `Anti Spam for WordPress` top-level admin menu for a tabbed admin app (`Settings`, `Events`, `Analytics`).
+* Legacy `Settings -> Anti Spam`, `Settings -> Events`, and `Settings -> Analytics` links are preserved and redirect to the corresponding tab.
 
 Event logging is disabled by default. Enable `Event logging` and set its mode to `log` or `block` before expecting Events/Analytics pages and event-based CLI reporting to populate.
 
@@ -159,7 +158,7 @@ Instead of asking the user to solve a visual puzzle, the widget asks the browser
 
 == Screenshots ==
 
-1. Settings page
+1. Settings tab
 2. Protection on the login page
 3. Protection with WPForms
 4. Custom shortcode usage
