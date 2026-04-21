@@ -11,4 +11,10 @@ declare(strict_types=1);
  * exposes $plugin_file and $tests_dir when you need them.
  */
 
+if ( ! function_exists( 'esc_url' ) ) {
+	function esc_url( $value ) {
+		return esc_url_raw( $value );
+	}
+}
+
 require_once __DIR__ . '/AsfwPluginTestCase.php';

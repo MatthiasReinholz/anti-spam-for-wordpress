@@ -78,6 +78,31 @@ function asfw_get_woocommerce_reset_password_protection() {
 	return array( $mode, 'wordpress:reset-password' );
 }
 
+function asfw_resolve_woocommerce_guard_context( $preferred_context, $alternate_context ) {
+	$preferred_context = ASFW_Feature_Registry::normalize_context( $preferred_context );
+	$alternate_context = ASFW_Feature_Registry::normalize_context( $alternate_context );
+
+	if ( '' === $alternate_context ) {
+		return $preferred_context;
+	}
+
+	$preferred_has_guards =
+		ASFW_Feature_Registry::is_enabled( 'math_challenge', $preferred_context ) ||
+		ASFW_Feature_Registry::is_enabled( 'submit_delay', $preferred_context );
+	if ( $preferred_has_guards ) {
+		return $preferred_context;
+	}
+
+	$alternate_has_guards =
+		ASFW_Feature_Registry::is_enabled( 'math_challenge', $alternate_context ) ||
+		ASFW_Feature_Registry::is_enabled( 'submit_delay', $alternate_context );
+	if ( $alternate_has_guards ) {
+		return $alternate_context;
+	}
+
+	return $preferred_context;
+}
+
 add_action(
 	'woocommerce_register_form',
 	function () {
@@ -115,11 +140,12 @@ add_action(
 	'woocommerce_login_form',
 	function () {
 		list($mode, $context) = asfw_get_woocommerce_login_protection();
+		$guard_context = asfw_resolve_woocommerce_guard_context( $context, 'woocommerce:login' );
 		if ( ! empty( $mode ) ) {
 			asfw_render_woocommerce_widget( $mode, $context );
 		}
 
-		echo asfw_render_context_guards( $context ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
+		echo asfw_render_context_guards( $guard_context ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
 	},
 	10,
 	0
@@ -142,7 +168,8 @@ add_filter(
 			return $user;
 		}
 		list($mode, $context) = asfw_get_woocommerce_login_protection();
-		$guard_result = asfw_validate_context_guards( $context );
+		$guard_context = asfw_resolve_woocommerce_guard_context( $context, 'woocommerce:login' );
+		$guard_result = asfw_validate_context_guards( $guard_context );
 		if ( $guard_result instanceof WP_Error ) {
 			return new WP_Error(
 				'asfw-error',
@@ -173,11 +200,12 @@ add_action(
 	'woocommerce_lostpassword_form',
 	function () {
 		list($mode, $context) = asfw_get_woocommerce_reset_password_protection();
+		$guard_context = asfw_resolve_woocommerce_guard_context( $context, 'woocommerce:reset-password' );
 		if ( ! empty( $mode ) ) {
 			asfw_render_woocommerce_widget( $mode, $context );
 		}
 
-		echo asfw_render_context_guards( $context ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
+		echo asfw_render_context_guards( $guard_context ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
 	},
 	10,
 	0
@@ -194,7 +222,8 @@ add_filter(
 			return $errors;
 		}
 		list($mode, $context) = asfw_get_woocommerce_reset_password_protection();
-		$guard_result = asfw_validate_context_guards( $context );
+		$guard_context = asfw_resolve_woocommerce_guard_context( $context, 'woocommerce:reset-password' );
+		$guard_result = asfw_validate_context_guards( $guard_context );
 		if ( $guard_result instanceof WP_Error ) {
 			$errors->add(
 				'asfw_error_message',
