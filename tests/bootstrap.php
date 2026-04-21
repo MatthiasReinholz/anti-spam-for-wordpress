@@ -33,8 +33,10 @@ if (file_exists($child_bootstrap_file)) {
 	require_once $child_bootstrap_file;
 }
 
+require_once __DIR__ . '/support/wp-stubs.php';
+
 if (! defined('ABSPATH')) {
-	define('ABSPATH', dirname(__DIR__) . '/');
+	define('ABSPATH', __DIR__ . '/support/wordpress/');
 }
 
 require_once $plugin_file;
