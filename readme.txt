@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, antispam, captcha, proof-of-work, gdpr, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.6.0
-Stable tag: 0.6.0
+Version: 0.6.1
+Stable tag: 0.6.1
 Requires at least: 5.0
 Requires PHP: 8.0
 Tested up to: 6.8
@@ -165,6 +165,14 @@ Instead of asking the user to solve a visual puzzle, the widget asks the browser
 5. Floating UI example
 
 == Changelog ==
+
+= 0.6.1 =
+* Fix - fix(ci): restore runtime smoke compatibility after foundation sync.
+* Fix - fix(tests): preload shared base test case via bootstrap-child.
+* Fix - fix(tests): use local WordPress stubs in phpunit bootstrap fallback.
+* Update - chore: update wp-plugin-base to v1.7.8.
+* Fix - fix(ci): restore foundation provenance checks (#46).
+
 
 = 0.6.0 =
 * Add - feat(admin): migrate to wp-plugin-base admin UI + REST operations packs (#44).

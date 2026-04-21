@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Anti Spam for WordPress 0.5.0\n"
+"Project-Id-Version: Anti Spam for WordPress 0.6.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/anti-spam-for-wordpress\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-20T06:32:27+00:00\n"
+"POT-Creation-Date: 2026-04-21T10:53:20+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: anti-spam-for-wordpress\n"
@@ -17,8 +17,8 @@ msgstr ""
 #. Plugin Name of the plugin
 #: anti-spam-for-wordpress.php
 #: admin/options.php:26
-#: includes/admin.php:12
-#: includes/admin.php:13
+#: includes/admin.php:39
+#: includes/admin.php:40
 msgid "Anti Spam for WordPress"
 msgstr ""
 
@@ -65,11 +65,13 @@ msgstr ""
 
 #: admin/options.php:80
 #: admin/options.php:97
+#: assets/admin-ui/index.js:1
 msgid "Active"
 msgstr ""
 
 #: admin/options.php:80
 #: admin/options.php:98
+#: assets/admin-ui/index.js:1
 msgid "Inactive"
 msgstr ""
 
@@ -86,28 +88,34 @@ msgid "Control plane summary"
 msgstr ""
 
 #: admin/options.php:104
+#: assets/admin-ui/index.js:1
 msgid "Kill switch:"
 msgstr ""
 
 #: admin/options.php:110
 #: includes/class-asfw-admin-pages.php:59
 #: includes/class-asfw-admin-pages.php:138
+#: assets/admin-ui/index.js:1
 msgid "Feature"
 msgstr ""
 
 #: admin/options.php:111
+#: assets/admin-ui/index.js:1
 msgid "State"
 msgstr ""
 
 #: admin/options.php:112
+#: assets/admin-ui/index.js:1
 msgid "Mode"
 msgstr ""
 
 #: admin/options.php:113
+#: assets/admin-ui/index.js:1
 msgid "Background work"
 msgstr ""
 
 #: admin/options.php:114
+#: assets/admin-ui/index.js:1
 msgid "Experimental"
 msgstr ""
 
@@ -150,14 +158,17 @@ msgstr ""
 #: admin/options.php:183
 #: includes/class-asfw-admin-pages.php:58
 #: includes/class-asfw-admin-pages.php:134
+#: assets/admin-ui/index.js:1
 msgid "Context"
 msgstr ""
 
 #: admin/options.php:184
+#: assets/admin-ui/index.js:1
 msgid "Group"
 msgstr ""
 
 #: admin/options.php:185
+#: assets/admin-ui/index.js:1
 msgid "Description"
 msgstr ""
 
@@ -176,48 +187,61 @@ msgid "Integrations"
 msgstr ""
 
 #: admin/options.php:287
+#: includes/rest-operations/settings-operations.php:77
 msgid "No link"
 msgstr ""
 
 #: admin/options.php:288
+#: includes/rest-operations/settings-operations.php:81
 msgid "Custom URL"
 msgstr ""
 
-#: anti-spam-for-wordpress.php:144
+#: anti-spam-for-wordpress.php:146
 #: includes/class-asfw-options.php:65
 msgid "Protected by Anti Spam for WordPress"
 msgstr ""
 
-#: includes/admin.php:32
+#: includes/admin.php:29
+msgid "Unable to resolve admin destination."
+msgstr ""
+
+#: includes/admin.php:54
+#: assets/admin-ui/index.js:1
 msgid "Settings"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:21
 #: includes/class-asfw-admin-pages.php:22
+#: includes/class-asfw-admin-pages.php:23
 #: includes/class-asfw-admin-pages.php:181
+#: assets/admin-ui/index.js:1
 msgid "Events"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:30
 #: includes/class-asfw-admin-pages.php:31
+#: includes/class-asfw-admin-pages.php:32
 #: includes/class-asfw-admin-pages.php:272
+#: assets/admin-ui/index.js:1
 msgid "Analytics"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:55
+#: assets/admin-ui/index.js:1
 msgid "Time"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:56
+#: assets/admin-ui/index.js:1
 msgid "Type"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:57
 #: includes/class-asfw-admin-pages.php:140
+#: assets/admin-ui/index.js:1
 msgid "Decision"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:60
+#: assets/admin-ui/index.js:1
 msgid "Details"
 msgstr ""
 
@@ -226,18 +250,22 @@ msgid "Event logging is currently disabled. Enable the Event logging feature to 
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:130
+#: assets/admin-ui/index.js:1
 msgid "Date from"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:132
+#: assets/admin-ui/index.js:1
 msgid "Date to"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:136
+#: assets/admin-ui/index.js:1
 msgid "Event type"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:142
+#: assets/admin-ui/index.js:1
 msgid "Apply filters"
 msgstr ""
 
@@ -265,6 +293,7 @@ msgid "Label"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:200
+#: assets/admin-ui/index.js:1
 msgid "Count"
 msgstr ""
 
@@ -281,14 +310,17 @@ msgid "Verify pass/fail by day"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:287
+#: assets/admin-ui/index.js:1
 msgid "Day"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:288
+#: assets/admin-ui/index.js:1
 msgid "Pass"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:289
+#: assets/admin-ui/index.js:1
 msgid "Fail"
 msgstr ""
 
@@ -1155,6 +1187,11 @@ msgstr ""
 msgid "Please wait %ss..."
 msgstr ""
 
+#: includes/rest-operations/analytics-operations.php:27
+#: includes/rest-operations/events-operations.php:86
+msgid "Event store is unavailable."
+msgstr ""
+
 #: includes/rest.php:49
 msgid "Cross-site challenge requests are not allowed."
 msgstr ""
@@ -1193,11 +1230,11 @@ msgstr ""
 #: integrations/forminator.php:41
 #: integrations/gravityforms/class-asfw-gfforms-field.php:75
 #: integrations/html-forms.php:59
-#: integrations/woocommerce.php:103
-#: integrations/woocommerce.php:149
-#: integrations/woocommerce.php:161
-#: integrations/woocommerce.php:201
-#: integrations/woocommerce.php:214
+#: integrations/woocommerce.php:128
+#: integrations/woocommerce.php:176
+#: integrations/woocommerce.php:188
+#: integrations/woocommerce.php:230
+#: integrations/woocommerce.php:243
 #: integrations/wordpress.php:29
 #: integrations/wordpress.php:39
 #: integrations/wordpress.php:98
@@ -1223,4 +1260,180 @@ msgstr ""
 #: integrations/wordpress.php:237
 #: integrations/wordpress.php:242
 msgid "Error"
+msgstr ""
+
+#. translators: %s: plugin label.
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-abilities-adapter.php:40
+#, php-format
+msgid "Abilities exposed by %s."
+msgstr ""
+
+#. translators: %s: operation id.
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-abilities-adapter.php:89
+#, php-format
+msgid "Executes the %s operation."
+msgstr ""
+
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-executor.php:33
+msgid "The REST operation callback is invalid."
+msgstr ""
+
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-executor.php:45
+msgid "The REST operation failed to execute."
+msgstr ""
+
+#. translators: 1: operation id, 2: thrown exception class name.
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-executor.php:67
+#, php-format
+msgid "REST operation %1$s threw an uncaught %2$s."
+msgstr ""
+
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:40
+msgid "Authentication is required for this operation."
+msgstr ""
+
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:76
+msgid "The REST operation permission callback failed."
+msgstr ""
+
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:91
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:104
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:113
+msgid "You are not allowed to execute this operation."
+msgstr ""
+
+#. translators: 1: operation id, 2: thrown exception class name.
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:136
+#, php-format
+msgid "REST operation %1$s capability_callback threw an uncaught %2$s."
+msgstr ""
+
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:167
+msgid "You do not have the required operation scope."
+msgstr ""
+
+#. translators: %s: operation id.
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-rest-adapter.php:92
+#, php-format
+msgid "Skipped registering REST operation %s because its callback is missing or not callable."
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Control Plane Summary"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Save Settings"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Context Catalog"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Event logging is currently disabled."
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Retention window"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "days"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Last maintenance run"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Last maintenance run: not recorded yet."
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "No events found for the selected filters."
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Page"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "of"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Previous"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Next"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Refresh"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Analytics sample is truncated for performance. Refine filters for full fidelity."
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Events analyzed"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Rate-limit total"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Challenges Issued by Day"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "No data"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Verify Pass/Fail by Day"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Top Contexts"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Feature Hit Totals"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "The admin UI encountered an unexpected error."
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "The admin UI could not finish rendering."
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Reload page"
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Failed to load settings."
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Settings saved."
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Failed to save settings."
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Failed to load events."
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Failed to load analytics."
 msgstr ""
