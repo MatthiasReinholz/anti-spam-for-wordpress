@@ -10,3 +10,5 @@ declare(strict_types=1);
  * hooks or optional integration bootstrap code. The managed bootstrap scope
  * exposes $plugin_file and $tests_dir when you need them.
  */
+
+require_once __DIR__ . '/AsfwPluginTestCase.php';
