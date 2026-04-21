@@ -7,7 +7,7 @@ The scheduled `update-foundation` automation:
 - reads `FOUNDATION_VERSION`
 - resolves the authoritative foundation release source from `FOUNDATION_RELEASE_SOURCE_PROVIDER`, `FOUNDATION_RELEASE_SOURCE_REFERENCE`, and `FOUNDATION_RELEASE_SOURCE_API_BASE`
 - checks for a newer compatible published foundation release in the same major series
-- verifies the candidate release provenance by checking the published release metadata asset, its Sigstore bundle, and the tag commit's relationship to `main`
+- verifies the candidate release provenance by checking the published release metadata asset, its Sigstore bundle, and the tag commit's relationship to `main` (GitHub compare direction: `main...<tag-commit>`, expecting `behind` or `identical`)
 - refreshes the vendored `.wp-plugin-base/` directory from the exact verified commit SHA instead of trusting the mutable tag name twice
 - regenerates managed files from templates
 - opens a reviewable change request on the selected automation host
