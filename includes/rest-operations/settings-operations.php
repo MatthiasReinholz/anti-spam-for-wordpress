@@ -404,6 +404,9 @@ if ( ! function_exists( 'asfw_rest_operation_settings_update' ) ) {
 			}
 
 			update_option( $option, $sanitized );
+			if ( class_exists( 'ASFW_Settings_Registrar', false ) && method_exists( 'ASFW_Settings_Registrar', 'sync_legacy_feature_options' ) ) {
+				ASFW_Settings_Registrar::sync_legacy_feature_options( $option );
+			}
 			$updated[] = $option;
 		}
 

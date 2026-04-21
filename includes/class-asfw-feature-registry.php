@@ -25,10 +25,10 @@ final class ASFW_Feature_Registry {
 					'contexts_option'    => 'asfw_feature_event_logging_contexts',
 					'mode_option'        => 'asfw_feature_event_logging_mode',
 					'background_option'  => '',
-					'default_enabled'    => false,
+					'default_enabled'    => true,
 					'default_scope_mode' => 'all',
 					'default_contexts'   => array(),
-					'default_mode'       => 'off',
+					'default_mode'       => 'log',
 					'show_in_settings'   => true,
 				),
 			'disposable_email' => array(

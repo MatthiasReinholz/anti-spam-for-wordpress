@@ -112,14 +112,14 @@ expected_permissions = {
   "scorecard.yml" => { "contents" => "read" },
   "ci.yml" => { "contents" => "read" },
   "woocommerce-qit.yml" => { "contents" => "read" },
-  "prepare-foundation-release.yml" => { "contents" => "write", "pull-requests" => "write" },
-  "prepare-release.yml" => { "contents" => "write", "pull-requests" => "write" },
-  "update-foundation.yml" => { "contents" => "write", "pull-requests" => "write" },
-  "update-plugin-check.yml" => { "contents" => "write", "pull-requests" => "write" },
-  "finalize-foundation-release.yml" => { "contents" => "write", "attestations" => "write", "id-token" => "write" },
-  "release-foundation.yml" => { "contents" => "write", "pull-requests" => "read", "attestations" => "write", "id-token" => "write" },
-  "finalize-release.yml" => { "contents" => "write", "attestations" => "write", "id-token" => "write" },
-  "release.yml" => { "contents" => "write", "pull-requests" => "read", "attestations" => "write", "id-token" => "write" }
+  "prepare-foundation-release.yml" => { "contents" => "read", "pull-requests" => "read" },
+  "prepare-release.yml" => { "contents" => "read", "pull-requests" => "read" },
+  "update-foundation.yml" => { "contents" => "read", "pull-requests" => "read" },
+  "update-plugin-check.yml" => { "contents" => "read", "pull-requests" => "read" },
+  "finalize-foundation-release.yml" => { "contents" => "read" },
+  "release-foundation.yml" => { "contents" => "read", "pull-requests" => "read" },
+  "finalize-release.yml" => { "contents" => "read" },
+  "release.yml" => { "contents" => "read", "pull-requests" => "read" }
 }
 
 expected_job_permissions = {
@@ -143,6 +143,60 @@ expected_job_permissions = {
   "foundation-ci.yml" => {
     "release-security-smoke" => {
       "contents" => "read",
+      "id-token" => "write"
+    }
+  },
+  "prepare-foundation-release.yml" => {
+    "prepare" => {
+      "contents" => "write",
+      "pull-requests" => "write"
+    }
+  },
+  "prepare-release.yml" => {
+    "prepare" => {
+      "contents" => "write",
+      "pull-requests" => "write"
+    }
+  },
+  "update-foundation.yml" => {
+    "update" => {
+      "contents" => "write",
+      "pull-requests" => "write"
+    }
+  },
+  "update-plugin-check.yml" => {
+    "update" => {
+      "contents" => "write",
+      "pull-requests" => "write"
+    }
+  },
+  "finalize-foundation-release.yml" => {
+    "release" => {
+      "contents" => "write",
+      "attestations" => "write",
+      "id-token" => "write"
+    }
+  },
+  "release-foundation.yml" => {
+    "release" => {
+      "contents" => "write",
+      "pull-requests" => "read",
+      "attestations" => "write",
+      "id-token" => "write"
+    }
+  },
+  "finalize-release.yml" => {
+    "release" => {
+      "contents" => "write",
+      "attestations" => "write",
+      "id-token" => "write"
+    }
+  },
+  "release.yml" => {
+    "release" => {
+      "contents" => "write",
+      "pull-requests" => "read",
+      "attestations" => "write",
       "id-token" => "write"
     }
   }
@@ -431,7 +485,7 @@ fi
 
 declare -a allowed_actions=(
   "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd"
-  "actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f"
+  "actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e"
   "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
   "actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32"
   "github/codeql-action/upload-sarif@95e58e9a2cdfd71adc6e0353d5c52f41a045d225"

@@ -676,9 +676,11 @@ function asfw_seed_control_plane_defaults() {
 	if ( null === get_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_enabled, null ) ) {
 		update_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_enabled, (bool) get_option( AntiSpamForWordPressPlugin::$option_bunny_enabled, false ) );
 	}
+	$legacy_bunny_enabled = (bool) get_option( AntiSpamForWordPressPlugin::$option_bunny_enabled, false );
 	if ( null === get_option( 'asfw_feature_bunny_shield_mode', null ) ) {
-		$legacy_bunny_enabled = (bool) get_option( AntiSpamForWordPressPlugin::$option_bunny_enabled, false );
 		update_option( 'asfw_feature_bunny_shield_mode', $legacy_bunny_enabled ? 'block' : 'off' );
+	} elseif ( $legacy_bunny_enabled && 'off' === (string) get_option( 'asfw_feature_bunny_shield_mode', 'off' ) ) {
+		update_option( 'asfw_feature_bunny_shield_mode', 'block' );
 	}
 
 	if ( null === get_option( AntiSpamForWordPressPlugin::$option_bunny_api_key, null ) ) {

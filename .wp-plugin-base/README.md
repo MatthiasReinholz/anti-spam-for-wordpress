@@ -72,12 +72,15 @@ Default behavior is intentionally conservative. Optional channels and packs are 
 For the foundation repo itself, run:
 
 ```bash
+bash scripts/dev/install_git_hooks.sh
 bash scripts/foundation/validate.sh
 bash scripts/foundation/bootstrap_strict_local.sh "$PWD/.wp-plugin-base-tools"
 export PATH="$PWD/.wp-plugin-base-tools:$PATH"
 bash scripts/foundation/validate.sh --mode strict-local
 bash scripts/foundation/validate-full.sh
 ```
+
+`scripts/dev/install_git_hooks.sh` configures `core.hooksPath=.githooks` so every `git push` executes both local workflow-equivalent validation paths before upload.
 
 `validate.sh` defaults to `fast-local` mode, which tolerates missing foundation-only lint/security tools and reports reduced assurance explicitly. Use `bash scripts/foundation/validate.sh --mode strict-local` when you want the local run to fail if any required foundation lint/security tool is missing. `validate-full.sh` requires Docker and adds the WordPress readiness and Plugin Check fixtures on top. In CI the full suite skips rerunning the fast suite so the matrix does not pay for the same checks twice.
 
@@ -110,6 +113,13 @@ Full local validation and optional flows need additional tools:
 The shared scripts now fail fast with explicit missing-tool errors instead of failing deeper into release or update flows.
 
 Foundation-only linting uses `shellcheck`, `actionlint`, `yamllint`, `markdownlint-cli2`, `codespell`, `editorconfig-checker`, and `gitleaks` when they are installed locally. Foundation CI installs and runs them strictly even if they are absent on a contributor machine.
+
+The repository pre-push hook runs:
+
+- `bash scripts/foundation/validate.sh --mode fast-local`
+- `bash scripts/foundation/validate-full.sh --mode fast-local`
+
+Set `WP_PLUGIN_BASE_SKIP_LOCAL_PUSH_GATE=1` only when you intentionally need to bypass the local gate.
 
 On macOS, install the binary tools locally with:
 
@@ -203,7 +213,7 @@ That command enforces the generated managed-file surface, not just `.github/work
 
 You can bootstrap `.wp-plugin-base/` with `git subtree` if you want that history locally, but the shared update workflow only requires a normal vendored copy.
 
-If your plugin ships files from nested directories, keep `PACKAGE_INCLUDE`, `PACKAGE_EXCLUDE`, and `DISTIGNORE_FILE` as explicit repo-relative paths. Absolute paths are rejected. The default package excludes repo-root `packages/` and `routes/`, which keeps build-only workspaces out of the install ZIP and translation scan; include those directories explicitly if they are part of the shipped plugin.
+If your plugin ships files from nested directories, keep `PACKAGE_INCLUDE`, `PACKAGE_EXCLUDE`, and `DISTIGNORE_FILE` as explicit repo-relative paths. Absolute paths are rejected. The default package excludes common development-only paths (`/docs`, `/scripts`, `/tests`, `/packages`, and `/routes`) so those workspaces stay out of the install ZIP and translation scan; include those directories explicitly only when they are part of the shipped plugin.
 
 GitHub-managed repos receive `.github/dependabot.yml` and should keep Dependabot enabled so pinned action SHAs keep moving forward through normal review PRs. GitLab repos do not get a managed Dependabot equivalent in this release.
 
@@ -364,7 +374,7 @@ Set `CODEOWNERS_REVIEWERS` only if you want the generated project files to inclu
 
 `FOUNDATION_RELEASE_SOURCE_SIGSTORE_ISSUER` is only needed for self-managed GitLab foundation sources. `gitlab.com` uses its standard issuer automatically; self-managed GitLab must set the issuer explicitly.
 
-`WORDPRESS_QUALITY_PACK_ENABLED=true` enables the broader PHP quality pack during WordPress readiness validation. It is a readiness submode and therefore requires `WORDPRESS_READINESS_ENABLED=true`.
+`WORDPRESS_QUALITY_PACK_ENABLED=true` enables the broader PHP quality pack during WordPress readiness validation. It is a readiness submode and therefore requires `WORDPRESS_READINESS_ENABLED=true`. Full quality-pack mode manages PHPCS/PHPStan/PHPUnit support files.
 
 `WORDPRESS_SECURITY_PACK_ENABLED=true` enables a narrower security-focused pack during WordPress readiness validation. It is a readiness submode and therefore requires `WORDPRESS_READINESS_ENABLED=true`. That pack runs explicit `WordPress.Security`, `WordPress.DB`, and `WordPress.WP.Capabilities` sniffs, blocks risky public endpoint patterns, and audits root Composer/npm runtime dependencies when lock files are present.
 
@@ -384,6 +394,17 @@ Workflow files use the `.yml` extension. `.yaml` workflow files are rejected by 
 - `..._SEVERITY`, `..._ERROR_SEVERITY`, and `..._WARNING_SEVERITY` pass through severity thresholds to Plugin Check.
 
 `PHP_RUNTIME_MATRIX` enables an additional CI smoke job across the listed interpreter versions, for example `PHP_RUNTIME_MATRIX=8.1,8.2,8.3`. The matrix reruns repository validation and WordPress metadata checks with each configured PHP version. Set `PHP_RUNTIME_MATRIX_MODE=strict` to also run PHPUnit in the matrix when `phpunit.xml.dist` and the managed quality-pack tool bundle are present.
+
+PHP quality-pack and runtime-matrix behavior matrix:
+
+| `WORDPRESS_QUALITY_PACK_ENABLED` | `PHP_RUNTIME_MATRIX` | `PHP_RUNTIME_MATRIX_MODE` | Managed PHPUnit bridge files (`phpunit.xml.dist`, `tests/bootstrap.php`, `.wp-plugin-base-quality-pack/**`) | Full pack-only files (`.phpcs.xml.dist`, `phpstan.neon.dist`, `phpstan.neon`) |
+| --- | --- | --- | --- | --- |
+| `false` | unset | `smoke` (default) | no | no |
+| `false` | set | `smoke` | no | no |
+| `false` | set | `strict` | yes | no |
+| `true` | unset or set | `smoke` or `strict` | yes | yes |
+
+Strict runtime matrix mode can therefore manage and execute the PHPUnit bridge even when the full quality pack is disabled. This is expected behavior, not a framework gap.
 
 `WOOCOMMERCE_QIT_ENABLED=true` syncs an optional manual WooCommerce QIT workflow into the child repository. That workflow is intended for WooCommerce Marketplace/partner use, expects `QIT_USER` and `QIT_APP_PASSWORD` secrets plus a manually provided WooCommerce extension slug, and uses a pinned internal `woocommerce/qit-cli` version.
 

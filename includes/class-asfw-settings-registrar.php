@@ -121,6 +121,12 @@ final class ASFW_Settings_Registrar {
 	public static function sync_legacy_feature_options( $updated_option ) {
 		switch ( $updated_option ) {
 			case AntiSpamForWordPressPlugin::$option_feature_bunny_shield_enabled:
+				update_option(
+					AntiSpamForWordPressPlugin::$option_bunny_enabled,
+					(bool) get_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_enabled, false ) ? 1 : 0
+				);
+				break;
+
 			case 'asfw_feature_bunny_shield_mode':
 				update_option( AntiSpamForWordPressPlugin::$option_bunny_enabled, ASFW_Feature_Registry::is_enabled( 'bunny_shield' ) ? 1 : 0 );
 				break;
