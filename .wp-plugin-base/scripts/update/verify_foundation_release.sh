@@ -283,8 +283,10 @@ case "$SOURCE_PROVIDER" in
       commit_sha="$tag_object_sha"
     fi
 
+    # Compare direction matters: main...commit yields behind/identical when the
+    # tagged commit is on (or equal to) main ancestry.
     compare_json="$(
-      api_json compare "${SOURCE_API_BASE}/repos/${REFERENCE}/compare/${commit_sha}...main"
+      api_json compare "${SOURCE_API_BASE}/repos/${REFERENCE}/compare/main...${commit_sha}"
     )"
     compare_status="$(printf '%s' "$compare_json" | jq -r '.status')"
 

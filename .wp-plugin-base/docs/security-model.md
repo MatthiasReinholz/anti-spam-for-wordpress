@@ -154,7 +154,7 @@ bash .wp-plugin-base/scripts/release/verify_sigstore_bundle.sh \
   plugin
 ```
 
-The strict verifier only trusts signatures produced by the expected release workflows on `refs/heads/main`. Foundation update verification also downloads the signed `dist-foundation-release.json` metadata asset and its Sigstore bundle, verifies the bundle, and compares the repository, version, and commit fields against the selected release before any vendored code is refreshed. For self-managed GitLab foundation sources, `FOUNDATION_RELEASE_SOURCE_SIGSTORE_ISSUER` must be configured explicitly because the issuer is instance-specific. If the newest compatible release fails those checks, the updater falls back to the next older compatible published release instead of trusting the broken candidate.
+The strict verifier only trusts signatures produced by the expected release workflows on `refs/heads/main`. Foundation update verification also downloads the signed `dist-foundation-release.json` metadata asset and its Sigstore bundle, verifies the bundle, and compares the repository, version, and commit fields against the selected release before any vendored code is refreshed. For GitHub sources, the ancestry check uses `compare/main...<tag-commit>` and accepts `behind` or `identical`. For self-managed GitLab foundation sources, `FOUNDATION_RELEASE_SOURCE_SIGSTORE_ISSUER` must be configured explicitly because the issuer is instance-specific. If the newest compatible release fails those checks, the updater falls back to the next older compatible published release instead of trusting the broken candidate.
 
 If you intentionally need a different branch policy, treat it as an explicit policy change and document it in the repository that consumes the verifier.
 

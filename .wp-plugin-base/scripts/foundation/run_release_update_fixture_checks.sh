@@ -403,6 +403,11 @@ if GH_TOKEN=dummy FOUNDATION_ALLOWED_RELEASE_AUTHORS='trusted-bot' \
   exit 1
 fi
 
+if ! grep -Fq '/compare/main...${commit_sha}' "$ROOT_DIR/scripts/update/verify_foundation_release.sh"; then
+  echo "Foundation provenance verification must query GitHub compare using main...<commit> direction." >&2
+  exit 1
+fi
+
 cat > "$foundation_verify_compare_json" <<'EOF'
 {
   "status": "ahead"
