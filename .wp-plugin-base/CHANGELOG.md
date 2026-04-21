@@ -1,5 +1,33 @@
 # Changelog
 
+## v1.7.8
+
+* chore(ci): enforce local pre-push validation and bump setup-node pin (#108)
+* chore(deps): bump semgrep in /tools/python-semgrep (#107)
+
+## v1.7.7
+
+* Fix docs guard regression test distignore rewrite (#104)
+* Preserve configured README_FILE when docs path is excluded (#103)
+* Enforce runtime-clean packaging by excluding docs content (#102)
+* Clarify PHPUnit bridge contract and sync strict matrix managed files (#101)
+
+## v1.7.6
+
+* Remediate admin-ui template dependency vulnerabilities
+* Fix foundation provenance compare direction on GitHub
+* Bootstrap release security tools before foundation provenance verify (#97)
+
+## v1.7.5
+
+* Fix finalize workflows merge-commit fetch in shallow clones (#95)
+* Foundation release v1.7.4 (#94)
+* Harden workflow permissions and patch markdownlint transitive advisory (#93)
+
+## v1.7.4
+
+* Harden workflow permissions and patch markdownlint transitive advisory (#93)
+
 ## v1.7.3
 
 * Prune disabled pack trees from REST contract scan

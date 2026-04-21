@@ -18,7 +18,7 @@ The intended default for the foundation repository and every project that consum
 The current hardened baseline allows only these external actions:
 
 - `actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd`
-- `actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f`
+- `actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e`
 - `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a`
 - `actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32`
 - `github/codeql-action/upload-sarif@95e58e9a2cdfd71adc6e0353d5c52f41a045d225`
@@ -154,7 +154,7 @@ bash .wp-plugin-base/scripts/release/verify_sigstore_bundle.sh \
   plugin
 ```
 
-The strict verifier only trusts signatures produced by the expected release workflows on `refs/heads/main`. Foundation update verification also downloads the signed `dist-foundation-release.json` metadata asset and its Sigstore bundle, verifies the bundle, and compares the repository, version, and commit fields against the selected release before any vendored code is refreshed. For GitHub sources, the ancestry check uses `compare/main...<tag-commit>` and accepts `behind` or `identical`. For self-managed GitLab foundation sources, `FOUNDATION_RELEASE_SOURCE_SIGSTORE_ISSUER` must be configured explicitly because the issuer is instance-specific. If the newest compatible release fails those checks, the updater falls back to the next older compatible published release instead of trusting the broken candidate.
+The strict verifier only trusts signatures produced by the expected release workflows on `refs/heads/main`. Foundation update verification also downloads the signed `dist-foundation-release.json` metadata asset and its Sigstore bundle, verifies the bundle, and compares the repository, version, and commit fields against the selected release before any vendored code is refreshed. For self-managed GitLab foundation sources, `FOUNDATION_RELEASE_SOURCE_SIGSTORE_ISSUER` must be configured explicitly because the issuer is instance-specific. If the newest compatible release fails those checks, the updater falls back to the next older compatible published release instead of trusting the broken candidate.
 
 If you intentionally need a different branch policy, treat it as an explicit policy change and document it in the repository that consumes the verifier.
 

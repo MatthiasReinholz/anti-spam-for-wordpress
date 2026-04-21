@@ -9,8 +9,8 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
 
 concurrency:
   group: update-foundation-${{ github.repository }}-${{ github.ref }}
@@ -21,6 +21,9 @@ jobs:
     name: Update foundation
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout
@@ -60,9 +63,10 @@ jobs:
             "${{ steps.config.outputs.release_source_api_base }}"
 
       - name: Install release security tools
+        if: ${{ steps.latest.outputs.update_needed == 'true' }}
         run: |
-          bash .wp-plugin-base/scripts/release/install_release_security_tools.sh "$RUNNER_TEMP/.bin"
-          echo "$RUNNER_TEMP/.bin" >> "$GITHUB_PATH"
+          bash .wp-plugin-base/scripts/release/install_release_security_tools.sh "$RUNNER_TEMP/wp-plugin-base-release-tools"
+          echo "$RUNNER_TEMP/wp-plugin-base-release-tools" >> "$GITHUB_PATH"
 
       - name: Verify foundation release provenance
         id: verify

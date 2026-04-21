@@ -144,6 +144,13 @@ else
   rsync -a --exclude-from="$EXCLUDES_FILE" "$ROOT_DIR/" "$STAGE_DIR/"
 fi
 
+# The configured readme is a required package artifact. If exclusion rules dropped it
+# (for example README_FILE under /docs), restore that single file explicitly.
+if [ ! -f "$STAGE_DIR/$README_FILE" ] && [ -f "$README_PATH" ]; then
+  mkdir -p "$(dirname "$STAGE_DIR/$README_FILE")"
+  cp "$README_PATH" "$STAGE_DIR/$README_FILE"
+fi
+
 if [ ! -f "$STAGE_DIR/$MAIN_PLUGIN_FILE" ]; then
   echo "Package is missing the main plugin file: $MAIN_PLUGIN_FILE" >&2
   exit 1
@@ -162,6 +169,26 @@ fi
 if [ -e "$STAGE_DIR/$WP_PLUGIN_BASE_SECURITY_SUPPRESSIONS_FILE" ]; then
   echo "Package contains the configured security suppressions file: $WP_PLUGIN_BASE_SECURITY_SUPPRESSIONS_FILE" >&2
   exit 1
+fi
+
+normalized_readme_path="$(normalize_repo_relative_path "$README_FILE")"
+allowed_docs_runtime_file=""
+if [[ "$normalized_readme_path" == docs/* ]]; then
+  allowed_docs_runtime_file="$normalized_readme_path"
+fi
+
+if [ -d "$STAGE_DIR/docs" ]; then
+  while IFS= read -r docs_file; do
+    [ -n "$docs_file" ] || continue
+    relative_docs_file="${docs_file#"$STAGE_DIR/"}"
+    if [ -n "$allowed_docs_runtime_file" ] && [ "$relative_docs_file" = "$allowed_docs_runtime_file" ]; then
+      continue
+    fi
+
+    echo "Package contains development-only docs content: $relative_docs_file" >&2
+    echo "Keep /docs out of distributable ZIPs (or move runtime-required content outside /docs)." >&2
+    exit 1
+  done < <(find "$STAGE_DIR/docs" -type f)
 fi
 
 runtime_update_enabled=false
