@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.6.1
-Stable tag: 0.6.1
+Version: 0.6.2
+Stable tag: 0.6.2
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 6.9
@@ -171,6 +171,10 @@ Instead of asking the user to solve a visual puzzle, the widget asks the browser
 5. Floating UI example
 
 == Changelog ==
+
+= 0.6.2 =
+* Update - chore: update foundation and harden release gates.
+
 
 = 0.6.1 =
 * Fix - fix(ci): restore runtime smoke compatibility after foundation sync.
