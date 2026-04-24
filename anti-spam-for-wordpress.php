@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 
 define( 'ASFW_FILE', __FILE__ );
-define('ASFW_VERSION', '0.6.2');
+define( 'ASFW_VERSION', '0.6.2' );
 define( 'ASFW_WEBSITE', 'https://matthiasreinholz.com' );
 define( 'ASFW_WIDGET_VERSION', '1.0.0' );
 define( 'ASFW_DB_VERSION', 1 );
