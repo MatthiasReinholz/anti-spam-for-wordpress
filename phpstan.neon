@@ -1,0 +1,13 @@
+# Child-owned PHPStan overlay loaded after phpstan.neon.dist.
+#
+# Add repo-specific bootstrapFiles, scanFiles, or exclusions here when the
+# managed WordPress quality pack is enabled.
+#
+# Example:
+# parameters:
+#   bootstrapFiles:
+#     - vendor/autoload.php
+parameters:
+  treatPhpDocTypesAsCertain: false
+  bootstrapFiles:
+    - tests/support/phpstan-bootstrap.php

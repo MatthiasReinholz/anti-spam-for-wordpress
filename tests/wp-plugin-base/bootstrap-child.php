@@ -17,4 +17,9 @@ if ( ! function_exists( 'esc_url' ) ) {
 	}
 }
 
+if ( ! defined( 'ABSPATH' ) ) {
+	define( 'ABSPATH', dirname( __DIR__ ) . '/support/wordpress/' );
+}
+
+require_once dirname( __DIR__ ) . '/support/wp-stubs.php';
 require_once __DIR__ . '/AsfwPluginTestCase.php';

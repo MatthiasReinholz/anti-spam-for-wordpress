@@ -38,6 +38,61 @@ final class WpPluginBaseAdminUiOperationsTest extends AsfwPluginTestCase
         $this->assertSame(1, (int) get_option(AntiSpamForWordPressPlugin::$option_bunny_enabled, 0));
     }
 
+    public function test_settings_payload_masks_secret_and_blank_update_keeps_current_secret(): void
+    {
+        update_option(AntiSpamForWordPressPlugin::$option_secret, 'current-secret-value-that-is-long-enough');
+        update_option(AntiSpamForWordPressPlugin::$option_feature_bunny_shield_api_key, 'current-bunny-api-key');
+
+        $payload = asfw_rest_build_settings_payload();
+        $secretField = null;
+        $bunnyApiKeyField = null;
+        foreach ($payload['sections'] as $section) {
+            foreach ($section['fields'] as $field) {
+                if ($field['option'] === AntiSpamForWordPressPlugin::$option_secret) {
+                    $secretField = $field;
+                }
+
+                if ($field['option'] === AntiSpamForWordPressPlugin::$option_feature_bunny_shield_api_key) {
+                    $bunnyApiKeyField = $field;
+                }
+            }
+        }
+
+        $this->assertIsArray($secretField);
+        $this->assertSame('password', $secretField['type']);
+        $this->assertSame('', $secretField['value']);
+        $this->assertSame('Unchanged', $secretField['placeholder']);
+        $this->assertIsArray($bunnyApiKeyField);
+        $this->assertSame('password', $bunnyApiKeyField['type']);
+        $this->assertSame('', $bunnyApiKeyField['value']);
+        $this->assertSame('Unchanged', $bunnyApiKeyField['placeholder']);
+
+        asfw_rest_operation_settings_update(
+            new WP_REST_Request(
+                array(
+                    'values' => array(
+                        AntiSpamForWordPressPlugin::$option_secret => '',
+                        AntiSpamForWordPressPlugin::$option_feature_bunny_shield_api_key => '',
+                    ),
+                )
+            ),
+            array()
+        );
+
+        $this->assertSame('current-secret-value-that-is-long-enough', get_option(AntiSpamForWordPressPlugin::$option_secret));
+        $this->assertSame('current-bunny-api-key', get_option(AntiSpamForWordPressPlugin::$option_feature_bunny_shield_api_key));
+    }
+
+    public function test_secret_sanitizer_rejects_short_rotations_without_losing_current_secret(): void
+    {
+        update_option(AntiSpamForWordPressPlugin::$option_secret, 'current-secret-value-that-is-long-enough');
+
+        $this->assertSame(
+            'current-secret-value-that-is-long-enough',
+            asfw_sanitize_secret_option('short')
+        );
+    }
+
     public function test_events_and_analytics_operations_return_structured_payloads(): void
     {
         update_option('asfw_feature_event_logging_enabled', 1);

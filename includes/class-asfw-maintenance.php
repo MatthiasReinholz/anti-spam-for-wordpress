@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class ASFW_Maintenance {
 
-	const HOOK = 'asfw_daily_maintenance';
+	const HOOK            = 'asfw_daily_maintenance';
 	const OPTION_LAST_RUN = 'asfw_last_maintenance_run';
 
 	protected $store;
@@ -41,7 +41,7 @@ class ASFW_Maintenance {
 
 	public function run() {
 		$this->store->maybe_upgrade_schema();
-		$pruned = $this->store->prune_older_than( $this->store->get_retention_days() );
+		$pruned    = $this->store->prune_older_than( $this->store->get_retention_days() );
 		$refreshed = array(
 			'disposable_domains' => 0,
 		);

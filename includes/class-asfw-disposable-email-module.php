@@ -15,9 +15,9 @@ class ASFW_Disposable_Email_Module {
 	const DEFAULT_REMOTE_URL = 'https://raw.githubusercontent.com/disposable/disposable-email-domains/master/domains.txt';
 
 	protected $candidate_email_fields = array(
-		'wordpress:register'     => array( 'user_email' ),
-		'wordpress:comments'     => array( 'email' ),
-		'woocommerce:register'    => array( 'email', 'billing_email' ),
+		'wordpress:register'   => array( 'user_email' ),
+		'wordpress:comments'   => array( 'email' ),
+		'woocommerce:register' => array( 'email', 'billing_email' ),
 	);
 
 	protected $store;
@@ -104,9 +104,10 @@ class ASFW_Disposable_Email_Module {
 
 	public function get_candidate_emails( $context, $post = null, &$used_fallback = false ) {
 		$context = ASFW_Feature_Registry::normalize_context( $context );
-		$post    = is_array( $post ) ? $post : $_POST;
-		$emails  = array();
-		$used_fallback = false;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Anti-spam email analysis intentionally reads the submitted payload during verification.
+		$post                   = is_array( $post ) ? $post : $_POST;
+		$emails                 = array();
+		$used_fallback          = false;
 		$candidate_email_fields = $this->get_candidate_email_fields( $context );
 
 		foreach ( $candidate_email_fields as $field_name ) {
@@ -119,8 +120,8 @@ class ASFW_Disposable_Email_Module {
 		}
 
 		if ( empty( $emails ) && empty( $candidate_email_fields ) ) {
-			$emails         = $this->get_fallback_candidate_emails( $post );
-			$used_fallback  = ! empty( $emails );
+			$emails        = $this->get_fallback_candidate_emails( $post );
+			$used_fallback = ! empty( $emails );
 		}
 
 		$emails = apply_filters( 'asfw_candidate_emails', $emails, $context, $post );
@@ -152,22 +153,22 @@ class ASFW_Disposable_Email_Module {
 	}
 
 	public function analyze_submission( $context, $post = null ) {
-		$context    = ASFW_Feature_Registry::normalize_context( $context );
-		$mode       = $this->get_mode();
-		$fallback_used = false;
-		$emails     = $this->get_candidate_emails( $context, $post, $fallback_used );
-		$matched    = array();
+		$context        = ASFW_Feature_Registry::normalize_context( $context );
+		$mode           = $this->get_mode();
+		$fallback_used  = false;
+		$emails         = $this->get_candidate_emails( $context, $post, $fallback_used );
+		$matched        = array();
 		$matched_emails = array();
 
 		$analysis = array(
 			'context'          => $context,
 			'mode'             => $mode,
 			'enabled'          => $this->is_enabled( $context ),
-			'candidate_fields'  => array_keys( $emails ),
-			'candidate_count'   => count( $emails ),
-			'matched_fields'    => array(),
-			'matched_emails'    => array(),
-			'matched_count'     => 0,
+			'candidate_fields' => array_keys( $emails ),
+			'candidate_count'  => count( $emails ),
+			'matched_fields'   => array(),
+			'matched_emails'   => array(),
+			'matched_count'    => 0,
 			'hit'              => false,
 			'blocked'          => false,
 			'fallback'         => $fallback_used,
@@ -185,7 +186,7 @@ class ASFW_Disposable_Email_Module {
 			}
 
 			$matched[]        = sanitize_key( (string) $field_name );
-			$matched_emails[]  = $email;
+			$matched_emails[] = $email;
 		}
 
 		$matched = array_values( array_unique( array_filter( $matched ) ) );
@@ -204,31 +205,31 @@ class ASFW_Disposable_Email_Module {
 		return $analysis;
 	}
 
-		public function record_disposable_email_hit( array $analysis, $field_name = 'asfw' ) {
-			if ( empty( $analysis['hit'] ) ) {
-				return false;
-			}
-			$event_context = isset( $analysis['context'] ) ? ASFW_Feature_Registry::normalize_context( $analysis['context'] ) : 'generic';
-			if ( ! ASFW_Feature_Registry::is_enabled( 'event_logging', $event_context ) ) {
-				return false;
-			}
+	public function record_disposable_email_hit( array $analysis, $field_name = 'asfw' ) {
+		if ( empty( $analysis['hit'] ) ) {
+			return false;
+		}
+		$event_context = isset( $analysis['context'] ) ? ASFW_Feature_Registry::normalize_context( $analysis['context'] ) : 'generic';
+		if ( ! ASFW_Feature_Registry::is_enabled( 'event_logging', $event_context ) ) {
+			return false;
+		}
 
-			$this->store->record_event(
-				'disposable_email_hit',
-				array(
-					'decision'   => isset( $analysis['decision'] ) ? sanitize_key( (string) $analysis['decision'] ) : 'matched',
-					'context'    => $event_context,
+		$this->store->record_event(
+			'disposable_email_hit',
+			array(
+				'decision'   => isset( $analysis['decision'] ) ? sanitize_key( (string) $analysis['decision'] ) : 'matched',
+				'context'    => $event_context,
 				'feature'    => 'disposable-email',
 				'ip_hash'    => $this->get_actor_hash(),
 				'email_hash' => isset( $analysis['email_hash'] ) ? (string) $analysis['email_hash'] : '',
 				'details'    => array(
-					'field_name'      => sanitize_key( (string) $field_name ),
-					'mode'            => isset( $analysis['mode'] ) ? sanitize_key( (string) $analysis['mode'] ) : 'log',
-					'fallback'        => ! empty( $analysis['fallback'] ),
+					'field_name'       => sanitize_key( (string) $field_name ),
+					'mode'             => isset( $analysis['mode'] ) ? sanitize_key( (string) $analysis['mode'] ) : 'log',
+					'fallback'         => ! empty( $analysis['fallback'] ),
 					'candidate_fields' => isset( $analysis['candidate_fields'] ) && is_array( $analysis['candidate_fields'] ) ? array_values( array_map( 'sanitize_key', $analysis['candidate_fields'] ) ) : array(),
-					'matched_fields'  => isset( $analysis['matched_fields'] ) && is_array( $analysis['matched_fields'] ) ? array_values( array_map( 'sanitize_key', $analysis['matched_fields'] ) ) : array(),
-					'candidate_count' => isset( $analysis['candidate_count'] ) ? intval( $analysis['candidate_count'], 10 ) : 0,
-					'matched_count'   => isset( $analysis['matched_count'] ) ? intval( $analysis['matched_count'], 10 ) : 0,
+					'matched_fields'   => isset( $analysis['matched_fields'] ) && is_array( $analysis['matched_fields'] ) ? array_values( array_map( 'sanitize_key', $analysis['matched_fields'] ) ) : array(),
+					'candidate_count'  => isset( $analysis['candidate_count'] ) ? intval( $analysis['candidate_count'], 10 ) : 0,
+					'matched_count'    => isset( $analysis['matched_count'] ) ? intval( $analysis['matched_count'], 10 ) : 0,
 				),
 			)
 		);
@@ -238,7 +239,8 @@ class ASFW_Disposable_Email_Module {
 
 	public function log_verify_result( $success, $result, $context, $field_name, $resolved_context = null ) {
 		$event_context = '' !== trim( (string) $resolved_context ) ? $resolved_context : $context;
-		$analysis      = $this->analyze_submission( $event_context, $_POST );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Logging uses the just-verified submission to record privacy-preserving spam signals.
+		$analysis = $this->analyze_submission( $event_context, $_POST );
 
 		if ( empty( $analysis['hit'] ) ) {
 			return;
@@ -324,7 +326,7 @@ class ASFW_Disposable_Email_Module {
 
 		if ( $force_remote && function_exists( 'wp_remote_get' ) && false !== filter_var( $remote_url, FILTER_VALIDATE_URL ) ) {
 			$remote_attempted = true;
-			$response = wp_remote_get(
+			$response         = wp_remote_get(
 				$remote_url,
 				array(
 					'timeout' => 5,
@@ -335,7 +337,7 @@ class ASFW_Disposable_Email_Module {
 				$body = trim( (string) wp_remote_retrieve_body( $response ) );
 				if ( '' !== $body ) {
 					$remote_domains = preg_split( '/[\r\n]+/', $body, -1, PREG_SPLIT_NO_EMPTY );
-					if ( is_array( $remote_domains ) && ! empty( $remote_domains ) ) {
+					if ( is_array( $remote_domains ) ) {
 						$domains = $remote_domains;
 						$source  = 'remote';
 					}
@@ -359,7 +361,7 @@ class ASFW_Disposable_Email_Module {
 				'context'  => 'disposable-email',
 				'feature'  => 'disposable-email',
 				'details'  => array(
-					'count' => count( $domains ),
+					'count'  => count( $domains ),
 					'source' => ( $remote_attempted && $remote_refresh_failed ) ? 'remote_failed' : $source,
 				),
 			)

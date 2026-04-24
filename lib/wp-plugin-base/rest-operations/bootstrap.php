@@ -18,12 +18,12 @@ require_once __DIR__ . '/class-wp-plugin-base-rest-operations-executor.php';
 require_once __DIR__ . '/class-wp-plugin-base-rest-operations-rest-adapter.php';
 require_once __DIR__ . '/class-wp-plugin-base-rest-operations-abilities-adapter.php';
 
-$wp_plugin_base_rest_operations_bootstrap = dirname( __DIR__, 3 ) . '/includes/rest-operations/bootstrap.php';
+$asfw_rest_operations_bootstrap = dirname( __DIR__, 3 ) . '/includes/rest-operations/bootstrap.php';
 
-if ( file_exists( $wp_plugin_base_rest_operations_bootstrap ) ) {
-	$operations = require $wp_plugin_base_rest_operations_bootstrap;
-	if ( is_array( $operations ) ) {
-		WP_Plugin_Base_REST_Operations_Registry::register_many( $operations );
+if ( file_exists( $asfw_rest_operations_bootstrap ) ) {
+	$asfw_rest_operations = require $asfw_rest_operations_bootstrap;
+	if ( is_array( $asfw_rest_operations ) ) {
+		WP_Plugin_Base_REST_Operations_Registry::register_many( $asfw_rest_operations );
 	}
 }
 
@@ -38,7 +38,7 @@ add_action(
 	}
 );
 
-if ( 'true' === 'false' ) {
+if ( (bool) filter_var( 'false', FILTER_VALIDATE_BOOLEAN ) ) {
 	add_action(
 		'wp_abilities_api_categories_init',
 		static function () {

@@ -58,38 +58,44 @@ final class ASFW_Settings_Schema {
 
 	public static function get_fields_by_section() {
 		$fields = array(
-				'asfw_control_plane_settings_section' => array(
-					self::checkbox_field(
-						'asfw_settings_kill_switch_field',
-						AntiSpamForWordPressPlugin::$option_kill_switch,
-						__( 'Kill switch', 'anti-spam-for-wordpress' ),
-						__( 'Leave this off unless you need to disable protection immediately.', 'anti-spam-for-wordpress' ),
-						__( 'Bypass widget rendering and verification across the site.', 'anti-spam-for-wordpress' )
-					),
-					self::select_field(
-						'asfw_settings_event_logging_retention_days_field',
-						'asfw_event_logging_retention_days',
-						__( 'Event logging retention', 'anti-spam-for-wordpress' ),
-						__( 'How long event rows are kept before daily maintenance purges old data.', 'anti-spam-for-wordpress' ),
-						array(
-							'7'   => __( '7 days', 'anti-spam-for-wordpress' ),
-							'14'  => __( '14 days', 'anti-spam-for-wordpress' ),
-							'30'  => __( '30 days', 'anti-spam-for-wordpress' ),
-							'60'  => __( '60 days', 'anti-spam-for-wordpress' ),
-							'90'  => __( '90 days', 'anti-spam-for-wordpress' ),
-							'180' => __( '180 days', 'anti-spam-for-wordpress' ),
-							'365' => __( '365 days', 'anti-spam-for-wordpress' ),
-						),
-						'30'
-					),
+			'asfw_control_plane_settings_section' => array(
+				self::checkbox_field(
+					'asfw_settings_kill_switch_field',
+					AntiSpamForWordPressPlugin::$option_kill_switch,
+					__( 'Kill switch', 'anti-spam-for-wordpress' ),
+					__( 'Leave this off unless you need to disable protection immediately.', 'anti-spam-for-wordpress' ),
+					__( 'Bypass widget rendering and verification across the site.', 'anti-spam-for-wordpress' )
 				),
-			'asfw_general_settings_section' => array(
+				self::select_field(
+					'asfw_settings_event_logging_retention_days_field',
+					'asfw_event_logging_retention_days',
+					__( 'Event logging retention', 'anti-spam-for-wordpress' ),
+					__( 'How long event rows are kept before daily maintenance purges old data.', 'anti-spam-for-wordpress' ),
+					array(
+						'7'   => __( '7 days', 'anti-spam-for-wordpress' ),
+						'14'  => __( '14 days', 'anti-spam-for-wordpress' ),
+						'30'  => __( '30 days', 'anti-spam-for-wordpress' ),
+						'60'  => __( '60 days', 'anti-spam-for-wordpress' ),
+						'90'  => __( '90 days', 'anti-spam-for-wordpress' ),
+						'180' => __( '180 days', 'anti-spam-for-wordpress' ),
+						'365' => __( '365 days', 'anti-spam-for-wordpress' ),
+					),
+					'30'
+				),
+			),
+			'asfw_general_settings_section'       => array(
 				self::text_field(
 					'asfw_settings_secret_field',
 					AntiSpamForWordPressPlugin::$option_secret,
 					__( 'Secret key', 'anti-spam-for-wordpress' ),
-					__( 'Used to sign and verify local proof-of-work challenges.', 'anti-spam-for-wordpress' ),
-					'asfw_sanitize_secret_option'
+					__( 'Leave blank to keep the current secret. Enter at least 32 characters to rotate it.', 'anti-spam-for-wordpress' ),
+					'asfw_sanitize_secret_option',
+					'password',
+					null,
+					array(
+						'write_only'  => true,
+						'placeholder' => __( 'Unchanged', 'anti-spam-for-wordpress' ),
+					)
 				),
 				self::select_field(
 					'asfw_settings_complexity_field',
@@ -117,7 +123,7 @@ final class ASFW_Settings_Schema {
 					'300'
 				),
 			),
-			'asfw_security_settings_section' => array(
+			'asfw_security_settings_section'      => array(
 				self::checkbox_field(
 					'asfw_settings_lazy_field',
 					AntiSpamForWordPressPlugin::$option_lazy,
@@ -216,14 +222,19 @@ final class ASFW_Settings_Schema {
 					'text'
 				),
 			),
-			'asfw_bunny_settings_section' => array(
+			'asfw_bunny_settings_section'         => array(
 				self::text_field(
 					'asfw_settings_bunny_api_key_field',
 					AntiSpamForWordPressPlugin::$option_feature_bunny_shield_api_key,
 					__( 'Bunny API key', 'anti-spam-for-wordpress' ),
-					__( 'Used with the Bunny AccessKey header to manage Shield access lists.', 'anti-spam-for-wordpress' ),
+					__( 'Leave blank to keep the current Bunny API key. Enter a new key to rotate it.', 'anti-spam-for-wordpress' ),
 					'asfw_sanitize_bunny_api_key_option',
-					'password'
+					'password',
+					null,
+					array(
+						'write_only'  => true,
+						'placeholder' => __( 'Unchanged', 'anti-spam-for-wordpress' ),
+					)
 				),
 				self::text_field(
 					'asfw_settings_bunny_shield_zone_id_field',
@@ -253,46 +264,46 @@ final class ASFW_Settings_Schema {
 					__( 'Fail open', 'anti-spam-for-wordpress' ),
 					__( 'Treat Bunny API failures as operational warnings, keep local verification in control of submissions, and back off before retrying automatic syncs.', 'anti-spam-for-wordpress' )
 				),
-					self::select_field(
-						'asfw_settings_bunny_threshold_field',
-						AntiSpamForWordPressPlugin::$option_feature_bunny_shield_threshold,
+				self::select_field(
+					'asfw_settings_bunny_threshold_field',
+					AntiSpamForWordPressPlugin::$option_feature_bunny_shield_threshold,
 					__( 'Escalation threshold', 'anti-spam-for-wordpress' ),
 					__( 'How many local abuse signals must accumulate before a Bunny update is attempted.', 'anti-spam-for-wordpress' ),
-						array(
-							'1' => '1',
-							'2' => '2',
-							'3' => '3',
-							'5' => '5',
-							'10' => '10',
-						),
-						'10'
+					array(
+						'1'  => '1',
+						'2'  => '2',
+						'3'  => '3',
+						'5'  => '5',
+						'10' => '10',
 					),
-					self::select_field(
-						'asfw_settings_bunny_dedupe_window_field',
-						AntiSpamForWordPressPlugin::$option_feature_bunny_shield_ttl_minutes,
-						__( 'TTL (minutes)', 'anti-spam-for-wordpress' ),
-						__( 'Used for the local Bunny dedupe window. Bunny list retention is managed by Bunny Shield access-list behavior.', 'anti-spam-for-wordpress' ),
-						array(
-							'15'   => __( '15 minutes', 'anti-spam-for-wordpress' ),
-							'60'   => __( '1 hour', 'anti-spam-for-wordpress' ),
-							'360'  => __( '6 hours', 'anti-spam-for-wordpress' ),
+					'10'
+				),
+				self::select_field(
+					'asfw_settings_bunny_dedupe_window_field',
+					AntiSpamForWordPressPlugin::$option_feature_bunny_shield_ttl_minutes,
+					__( 'TTL (minutes)', 'anti-spam-for-wordpress' ),
+					__( 'Used for the local Bunny dedupe window. Bunny list retention is managed by Bunny Shield access-list behavior.', 'anti-spam-for-wordpress' ),
+					array(
+						'15'   => __( '15 minutes', 'anti-spam-for-wordpress' ),
+						'60'   => __( '1 hour', 'anti-spam-for-wordpress' ),
+						'360'  => __( '6 hours', 'anti-spam-for-wordpress' ),
 						'1440' => __( '24 hours', 'anti-spam-for-wordpress' ),
 					),
 					'60'
 				),
-					self::select_field(
-						'asfw_settings_bunny_action_field',
-						AntiSpamForWordPressPlugin::$option_feature_bunny_shield_action,
-						__( 'Bunny action', 'anti-spam-for-wordpress' ),
-						__( 'Current runtime uses block-style access-list updates only. Challenge remains reserved for future contract expansion.', 'anti-spam-for-wordpress' ),
-						array(
-							'block' => __( 'Block', 'anti-spam-for-wordpress' ),
-						),
-						'block',
-						array( 'block', 'challenge' )
+				self::select_field(
+					'asfw_settings_bunny_action_field',
+					AntiSpamForWordPressPlugin::$option_feature_bunny_shield_action,
+					__( 'Bunny action', 'anti-spam-for-wordpress' ),
+					__( 'Current runtime uses block-style access-list updates only. Challenge remains reserved for future contract expansion.', 'anti-spam-for-wordpress' ),
+					array(
+						'block' => __( 'Block', 'anti-spam-for-wordpress' ),
 					),
+					'block',
+					array( 'block', 'challenge' )
 				),
-			'asfw_widget_settings_section' => array(
+			),
+			'asfw_widget_settings_section'        => array(
 				self::select_field(
 					'asfw_settings_auto_field',
 					AntiSpamForWordPressPlugin::$option_auto,
@@ -357,9 +368,9 @@ final class ASFW_Settings_Schema {
 					__( 'Hide the widget footer entirely.', 'anti-spam-for-wordpress' )
 				),
 			),
-			'asfw_integrations_settings_section' => array(),
-			'asfw_wordpress_settings_section'    => array(),
-			'asfw_context_catalog_section'       => array(),
+			'asfw_integrations_settings_section'  => array(),
+			'asfw_wordpress_settings_section'     => array(),
+			'asfw_context_catalog_section'        => array(),
 		);
 
 		foreach ( ASFW_Feature_Registry::get_integration_features() as $feature ) {
@@ -415,34 +426,37 @@ final class ASFW_Settings_Schema {
 
 	private static function checkbox_field( $field_id, $option, $title, $hint, $description = null ) {
 		return array(
-			'id'               => $field_id,
-			'callback'         => 'asfw_settings_field_callback',
-			'section'          => self::section_for_option( $option ),
-			'title'            => $title,
-			'option'           => $option,
+			'id'                => $field_id,
+			'callback'          => 'asfw_settings_field_callback',
+			'section'           => self::section_for_option( $option ),
+			'title'             => $title,
+			'option'            => $option,
 			'sanitize_callback' => 'asfw_sanitize_checkbox_option',
-			'args'             => array(
+			'args'              => array(
 				'name'        => $option,
-				'description'  => $description,
+				'description' => $description,
 				'hint'        => $hint,
 				'type'        => 'checkbox',
 			),
 		);
 	}
 
-	private static function text_field( $field_id, $option, $title, $hint, $sanitize_callback, $type = 'text', $description = null ) {
+	private static function text_field( $field_id, $option, $title, $hint, $sanitize_callback, $type = 'text', $description = null, array $extra_args = array() ) {
 		return array(
-			'id'               => $field_id,
-			'callback'         => 'asfw_settings_field_callback',
-			'section'          => self::section_for_option( $option ),
-			'title'            => $title,
-			'option'           => $option,
+			'id'                => $field_id,
+			'callback'          => 'asfw_settings_field_callback',
+			'section'           => self::section_for_option( $option ),
+			'title'             => $title,
+			'option'            => $option,
 			'sanitize_callback' => $sanitize_callback,
-			'args'             => array(
-				'name'        => $option,
-				'description'  => $description,
-				'hint'        => $hint,
-				'type'        => $type,
+			'args'              => array_merge(
+				array(
+					'name'        => $option,
+					'description' => $description,
+					'hint'        => $hint,
+					'type'        => $type,
+				),
+				$extra_args
 			),
 		);
 	}
@@ -453,13 +467,13 @@ final class ASFW_Settings_Schema {
 
 	private static function textarea_field( $field_id, $option, $title, $hint, $sanitize_callback, $description = null, $placeholder = '' ) {
 		return array(
-			'id'               => $field_id,
-			'callback'         => 'asfw_settings_textarea_callback',
-			'section'          => self::section_for_option( $option ),
-			'title'            => $title,
-			'option'           => $option,
+			'id'                => $field_id,
+			'callback'          => 'asfw_settings_textarea_callback',
+			'section'           => self::section_for_option( $option ),
+			'title'             => $title,
+			'option'            => $option,
 			'sanitize_callback' => $sanitize_callback,
-			'args'             => array(
+			'args'              => array(
 				'name'        => $option,
 				'description' => $description,
 				'hint'        => $hint,
@@ -470,13 +484,13 @@ final class ASFW_Settings_Schema {
 
 	private static function privacy_target_field( $field_id, $option, $title, $hint ) {
 		return array(
-			'id'               => $field_id,
-			'callback'         => 'asfw_settings_privacy_target_callback',
-			'section'          => 'asfw_widget_settings_section',
-			'title'            => $title,
-			'option'           => $option,
+			'id'                => $field_id,
+			'callback'          => 'asfw_settings_privacy_target_callback',
+			'section'           => 'asfw_widget_settings_section',
+			'title'             => $title,
+			'option'            => $option,
 			'sanitize_callback' => 'asfw_sanitize_privacy_target_option',
-			'args'             => array(
+			'args'              => array(
 				'name' => $option,
 				'hint' => $hint,
 			),
@@ -487,13 +501,13 @@ final class ASFW_Settings_Schema {
 		$allowed_values = is_array( $allowed_values ) ? $allowed_values : array_keys( $options );
 
 		return array(
-			'id'               => $field_id,
-			'callback'         => 'asfw_settings_select_callback',
-			'section'          => self::section_for_option( $option ),
-			'title'            => $title,
-			'option'           => $option,
+			'id'                => $field_id,
+			'callback'          => 'asfw_settings_select_callback',
+			'section'           => self::section_for_option( $option ),
+			'title'             => $title,
+			'option'            => $option,
 			'sanitize_callback' => self::select_sanitize_callback( $allowed_values, $default_value ),
-			'args'             => array(
+			'args'              => array(
 				'name'    => $option,
 				'hint'    => $hint,
 				'options' => $options,
@@ -503,7 +517,7 @@ final class ASFW_Settings_Schema {
 
 	private static function integration_select_field( array $feature ) {
 		$options = array(
-			'' => __( 'Disable', 'anti-spam-for-wordpress' ),
+			''        => __( 'Disable', 'anti-spam-for-wordpress' ),
 			'captcha' => __( 'Captcha', 'anti-spam-for-wordpress' ),
 		);
 
@@ -512,17 +526,17 @@ final class ASFW_Settings_Schema {
 		}
 
 		return array(
-			'id'               => $feature['field_id'],
-			'callback'         => 'asfw_settings_select_callback',
-			'section'          => $feature['section'],
-			'title'            => $feature['label'],
-			'option'           => $feature['option'],
+			'id'                => $feature['field_id'],
+			'callback'          => 'asfw_settings_select_callback',
+			'section'           => $feature['section'],
+			'title'             => $feature['label'],
+			'option'            => $feature['option'],
 			'sanitize_callback' => self::select_sanitize_callback( array_keys( $options ), '' ),
-			'args'             => array(
-				'name'    => $feature['option'],
-				'hint'    => $feature['hint'],
+			'args'              => array(
+				'name'     => $feature['option'],
+				'hint'     => $feature['hint'],
 				'disabled' => ! empty( $feature['disabled'] ),
-				'options' => $options,
+				'options'  => $options,
 			),
 		);
 	}
@@ -618,177 +632,40 @@ final class ASFW_Settings_Schema {
 
 	private static function section_for_option( $option ) {
 		$section_map = array(
-				AntiSpamForWordPressPlugin::$option_kill_switch               => 'asfw_control_plane_settings_section',
-				'asfw_event_logging_retention_days'                           => 'asfw_control_plane_settings_section',
-			AntiSpamForWordPressPlugin::$option_secret                    => 'asfw_general_settings_section',
-			AntiSpamForWordPressPlugin::$option_complexity                => 'asfw_general_settings_section',
-			AntiSpamForWordPressPlugin::$option_expires                   => 'asfw_general_settings_section',
-			AntiSpamForWordPressPlugin::$option_lazy                      => 'asfw_security_settings_section',
-			AntiSpamForWordPressPlugin::$option_rate_limit_window         => 'asfw_security_settings_section',
+			AntiSpamForWordPressPlugin::$option_kill_switch => 'asfw_control_plane_settings_section',
+			'asfw_event_logging_retention_days'            => 'asfw_control_plane_settings_section',
+			AntiSpamForWordPressPlugin::$option_secret     => 'asfw_general_settings_section',
+			AntiSpamForWordPressPlugin::$option_complexity => 'asfw_general_settings_section',
+			AntiSpamForWordPressPlugin::$option_expires    => 'asfw_general_settings_section',
+			AntiSpamForWordPressPlugin::$option_lazy       => 'asfw_security_settings_section',
+			AntiSpamForWordPressPlugin::$option_rate_limit_window => 'asfw_security_settings_section',
 			AntiSpamForWordPressPlugin::$option_rate_limit_max_challenges => 'asfw_security_settings_section',
-			AntiSpamForWordPressPlugin::$option_rate_limit_max_failures   => 'asfw_security_settings_section',
-			AntiSpamForWordPressPlugin::$option_honeypot                  => 'asfw_security_settings_section',
-			AntiSpamForWordPressPlugin::$option_min_submit_time           => 'asfw_security_settings_section',
-			AntiSpamForWordPressPlugin::$option_feature_submit_delay_ms   => 'asfw_security_settings_section',
-			AntiSpamForWordPressPlugin::$option_visitor_binding           => 'asfw_security_settings_section',
-			AntiSpamForWordPressPlugin::$option_trusted_proxies           => 'asfw_security_settings_section',
-			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_enabled       => 'asfw_bunny_settings_section',
-			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_api_key       => 'asfw_bunny_settings_section',
-			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_zone_id       => 'asfw_bunny_settings_section',
+			AntiSpamForWordPressPlugin::$option_rate_limit_max_failures => 'asfw_security_settings_section',
+			AntiSpamForWordPressPlugin::$option_honeypot   => 'asfw_security_settings_section',
+			AntiSpamForWordPressPlugin::$option_min_submit_time => 'asfw_security_settings_section',
+			AntiSpamForWordPressPlugin::$option_feature_submit_delay_ms => 'asfw_security_settings_section',
+			AntiSpamForWordPressPlugin::$option_visitor_binding => 'asfw_security_settings_section',
+			AntiSpamForWordPressPlugin::$option_trusted_proxies => 'asfw_security_settings_section',
+			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_enabled => 'asfw_bunny_settings_section',
+			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_api_key => 'asfw_bunny_settings_section',
+			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_zone_id => 'asfw_bunny_settings_section',
 			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_access_list_id => 'asfw_bunny_settings_section',
-			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_dry_run       => 'asfw_bunny_settings_section',
-			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_fail_open     => 'asfw_bunny_settings_section',
-			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_threshold     => 'asfw_bunny_settings_section',
-			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_ttl_minutes   => 'asfw_bunny_settings_section',
-			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_action        => 'asfw_bunny_settings_section',
-			AntiSpamForWordPressPlugin::$option_auto                      => 'asfw_widget_settings_section',
-			AntiSpamForWordPressPlugin::$option_floating                  => 'asfw_widget_settings_section',
-			AntiSpamForWordPressPlugin::$option_delay                     => 'asfw_widget_settings_section',
-			AntiSpamForWordPressPlugin::$option_hidelogo                  => 'asfw_widget_settings_section',
-			AntiSpamForWordPressPlugin::$option_footer_text               => 'asfw_widget_settings_section',
-			AntiSpamForWordPressPlugin::$option_privacy_page              => 'asfw_widget_settings_section',
-			AntiSpamForWordPressPlugin::$option_privacy_url               => 'asfw_widget_settings_section',
-			AntiSpamForWordPressPlugin::$option_privacy_new_tab           => 'asfw_widget_settings_section',
-			AntiSpamForWordPressPlugin::$option_hidefooter                => 'asfw_widget_settings_section',
+			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_dry_run => 'asfw_bunny_settings_section',
+			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_fail_open => 'asfw_bunny_settings_section',
+			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_threshold => 'asfw_bunny_settings_section',
+			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_ttl_minutes => 'asfw_bunny_settings_section',
+			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_action => 'asfw_bunny_settings_section',
+			AntiSpamForWordPressPlugin::$option_auto       => 'asfw_widget_settings_section',
+			AntiSpamForWordPressPlugin::$option_floating   => 'asfw_widget_settings_section',
+			AntiSpamForWordPressPlugin::$option_delay      => 'asfw_widget_settings_section',
+			AntiSpamForWordPressPlugin::$option_hidelogo   => 'asfw_widget_settings_section',
+			AntiSpamForWordPressPlugin::$option_footer_text => 'asfw_widget_settings_section',
+			AntiSpamForWordPressPlugin::$option_privacy_page => 'asfw_widget_settings_section',
+			AntiSpamForWordPressPlugin::$option_privacy_url => 'asfw_widget_settings_section',
+			AntiSpamForWordPressPlugin::$option_privacy_new_tab => 'asfw_widget_settings_section',
+			AntiSpamForWordPressPlugin::$option_hidefooter => 'asfw_widget_settings_section',
 		);
 
 		return isset( $section_map[ $option ] ) ? $section_map[ $option ] : 'asfw_widget_settings_section';
-	}
-
-}
-
-function asfw_seed_control_plane_defaults() {
-	$disposable_auto_refresh_option = class_exists( 'ASFW_Disposable_Email_Module', false )
-		? ASFW_Disposable_Email_Module::OPTION_AUTO_REFRESH
-		: 'asfw_disposable_email_auto_refresh';
-	$content_heuristics_legacy_option = class_exists( 'ASFW_Content_Heuristics_Module', false )
-		? ASFW_Content_Heuristics_Module::OPTION_ENABLED
-		: 'asfw_content_heuristics_enabled';
-
-	if ( null === get_option( AntiSpamForWordPressPlugin::$option_kill_switch, null ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_kill_switch, false );
-	}
-
-	if ( null === get_option( AntiSpamForWordPressPlugin::$option_bunny_enabled, null ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_bunny_enabled, false );
-	}
-
-	if ( null === get_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_enabled, null ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_enabled, (bool) get_option( AntiSpamForWordPressPlugin::$option_bunny_enabled, false ) );
-	}
-	$legacy_bunny_enabled = (bool) get_option( AntiSpamForWordPressPlugin::$option_bunny_enabled, false );
-	if ( null === get_option( 'asfw_feature_bunny_shield_mode', null ) ) {
-		update_option( 'asfw_feature_bunny_shield_mode', $legacy_bunny_enabled ? 'block' : 'off' );
-	} elseif ( $legacy_bunny_enabled && 'off' === (string) get_option( 'asfw_feature_bunny_shield_mode', 'off' ) ) {
-		update_option( 'asfw_feature_bunny_shield_mode', 'block' );
-	}
-
-	if ( null === get_option( AntiSpamForWordPressPlugin::$option_bunny_api_key, null ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_bunny_api_key, '' );
-	}
-
-	if ( null === get_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_api_key, null ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_api_key, (string) get_option( AntiSpamForWordPressPlugin::$option_bunny_api_key, '' ) );
-	}
-
-	if ( null === get_option( AntiSpamForWordPressPlugin::$option_bunny_shield_zone_id, null ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_bunny_shield_zone_id, '' );
-	}
-
-	if ( null === get_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_zone_id, null ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_zone_id, (string) get_option( AntiSpamForWordPressPlugin::$option_bunny_shield_zone_id, '' ) );
-	}
-
-	if ( null === get_option( AntiSpamForWordPressPlugin::$option_bunny_access_list_id, null ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_bunny_access_list_id, '' );
-	}
-
-	if ( null === get_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_access_list_id, null ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_access_list_id, (string) get_option( AntiSpamForWordPressPlugin::$option_bunny_access_list_id, '' ) );
-	}
-
-	if ( null === get_option( AntiSpamForWordPressPlugin::$option_bunny_dry_run, null ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_bunny_dry_run, true );
-	}
-
-	if ( null === get_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_dry_run, null ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_dry_run, (bool) get_option( AntiSpamForWordPressPlugin::$option_bunny_dry_run, true ) );
-	}
-
-	if ( null === get_option( AntiSpamForWordPressPlugin::$option_bunny_fail_open, null ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_bunny_fail_open, true );
-	}
-
-	if ( null === get_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_fail_open, null ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_fail_open, (bool) get_option( AntiSpamForWordPressPlugin::$option_bunny_fail_open, true ) );
-	}
-
-	if ( '' === (string) get_option( AntiSpamForWordPressPlugin::$option_bunny_threshold, '' ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_bunny_threshold, '10' );
-	}
-
-	if ( '' === (string) get_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_threshold, '' ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_threshold, (string) get_option( AntiSpamForWordPressPlugin::$option_bunny_threshold, '10' ) );
-	}
-
-	if ( '' === (string) get_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_ttl_minutes, '' ) ) {
-		$legacy_dedupe_window = max( 60, intval( (string) get_option( AntiSpamForWordPressPlugin::$option_bunny_dedupe_window, '3600' ), 10 ) );
-		update_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_ttl_minutes, (string) max( 1, intval( ceil( $legacy_dedupe_window / 60 ) ) ) );
-	}
-
-	if ( '' === (string) get_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_action, '' ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_action, 'block' );
-	}
-
-	if ( '' === (string) get_option( AntiSpamForWordPressPlugin::$option_bunny_dedupe_window, '' ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_bunny_dedupe_window, '3600' );
-	}
-
-	if ( null === get_option( $disposable_auto_refresh_option, null ) ) {
-		update_option( $disposable_auto_refresh_option, false );
-	}
-	if ( null === get_option( 'asfw_feature_disposable_email_background_enabled', null ) ) {
-		update_option( 'asfw_feature_disposable_email_background_enabled', (bool) get_option( $disposable_auto_refresh_option, false ) );
-	}
-
-	if ( null === get_option( 'asfw_feature_content_heuristics_enabled', null ) ) {
-		update_option( 'asfw_feature_content_heuristics_enabled', (bool) get_option( $content_heuristics_legacy_option, false ) );
-	}
-	if ( null === get_option( 'asfw_feature_content_heuristics_mode', null ) ) {
-		$legacy_content_heuristics_enabled = (bool) get_option( $content_heuristics_legacy_option, false );
-		update_option( 'asfw_feature_content_heuristics_mode', $legacy_content_heuristics_enabled ? 'log' : 'off' );
-	}
-
-	if ( '' === (string) get_option( AntiSpamForWordPressPlugin::$option_feature_submit_delay_ms, '' ) ) {
-		update_option( AntiSpamForWordPressPlugin::$option_feature_submit_delay_ms, '2500' );
-	}
-
-	foreach ( ASFW_Feature_Registry::definitions() as $definition ) {
-		if ( ! is_array( $definition ) || empty( $definition['enabled_option'] ) ) {
-			continue;
-		}
-
-		if ( null === get_option( $definition['enabled_option'], null ) ) {
-			$enabled = ! empty( $definition['default_enabled'] );
-			update_option( $definition['enabled_option'], $enabled );
-		}
-
-		if ( ! empty( $definition['scope_mode_option'] ) && null === get_option( $definition['scope_mode_option'], null ) ) {
-			update_option( $definition['scope_mode_option'], isset( $definition['default_scope_mode'] ) ? $definition['default_scope_mode'] : 'all' );
-		}
-
-		if ( ! empty( $definition['contexts_option'] ) && null === get_option( $definition['contexts_option'], null ) ) {
-			update_option( $definition['contexts_option'], isset( $definition['default_contexts'] ) && is_array( $definition['default_contexts'] ) ? $definition['default_contexts'] : array() );
-		}
-
-		if ( ! empty( $definition['mode_option'] ) && null === get_option( $definition['mode_option'], null ) ) {
-			$mode = isset( $definition['default_mode'] ) ? $definition['default_mode'] : 'off';
-			update_option( $definition['mode_option'], $mode );
-		}
-
-		if ( ! empty( $definition['background_option'] ) && null === get_option( $definition['background_option'], null ) ) {
-			$background_enabled = ! empty( $definition['default_background'] );
-			update_option( $definition['background_option'], $background_enabled );
-		}
 	}
 }

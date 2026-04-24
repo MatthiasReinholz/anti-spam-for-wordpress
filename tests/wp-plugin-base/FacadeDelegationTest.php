@@ -193,14 +193,18 @@ final class FacadeDelegationTest extends AsfwPluginTestCase
 	private function setService(AntiSpamForWordPressPlugin $plugin, string $property, object $service): void
 	{
 		$reflection = new ReflectionProperty($plugin, $property);
-		$reflection->setAccessible(true);
+		if (PHP_VERSION_ID < 80100) {
+			$reflection->setAccessible(true);
+		}
 		$reflection->setValue($plugin, $service);
 	}
 
 	private function readService(AntiSpamForWordPressPlugin $plugin, string $property)
 	{
 		$reflection = new ReflectionProperty($plugin, $property);
-		$reflection->setAccessible(true);
+		if (PHP_VERSION_ID < 80100) {
+			$reflection->setAccessible(true);
+		}
 
 		return $reflection->getValue($plugin);
 	}

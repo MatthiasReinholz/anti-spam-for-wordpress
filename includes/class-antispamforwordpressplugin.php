@@ -198,15 +198,15 @@ class AntiSpamForWordPressPlugin {
 			'class' => array(),
 			'id'    => array(),
 		),
-				'span'        => array(
-					'aria-live'                    => array(),
-					'class'                        => array(),
-					'data-asfw-submit-delay-ms'    => array(),
-					'data-asfw-submit-delay-mode'  => array(),
-					'data-asfw-submit-delay-token-url' => array(),
-					'data-asfw-submit-delay-until' => array(),
-					'role'                         => array(),
-				),
+		'span'        => array(
+			'aria-live'                        => array(),
+			'class'                            => array(),
+			'data-asfw-submit-delay-ms'        => array(),
+			'data-asfw-submit-delay-mode'      => array(),
+			'data-asfw-submit-delay-token-url' => array(),
+			'data-asfw-submit-delay-until'     => array(),
+			'role'                             => array(),
+		),
 		'noscript'    => array(),
 	);
 

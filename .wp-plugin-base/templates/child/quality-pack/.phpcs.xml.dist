@@ -16,6 +16,8 @@
   <exclude-pattern>*/.wp-plugin-base/*</exclude-pattern>
   <exclude-pattern>*/.wp-plugin-base-quality-pack/*</exclude-pattern>
   <exclude-pattern>*/dist/*</exclude-pattern>
+  <exclude-pattern>*/assets/admin-ui/index.asset.php</exclude-pattern>
+  <exclude-pattern>*/integrations/formidable/AntiSpamWidgetFieldType.php</exclude-pattern>
   <exclude-pattern>*/node_modules/*</exclude-pattern>
   <exclude-pattern>*/tests/*</exclude-pattern>
   <exclude-pattern>*/vendor/*</exclude-pattern>

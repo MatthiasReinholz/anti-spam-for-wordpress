@@ -145,6 +145,8 @@ function SettingsField( { field, value, onChange, values } ) {
 				? type
 				: 'text',
 		value: String( value ?? '' ),
+		placeholder: field.placeholder || '',
+		autoComplete: type === 'password' ? 'new-password' : undefined,
 		disabled,
 		onChange,
 	} );

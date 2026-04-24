@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$wp_plugin_base_attach_operation_source = static function ( $source_file, $operations ) {
+$asfw_attach_operation_source = static function ( $source_file, $operations ) {
 	if ( ! is_array( $operations ) ) {
 		return array();
 	}
@@ -30,22 +30,22 @@ $wp_plugin_base_attach_operation_source = static function ( $source_file, $opera
 	);
 };
 
-$settings_operations = $wp_plugin_base_attach_operation_source(
+$asfw_settings_operations  = $asfw_attach_operation_source(
 	'includes/rest-operations/settings-operations.php',
 	require __DIR__ . '/settings-operations.php'
 );
-$events_operations = $wp_plugin_base_attach_operation_source(
+$asfw_events_operations    = $asfw_attach_operation_source(
 	'includes/rest-operations/events-operations.php',
 	require __DIR__ . '/events-operations.php'
 );
-$analytics_operations = $wp_plugin_base_attach_operation_source(
+$asfw_analytics_operations = $asfw_attach_operation_source(
 	'includes/rest-operations/analytics-operations.php',
 	require __DIR__ . '/analytics-operations.php'
 );
 
 return array_merge(
 	array(),
-	is_array( $settings_operations ) ? $settings_operations : array(),
-	is_array( $events_operations ) ? $events_operations : array(),
-	is_array( $analytics_operations ) ? $analytics_operations : array()
+	$asfw_settings_operations,
+	$asfw_events_operations,
+	$asfw_analytics_operations
 );

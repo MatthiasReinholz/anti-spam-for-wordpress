@@ -10,7 +10,7 @@ class ASFW_Event_Store {
 
 	const OPTION_DB_VERSION = 'asfw_events_db_version';
 
-	const OPTION_RETENTION_DAYS = 'asfw_event_logging_retention_days';
+	const OPTION_RETENTION_DAYS        = 'asfw_event_logging_retention_days';
 	const OPTION_RETENTION_DAYS_LEGACY = 'asfw_event_retention_days';
 
 	const CONTRACT_EVENT_TYPES = array(
@@ -43,6 +43,17 @@ class ASFW_Event_Store {
 		}
 
 		return 'wp_asfw_events';
+	}
+
+	protected function get_escaped_table_name() {
+		$table = $this->get_table_name();
+		$table = preg_replace( '/[^A-Za-z0-9_]/', '', $table );
+
+		if ( '' === $table ) {
+			$table = 'wp_asfw_events';
+		}
+
+		return '`' . $table . '`';
 	}
 
 	public function get_retention_days() {
@@ -149,7 +160,7 @@ class ASFW_Event_Store {
 		return '' === $value ? null : $value;
 	}
 
-	protected function get_row_value( array $row, array $keys, $default = '' ) {
+	protected function get_row_value( array $row, array $keys, $fallback = '' ) {
 		foreach ( $keys as $key ) {
 			if ( array_key_exists( $key, $row ) && null !== $row[ $key ] && '' !== $row[ $key ] ) {
 				return $row[ $key ];
@@ -162,7 +173,7 @@ class ASFW_Event_Store {
 			}
 		}
 
-		return $default;
+		return $fallback;
 	}
 
 	protected function normalize_event_type( $event_type ) {
@@ -219,7 +230,7 @@ class ASFW_Event_Store {
 			'feature'    => $this->normalize_string( $this->get_row_value( $row, array( 'feature', 'module_name', 'module' ), '' ), 64 ),
 			'decision'   => $this->normalize_string( $this->get_row_value( $row, array( 'decision', 'event_status', 'status' ), '' ), 16 ),
 			'ip_hash'    => $this->normalize_nullable_string( $this->get_row_value( $row, array( 'ip_hash', 'actor_hash' ), '' ), 64 ),
-			'email_hash'  => $this->normalize_nullable_string( $this->get_row_value( $row, array( 'email_hash' ), '' ), 64 ),
+			'email_hash' => $this->normalize_nullable_string( $this->get_row_value( $row, array( 'email_hash' ), '' ), 64 ),
 			'details'    => $this->normalize_string( $details, 65535 ),
 		);
 
@@ -235,7 +246,7 @@ class ASFW_Event_Store {
 		$email_hash = $this->get_row_value( $row, array( 'email_hash' ), null );
 
 		$row['created_at']     = $created_at;
-		$row['created_at_gmt']  = $created_at;
+		$row['created_at_gmt'] = $created_at;
 		$row['context']        = $context;
 		$row['event_context']  = $context;
 		$row['feature']        = $feature;
@@ -408,7 +419,7 @@ class ASFW_Event_Store {
 		$normalized = array();
 
 		foreach ( $counts as $event_type => $count ) {
-			$canonical = $this->normalize_event_type( $event_type );
+			$canonical                = $this->normalize_event_type( $event_type );
 			$normalized[ $canonical ] = ( isset( $normalized[ $canonical ] ) ? $normalized[ $canonical ] : 0 ) + intval( $count, 10 );
 		}
 
@@ -433,6 +444,7 @@ class ASFW_Event_Store {
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'insert' ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Event logs are stored in a plugin-owned custom table.
 			return false !== $wpdb->insert( $this->get_table_name(), $normalized );
 		}
 
@@ -445,44 +457,35 @@ class ASFW_Event_Store {
 
 		$args = array_merge(
 			array(
-				'limit'   => 50,
-				'offset'  => 0,
-				'type'    => '',
-				'module'  => '',
-				'status'  => '',
+				'limit'     => 50,
+				'offset'    => 0,
+				'type'      => '',
+				'module'    => '',
+				'status'    => '',
 				'date_from' => '',
-				'date_to' => '',
+				'date_to'   => '',
 			),
 			$args
 		);
 
 		$type_variants = $this->get_event_type_variants( $args['type'] );
-		$has_date_filter = '' !== $this->normalize_date_input( $args['date_from'], false ) || '' !== $this->normalize_date_input( $args['date_to'], true );
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_fetch_events' ) && count( $type_variants ) <= 1 ) {
-			$query_args = $args;
-			if ( $has_date_filter ) {
-				$query_args['limit']  = PHP_INT_MAX;
-				$query_args['offset'] = 0;
-			}
-
-			$rows = (array) $wpdb->asfw_fetch_events( $this->get_table_name(), $query_args );
+			$rows = (array) $wpdb->asfw_fetch_events( $this->get_table_name(), $args );
 			$rows = $this->apply_date_range_to_rows( $rows, $args );
-			if ( $has_date_filter ) {
-				$offset = max( 0, intval( $args['offset'], 10 ) );
-				$limit  = max( 0, intval( $args['limit'], 10 ) );
-				$rows   = array_slice( $rows, $offset, $limit );
-			}
 
 			return $this->normalize_event_rows_for_response( $rows );
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_fetch_events' ) && count( $type_variants ) > 1 ) {
-			$merged = array();
+			$merged      = array();
+			$offset      = max( 0, intval( $args['offset'], 10 ) );
+			$limit       = max( 0, intval( $args['limit'], 10 ) );
+			$page_window = $limit > 0 ? $offset + $limit : 0;
 
 			foreach ( $type_variants as $variant ) {
 				$variant_args           = $args;
 				$variant_args['type']   = $variant;
-				$variant_args['limit']  = PHP_INT_MAX;
+				$variant_args['limit']  = $page_window;
 				$variant_args['offset'] = 0;
 				$merged                 = array_merge( $merged, $wpdb->asfw_fetch_events( $this->get_table_name(), $variant_args ) );
 			}
@@ -490,20 +493,24 @@ class ASFW_Event_Store {
 			$merged = $this->merge_events_by_id( $merged );
 			$merged = $this->apply_date_range_to_rows( $merged, $args );
 
-			return $this->normalize_event_rows_for_response( array_slice( $merged, max( 0, intval( $args['offset'], 10 ) ), max( 0, intval( $args['limit'], 10 ) ) ) );
+			return $this->normalize_event_rows_for_response( array_slice( $merged, $offset, $limit ) );
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'get_results' ) && method_exists( $wpdb, 'prepare' ) ) {
-			$params = array();
-			$where  = $this->build_where_clause( $args, $params );
-			$limit  = max( 0, intval( $args['limit'], 10 ) );
-			$offset = max( 0, intval( $args['offset'], 10 ) );
+			$params   = array();
+			$where    = $this->build_where_clause( $args, $params );
+			$limit    = max( 0, intval( $args['limit'], 10 ) );
+			$offset   = max( 0, intval( $args['offset'], 10 ) );
+			$table    = $this->get_escaped_table_name();
 			$params[] = $limit;
 			$params[] = $offset;
 
-			$query = "SELECT id, created_at, event_type, context, feature, decision, ip_hash, email_hash, details, created_at AS created_at_gmt, context AS event_context, feature AS module_name, decision AS event_status, ip_hash AS actor_hash, '' AS subject_hash FROM {$this->get_table_name()} WHERE {$where} ORDER BY id DESC LIMIT %d OFFSET %d";
-			$sql   = $wpdb->prepare( $query, $params );
-			$rows  = $wpdb->get_results( $sql, ARRAY_A );
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom table identifier is normalized and quoted by get_escaped_table_name().
+			$query = "SELECT id, created_at, event_type, context, feature, decision, ip_hash, email_hash, details, created_at AS created_at_gmt, context AS event_context, feature AS module_name, decision AS event_status, ip_hash AS actor_hash, '' AS subject_hash FROM {$table} WHERE {$where} ORDER BY id DESC LIMIT %d OFFSET %d";
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic fragments are a normalized table identifier plus placeholder-only WHERE clauses.
+			$sql = $wpdb->prepare( $query, $params );
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and $sql is prepared above.
+			$rows = $wpdb->get_results( $sql, ARRAY_A );
 
 			return $this->normalize_event_rows_for_response( is_array( $rows ) ? $rows : array() );
 		}
@@ -517,36 +524,32 @@ class ASFW_Event_Store {
 
 		$args = array_merge(
 			array(
-				'type'     => '',
-				'feature'  => '',
-				'module'   => '',
-				'status'   => '',
-				'decision' => '',
-				'context'  => '',
+				'type'      => '',
+				'feature'   => '',
+				'module'    => '',
+				'status'    => '',
+				'decision'  => '',
+				'context'   => '',
 				'date_from' => '',
-				'date_to' => '',
+				'date_to'   => '',
 			),
 			$args
 		);
 
-		$has_date_filter = '' !== $this->normalize_date_input( $args['date_from'], false ) || '' !== $this->normalize_date_input( $args['date_to'], true );
-		if ( $has_date_filter ) {
-			return count(
-				$this->fetch_events(
-					array_merge(
-						$args,
-						array(
-							'limit'  => PHP_INT_MAX,
-							'offset' => 0,
-						)
-					)
-				)
-			);
-		}
-
 		$type_variants = $this->get_event_type_variants( $args['type'] );
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_count_events' ) && count( $type_variants ) <= 1 ) {
 			return (int) $wpdb->asfw_count_events( $this->get_table_name(), $args );
+		}
+
+		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_count_events' ) && count( $type_variants ) > 1 ) {
+			$total = 0;
+			foreach ( $type_variants as $variant ) {
+				$variant_args         = $args;
+				$variant_args['type'] = $variant;
+				$total               += (int) $wpdb->asfw_count_events( $this->get_table_name(), $variant_args );
+			}
+
+			return $total;
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_fetch_events' ) && count( $type_variants ) > 1 ) {
@@ -566,8 +569,12 @@ class ASFW_Event_Store {
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'get_var' ) && method_exists( $wpdb, 'prepare' ) ) {
 			$params = array();
 			$where  = $this->build_where_clause( $args, $params );
-			$query  = "SELECT COUNT(*) FROM {$this->get_table_name()} WHERE {$where}";
-			$sql    = $wpdb->prepare( $query, $params );
+			$table  = $this->get_escaped_table_name();
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom table identifier is normalized and quoted by get_escaped_table_name().
+			$query = "SELECT COUNT(*) FROM {$table} WHERE {$where}";
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic fragments are a normalized table identifier plus placeholder-only WHERE clauses.
+			$sql = $wpdb->prepare( $query, $params );
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and $sql is prepared above.
 			return (int) $wpdb->get_var( $sql );
 		}
 
@@ -583,8 +590,11 @@ class ASFW_Event_Store {
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'get_results' ) ) {
-			$query = "SELECT event_type, COUNT(*) AS total FROM {$this->get_table_name()} GROUP BY event_type ORDER BY total DESC";
-			$rows  = $wpdb->get_results( $query, ARRAY_A );
+			$table = $this->get_escaped_table_name();
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom table identifier is normalized and quoted by get_escaped_table_name().
+			$query = "SELECT event_type, COUNT(*) AS total FROM {$table} GROUP BY event_type ORDER BY total DESC";
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and the query has no external values.
+			$rows   = $wpdb->get_results( $query, ARRAY_A );
 			$counts = array();
 			foreach ( (array) $rows as $row ) {
 				if ( isset( $row['event_type'] ) ) {
@@ -607,11 +617,14 @@ class ASFW_Event_Store {
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'get_results' ) ) {
-			$query = "SELECT COALESCE(NULLIF(feature, ''), 'core') AS feature_name, COUNT(*) AS total FROM {$this->get_table_name()} GROUP BY COALESCE(NULLIF(feature, ''), 'core') ORDER BY total DESC";
-			$rows  = $wpdb->get_results( $query, ARRAY_A );
+			$table = $this->get_escaped_table_name();
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom table identifier is normalized and quoted by get_escaped_table_name().
+			$query = "SELECT COALESCE(NULLIF(feature, ''), 'core') AS feature_name, COUNT(*) AS total FROM {$table} GROUP BY COALESCE(NULLIF(feature, ''), 'core') ORDER BY total DESC";
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and the query has no external values.
+			$rows   = $wpdb->get_results( $query, ARRAY_A );
 			$counts = array();
 			foreach ( (array) $rows as $row ) {
-				$feature = isset( $row['feature_name'] ) && '' !== $row['feature_name'] ? $row['feature_name'] : 'core';
+				$feature            = isset( $row['feature_name'] ) && '' !== $row['feature_name'] ? $row['feature_name'] : 'core';
 				$counts[ $feature ] = isset( $row['total'] ) ? intval( $row['total'], 10 ) : 0;
 			}
 
@@ -631,9 +644,13 @@ class ASFW_Event_Store {
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'get_results' ) ) {
-			$since  = gmdate( 'Y-m-d H:i:s', time() - ( $days * 86400 ) );
-			$query  = "SELECT DATE(created_at) AS day, COUNT(*) AS total FROM {$this->get_table_name()} WHERE created_at >= %s GROUP BY DATE(created_at) ORDER BY day ASC";
-			$sql    = $wpdb->prepare( $query, $since );
+			$since = gmdate( 'Y-m-d H:i:s', time() - ( $days * 86400 ) );
+			$table = $this->get_escaped_table_name();
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom table identifier is normalized and quoted by get_escaped_table_name().
+			$query = "SELECT DATE(created_at) AS day, COUNT(*) AS total FROM {$table} WHERE created_at >= %s GROUP BY DATE(created_at) ORDER BY day ASC";
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query contains only a normalized table identifier and prepared values.
+			$sql = $wpdb->prepare( $query, $since );
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and $sql is prepared above.
 			$rows   = $wpdb->get_results( $sql, ARRAY_A );
 			$counts = array();
 
@@ -665,9 +682,13 @@ class ASFW_Event_Store {
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'query' ) && method_exists( $wpdb, 'prepare' ) ) {
-			$query = "DELETE FROM {$this->get_table_name()} WHERE created_at < %s";
-			$sql   = $wpdb->prepare( $query, $cutoff );
+			$table = $this->get_escaped_table_name();
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom table identifier is normalized and quoted by get_escaped_table_name().
+			$query = "DELETE FROM {$table} WHERE created_at < %s";
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query contains only a normalized table identifier and prepared values.
+			$sql = $wpdb->prepare( $query, $cutoff );
 
+			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and $sql is prepared above.
 			return (int) $wpdb->query( $sql );
 		}
 
@@ -683,7 +704,10 @@ class ASFW_Event_Store {
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'query' ) ) {
-			return (int) $wpdb->query( "DELETE FROM {$this->get_table_name()}" );
+			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnsupportedIdentifierPlaceholder -- Minimum supported WordPress is 6.4, which supports %i.
+			$sql = $wpdb->prepare( 'DELETE FROM %i', $this->get_table_name() );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and $sql is prepared above.
+			return (int) $wpdb->query( $sql );
 		}
 
 		return 0;

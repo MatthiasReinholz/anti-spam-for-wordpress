@@ -1,6 +1,20 @@
 <?php
 
 namespace {
+	if ( ! class_exists( 'WP_CLI', false ) ) {
+		class WP_CLI {
+			public static function log( $message ) {}
+
+			public static function success( $message ) {}
+
+			public static function warning( $message ) {}
+
+			public static function error( $message ) {}
+
+			public static function add_command( $name, $callable ) {}
+		}
+	}
+
 	if ( ! class_exists( 'CoBlocks_Form', false ) ) {
 		class CoBlocks_Form {
 			public const GCAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';

@@ -96,13 +96,11 @@ final class ASFW_Settings_Registrar {
 			return;
 		}
 
-		if ( ! $syncing_legacy_options ) {
-			$syncing_legacy_options = true;
-			try {
-				self::sync_legacy_feature_options( (string) $option );
-			} finally {
-				$syncing_legacy_options = false;
-			}
+		$syncing_legacy_options = true;
+		try {
+			self::sync_legacy_feature_options( (string) $option );
+		} finally {
+			$syncing_legacy_options = false;
 		}
 
 		$user_id = function_exists( 'get_current_user_id' ) ? intval( get_current_user_id(), 10 ) : 0;

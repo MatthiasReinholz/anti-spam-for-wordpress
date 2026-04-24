@@ -14,7 +14,7 @@ function asfw_bootstrap_elementor_integration() {
 		return;
 	}
 
-	$mode   = $plugin->get_integration_elementor();
+	$mode = $plugin->get_integration_elementor();
 	if ( 'captcha' !== $mode ) {
 		return;
 	}

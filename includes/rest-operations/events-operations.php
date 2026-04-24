@@ -16,7 +16,7 @@ if ( ! function_exists( 'asfw_rest_admin_store' ) ) {
 	 * @return ASFW_Event_Store|null
 	 */
 	function asfw_rest_admin_store() {
-		if ( class_exists( 'ASFW_Control_Plane', false ) && method_exists( 'ASFW_Control_Plane', 'store' ) ) {
+		if ( class_exists( 'ASFW_Control_Plane', false ) ) {
 			$store = ASFW_Control_Plane::store();
 			if ( $store instanceof ASFW_Event_Store ) {
 				return $store;
@@ -152,20 +152,20 @@ if ( ! function_exists( 'asfw_rest_operation_events_list' ) ) {
 		$last_run       = (string) get_option( ASFW_Maintenance::OPTION_LAST_RUN, '' );
 
 		return array(
-			'items' => $items,
-			'pagination' => array(
-				'page'       => $page,
-				'per_page'   => $per_page,
-				'total'      => intval( $total, 10 ),
+			'items'                    => $items,
+			'pagination'               => array(
+				'page'        => $page,
+				'per_page'    => $per_page,
+				'total'       => intval( $total, 10 ),
 				'total_pages' => $total_pages,
 			),
-			'filters' => $filters,
-			'filter_options' => array(
+			'filters'                  => $filters,
+			'filter_options'           => array(
 				'types'    => $types,
 				'features' => $features,
 			),
-			'logging_enabled' => ASFW_Feature_Registry::is_enabled( 'event_logging' ),
-			'retention_days'  => intval( $retention_days, 10 ),
+			'logging_enabled'          => ASFW_Feature_Registry::is_enabled( 'event_logging' ),
+			'retention_days'           => intval( $retention_days, 10 ),
 			'last_maintenance_run_utc' => $last_run,
 		);
 	}

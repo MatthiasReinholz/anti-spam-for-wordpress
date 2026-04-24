@@ -10,10 +10,10 @@ add_action(
 		$plugin = asfw_plugin_instance();
 		$mode   = $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_wordpress_register() : '';
 		if ( ! empty( $mode ) ) {
-			asfw_render_wordpress_widget( $mode, 'wordpress:register', 'asfw_register' );
+			asfw_render_wordpress_widget( $mode, 'WordPress:register', 'asfw_register' );
 		}
 
-		echo asfw_render_context_guards( 'wordpress:register' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
+		echo asfw_render_context_guards( 'WordPress:register' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
 	},
 	10,
 	0
@@ -22,7 +22,7 @@ add_action(
 add_action(
 	'register_post',
 	function ( $user_login, $user_email, $errors ) {
-		$guard_result = asfw_validate_context_guards( 'wordpress:register' );
+		$guard_result = asfw_validate_context_guards( 'WordPress:register' );
 		if ( $guard_result instanceof WP_Error ) {
 			return $errors->add(
 				'asfw_error_message',
@@ -33,7 +33,7 @@ add_action(
 		$plugin = asfw_plugin_instance();
 		$mode   = $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_wordpress_register() : '';
 		if ( ! empty( $mode ) ) {
-			if ( asfw_verify_posted_widget( 'wordpress:register', 'asfw_register' ) === false ) {
+			if ( asfw_verify_posted_widget( 'WordPress:register', 'asfw_register' ) === false ) {
 				return $errors->add(
 					'asfw_error_message',
 					'<strong>' . esc_html__( 'Error', 'anti-spam-for-wordpress' ) . '</strong> : ' . esc_html__( 'Could not verify you are not a robot.', 'anti-spam-for-wordpress' )
@@ -53,10 +53,10 @@ add_action(
 		$plugin = asfw_plugin_instance();
 		$mode   = $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_wordpress_login() : '';
 		if ( ! empty( $mode ) ) {
-			asfw_render_wordpress_widget( $mode, 'wordpress:login' );
+			asfw_render_wordpress_widget( $mode, 'WordPress:login' );
 		}
 
-		echo asfw_render_context_guards( 'wordpress:login' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
+		echo asfw_render_context_guards( 'WordPress:login' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
 	},
 	10,
 	0
@@ -77,21 +77,21 @@ add_filter(
 			return $user;
 		}
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- This nonce field is read only to detect the WooCommerce login flow.
-			if (
+		if (
 				asfw_plugin_active( 'woocommerce' )
 				&& function_exists( 'asfw_is_woocommerce_account_request' )
 				&& asfw_is_woocommerce_account_request()
 				&& isset( $_POST['woocommerce-login-nonce'] )
 			) {
-				$nonce_valid = function_exists( 'wp_verify_nonce' )
-					&& wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['woocommerce-login-nonce'] ) ), 'woocommerce-login' );
-				if ( $nonce_valid ) {
-					return $user;
-				}
+			$nonce_valid = function_exists( 'wp_verify_nonce' )
+				&& wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['woocommerce-login-nonce'] ) ), 'woocommerce-login' );
+			if ( $nonce_valid ) {
+				return $user;
 			}
+		}
 
-		$plugin = asfw_plugin_instance();
-		$guard_result = asfw_validate_context_guards( 'wordpress:login' );
+		$plugin       = asfw_plugin_instance();
+		$guard_result = asfw_validate_context_guards( 'WordPress:login' );
 		if ( $guard_result instanceof WP_Error ) {
 			return new WP_Error(
 				'asfw-error',
@@ -99,9 +99,9 @@ add_filter(
 			);
 		}
 
-		$mode   = $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_wordpress_login() : '';
+		$mode = $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_wordpress_login() : '';
 		if ( ! empty( $mode ) ) {
-			if ( asfw_verify_posted_widget( 'wordpress:login' ) === false ) {
+			if ( asfw_verify_posted_widget( 'WordPress:login' ) === false ) {
 				return new WP_Error(
 					'asfw-error',
 					'<strong>' . esc_html__( 'Error', 'anti-spam-for-wordpress' ) . '</strong> : ' . esc_html__( 'Could not verify you are not a robot.', 'anti-spam-for-wordpress' )
@@ -121,10 +121,10 @@ add_action(
 		$plugin = asfw_plugin_instance();
 		$mode   = $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_wordpress_reset_password() : '';
 		if ( ! empty( $mode ) ) {
-			asfw_render_wordpress_widget( $mode, 'wordpress:reset-password' );
+			asfw_render_wordpress_widget( $mode, 'WordPress:reset-password' );
 		}
 
-		echo asfw_render_context_guards( 'wordpress:reset-password' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
+		echo asfw_render_context_guards( 'WordPress:reset-password' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
 	},
 	10,
 	0
@@ -137,21 +137,21 @@ add_filter(
 			return $errors;
 		}
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- This nonce field is read only to detect the WooCommerce lost-password flow.
-			if (
+		if (
 				asfw_plugin_active( 'woocommerce' )
 				&& function_exists( 'asfw_is_woocommerce_account_request' )
 				&& asfw_is_woocommerce_account_request()
 				&& isset( $_POST['woocommerce-lost-password-nonce'] )
 			) {
-				$nonce_valid = function_exists( 'wp_verify_nonce' )
-					&& wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['woocommerce-lost-password-nonce'] ) ), 'woocommerce-lost-password' );
-				if ( $nonce_valid ) {
-					return $errors;
-				}
+			$nonce_valid = function_exists( 'wp_verify_nonce' )
+				&& wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['woocommerce-lost-password-nonce'] ) ), 'woocommerce-lost-password' );
+			if ( $nonce_valid ) {
+				return $errors;
 			}
+		}
 
-		$plugin = asfw_plugin_instance();
-		$guard_result = asfw_validate_context_guards( 'wordpress:reset-password' );
+		$plugin       = asfw_plugin_instance();
+		$guard_result = asfw_validate_context_guards( 'WordPress:reset-password' );
 		if ( $guard_result instanceof WP_Error ) {
 			$errors->add(
 				'asfw_error_message',
@@ -160,9 +160,9 @@ add_filter(
 			return $errors;
 		}
 
-		$mode   = $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_wordpress_reset_password() : '';
+		$mode = $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_wordpress_reset_password() : '';
 		if ( ! empty( $mode ) ) {
-			if ( asfw_verify_posted_widget( 'wordpress:reset-password' ) === false ) {
+			if ( asfw_verify_posted_widget( 'WordPress:reset-password' ) === false ) {
 				$errors->add(
 					'asfw_error_message',
 					'<strong>' . esc_html__( 'Error', 'anti-spam-for-wordpress' ) . '</strong> : ' . esc_html__( 'Could not verify you are not a robot.', 'anti-spam-for-wordpress' )
@@ -182,10 +182,10 @@ add_action(
 		$plugin = asfw_plugin_instance();
 		$mode   = $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_wordpress_comments() : '';
 		if ( ! empty( $mode ) ) {
-			asfw_render_wordpress_widget( $mode, 'wordpress:comments' );
+			asfw_render_wordpress_widget( $mode, 'WordPress:comments' );
 		}
 
-		echo asfw_render_context_guards( 'wordpress:comments' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
+		echo asfw_render_context_guards( 'WordPress:comments' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
 	},
 	10,
 	0
@@ -197,10 +197,10 @@ add_action(
 		$plugin = asfw_plugin_instance();
 		$mode   = $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_wordpress_comments() : '';
 		if ( ! empty( $mode ) ) {
-			asfw_render_wordpress_widget( $mode, 'wordpress:comments' );
+			asfw_render_wordpress_widget( $mode, 'WordPress:comments' );
 		}
 
-		echo asfw_render_context_guards( 'wordpress:comments' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
+		echo asfw_render_context_guards( 'WordPress:comments' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Guard markup is sanitized in helper.
 	},
 	10,
 	0
@@ -230,9 +230,9 @@ add_filter(
 			}
 		}
 
-		$mode             = $wpdiscuz_request ? $wpdiscuz_mode : $wordpress_mode;
-		$guard_context    = $wpdiscuz_request ? 'wpdiscuz:comments' : 'wordpress:comments';
-		$guard_result     = asfw_validate_context_guards( $guard_context );
+		$mode          = $wpdiscuz_request ? $wpdiscuz_mode : $wordpress_mode;
+		$guard_context = $wpdiscuz_request ? 'wpdiscuz:comments' : 'WordPress:comments';
+		$guard_result  = asfw_validate_context_guards( $guard_context );
 		if ( $guard_result instanceof WP_Error ) {
 			wp_die( '<strong>' . esc_html__( 'Error', 'anti-spam-for-wordpress' ) . '</strong> : ' . esc_html__( 'Could not verify you are not a robot.', 'anti-spam-for-wordpress' ) );
 		}

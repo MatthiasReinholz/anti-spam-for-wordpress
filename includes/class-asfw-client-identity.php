@@ -122,52 +122,52 @@ if ( ! class_exists( 'ASFW_Client_Identity', false ) ) {
 			return false;
 		}
 
-			public function extract_forwarded_for_ip( $header_value ) {
-				$candidates = array_map( 'trim', explode( ',', (string) $header_value ) );
+		public function extract_forwarded_for_ip( $header_value ) {
+			$candidates = array_map( 'trim', explode( ',', (string) $header_value ) );
 
-				return $this->extract_client_from_forward_chain( $candidates );
+			return $this->extract_client_from_forward_chain( $candidates );
+		}
+
+		public function extract_forwarded_header_ip( $header_value ) {
+			$segments   = explode( ',', (string) $header_value );
+			$candidates = array();
+			foreach ( $segments as $segment ) {
+				$pairs = explode( ';', $segment );
+				foreach ( $pairs as $pair ) {
+					$pair = trim( $pair );
+					if ( stripos( $pair, 'for=' ) !== 0 ) {
+						continue;
+					}
+
+					$candidates[] = substr( $pair, 4 );
+				}
 			}
 
-			public function extract_forwarded_header_ip( $header_value ) {
-				$segments = explode( ',', (string) $header_value );
-				$candidates = array();
-				foreach ( $segments as $segment ) {
-					$pairs = explode( ';', $segment );
-					foreach ( $pairs as $pair ) {
-						$pair = trim( $pair );
-						if ( stripos( $pair, 'for=' ) !== 0 ) {
-							continue;
-						}
+			return $this->extract_client_from_forward_chain( $candidates );
+		}
 
-						$candidates[] = substr( $pair, 4 );
-					}
-				}
-
-				return $this->extract_client_from_forward_chain( $candidates );
-			}
-
-			private function extract_client_from_forward_chain( array $candidates ) {
-				$normalized = array_values(
-					array_filter(
-						array_map( array( $this, 'normalize_ip' ), $candidates )
-					)
-				);
-				if ( empty( $normalized ) ) {
-					return '';
-				}
-
-				for ( $index = count( $normalized ) - 1; $index >= 0; --$index ) {
-					$candidate = $normalized[ $index ];
-					if ( ! $this->is_trusted_proxy_ip( $candidate ) ) {
-						return $candidate;
-					}
-				}
-
+		private function extract_client_from_forward_chain( array $candidates ) {
+			$normalized = array_values(
+				array_filter(
+					array_map( array( $this, 'normalize_ip' ), $candidates )
+				)
+			);
+			if ( empty( $normalized ) ) {
 				return '';
 			}
 
+			for ( $index = count( $normalized ) - 1; $index >= 0; --$index ) {
+				$candidate = $normalized[ $index ];
+				if ( ! $this->is_trusted_proxy_ip( $candidate ) ) {
+					return $candidate;
+				}
+			}
+
+			return '';
+		}
+
 		public function get_client_ip_address() {
-			$remote_address = isset( $_SERVER['REMOTE_ADDR'] ) ? $this->normalize_ip( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+			$remote_address = isset( $_SERVER['REMOTE_ADDR'] ) ? $this->normalize_ip( sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) ) : '';
 			if ( '' === $remote_address || ! $this->is_trusted_proxy_ip( $remote_address ) ) {
 				return '' !== $remote_address ? $remote_address : 'unknown';
 			}
@@ -183,7 +183,7 @@ if ( ! class_exists( 'ASFW_Client_Identity', false ) ) {
 					continue;
 				}
 
-				$header_value = wp_unslash( $_SERVER[ $header_name ] );
+				$header_value = sanitize_text_field( wp_unslash( $_SERVER[ $header_name ] ) );
 				if ( 'HTTP_FORWARDED' === $header_name ) {
 					$candidate = $this->extract_forwarded_header_ip( $header_value );
 				} elseif ( 'HTTP_X_FORWARDED_FOR' === $header_name ) {

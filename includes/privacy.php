@@ -38,7 +38,7 @@ function asfw_sanitize_event_detail_value( $value, $path = array() ) {
 	$sensitive   = array( 'email', 'ip', 'user_agent', 'useragent', 'ua', 'address', 'phone', 'token', 'secret', 'salt', 'signature', 'challenge_id', 'payload', 'fingerprint' );
 	foreach ( $sensitive as $needle ) {
 		if ( false !== strpos( $joined_path, $needle ) ) {
-			return asfw_hash_value( $text, $joined_path ? $joined_path : $needle );
+			return asfw_hash_value( $text, $joined_path );
 		}
 	}
 

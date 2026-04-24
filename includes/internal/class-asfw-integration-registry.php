@@ -55,8 +55,9 @@ class ASFW_Integration_Registry {
 				);
 
 				throw new RuntimeException(
-					$message,
+					esc_html( $message ),
 					0,
+					// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Previous exception object is chained, not output.
 					$error
 				);
 			}
@@ -79,7 +80,7 @@ class ASFW_Integration_Registry {
 	}
 
 	private function integration_id( ASFW_Integration_Adapter $integration ) {
-		return method_exists( $integration, 'id' ) ? $integration->id() : ( method_exists( $integration, 'get_id' ) ? $integration->get_id() : spl_object_hash( $integration ) );
+		return $integration->id();
 	}
 
 	private function integration_priority( ASFW_Integration_Adapter $integration ) {

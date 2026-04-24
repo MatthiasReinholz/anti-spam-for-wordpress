@@ -29,7 +29,7 @@ class ASFW_Integration_Loader {
 	}
 
 	private static function get_adapters( $base_dir = null ) {
-		$base_dir = null === $base_dir ? plugin_dir_path( ASFW_FILE ) : rtrim( (string) $base_dir, "/\\" ) . '/';
+		$base_dir = null === $base_dir ? plugin_dir_path( ASFW_FILE ) : rtrim( (string) $base_dir, '/\\' ) . '/';
 
 		return array(
 			new ASFW_File_Integration( 'coblocks', $base_dir . 'integrations/class-asfw-plugin-coblocks.php', 10 ),

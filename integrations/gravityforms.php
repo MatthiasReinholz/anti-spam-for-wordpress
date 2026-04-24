@@ -14,7 +14,7 @@ function asfw_bootstrap_gravityforms_integration() {
 		return;
 	}
 
-	$mode   = $plugin->get_integration_gravityforms();
+	$mode = $plugin->get_integration_gravityforms();
 	if ( 'captcha' !== $mode ) {
 		return;
 	}

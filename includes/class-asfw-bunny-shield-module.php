@@ -240,7 +240,7 @@ class ASFW_Bunny_Shield_Module {
 		$current = array_merge(
 			$current,
 			array(
-				'count'       => $count,
+				'count'        => $count,
 				'last_reason'  => (string) $reason,
 				'last_context' => sanitize_key( (string) $context ),
 				'last_seen'    => time(),
@@ -274,7 +274,7 @@ class ASFW_Bunny_Shield_Module {
 			return array();
 		}
 
-		$plugin = $this->plugin();
+		$plugin  = $this->plugin();
 		$entries = array_map(
 			static function ( $entry ) use ( $plugin ) {
 				$entry = trim( (string) $entry );
@@ -336,10 +336,6 @@ class ASFW_Bunny_Shield_Module {
 	}
 
 	protected function is_missing_access_list_error( WP_Error $error ) {
-		if ( ! method_exists( $error, 'get_error_data' ) ) {
-			return false;
-		}
-
 		$data = $error->get_error_data();
 
 		return is_array( $data ) && isset( $data['status'] ) && 404 === intval( $data['status'], 10 );
@@ -356,13 +352,13 @@ class ASFW_Bunny_Shield_Module {
 		$content = isset( $payload['content'] ) ? (string) $payload['content'] : '';
 
 		return array(
-			'list_id'   => $this->extract_list_id( $payload ),
-			'name'      => isset( $payload['name'] ) ? (string) $payload['name'] : self::LIST_NAME,
-			'content'   => $content,
-			'checksum'  => isset( $payload['checksum'] ) ? (string) $payload['checksum'] : '',
-			'entries'   => $this->normalize_entries( $content ),
-			'raw'       => $payload,
-			'response'  => $response,
+			'list_id'  => $this->extract_list_id( $payload ),
+			'name'     => isset( $payload['name'] ) ? (string) $payload['name'] : self::LIST_NAME,
+			'content'  => $content,
+			'checksum' => isset( $payload['checksum'] ) ? (string) $payload['checksum'] : '',
+			'entries'  => $this->normalize_entries( $content ),
+			'raw'      => $payload,
+			'response' => $response,
 		);
 	}
 
@@ -382,10 +378,10 @@ class ASFW_Bunny_Shield_Module {
 	}
 
 	protected function get_or_create_access_list( array $initial_entries = array(), $allow_create = true ) {
-		$client    = $this->get_client();
-		$list_id   = $this->get_access_list_id();
-		$zone_id   = $this->get_shield_zone_id();
-		$entries   = array_values( array_unique( array_filter( $initial_entries ) ) );
+		$client  = $this->get_client();
+		$list_id = $this->get_access_list_id();
+		$zone_id = $this->get_shield_zone_id();
+		$entries = array_values( array_unique( array_filter( $initial_entries ) ) );
 
 		if ( $list_id > 0 ) {
 			$current = $this->get_existing_list_content( $list_id );
@@ -409,7 +405,7 @@ class ASFW_Bunny_Shield_Module {
 				$found = $this->find_list_id_by_name( $summary['body']['customLists'] );
 				if ( $found > 0 ) {
 					$this->set_access_list_id( $found );
-					$existing          = $this->get_existing_list_content( $found );
+					$existing = $this->get_existing_list_content( $found );
 					if ( ! is_wp_error( $existing ) ) {
 						$existing['created'] = false;
 					}
@@ -524,6 +520,7 @@ class ASFW_Bunny_Shield_Module {
 
 		do_action( 'asfw_bunny_sync_failed', $ip, $reason, $state, $error, $failure );
 		do_action(
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Both hook names use the plugin prefix and are selected by failure mode.
 			$this->is_fail_open() ? 'asfw_bunny_sync_failed_open' : 'asfw_bunny_sync_failed_closed',
 			$failure,
 			$error,
@@ -535,26 +532,37 @@ class ASFW_Bunny_Shield_Module {
 
 	protected function maybe_block_ip( $ip, $reason, $context, $state = array() ) {
 		if ( ! $this->is_enabled( $context ) ) {
-			return array( 'status' => 'disabled', 'ip' => $ip );
+			return array(
+				'status' => 'disabled',
+				'ip'     => $ip,
+			);
 		}
 
 		$normalized_ip = $this->normalize_public_ip( $ip );
 		if ( '' === $normalized_ip ) {
-			return array( 'status' => 'skipped', 'ip' => $ip, 'reason' => 'private_or_reserved' );
+			return array(
+				'status' => 'skipped',
+				'ip'     => $ip,
+				'reason' => 'private_or_reserved',
+			);
 		}
 
 		if ( $this->is_deduped( $normalized_ip ) ) {
-			return array( 'status' => 'deduped', 'ip' => $normalized_ip, 'reason' => $reason );
+			return array(
+				'status' => 'deduped',
+				'ip'     => $normalized_ip,
+				'reason' => $reason,
+			);
 		}
 
 		$signal_state = $this->increment_signal_state( $normalized_ip, $reason, $context, $state );
 		if ( isset( $signal_state['count'] ) && intval( $signal_state['count'], 10 ) < $this->get_threshold() ) {
 			return array(
-				'status'  => 'counting',
-				'ip'      => $normalized_ip,
-				'reason'  => $reason,
-				'context' => sanitize_key( (string) $context ),
-				'count'   => intval( $signal_state['count'], 10 ),
+				'status'    => 'counting',
+				'ip'        => $normalized_ip,
+				'reason'    => $reason,
+				'context'   => sanitize_key( (string) $context ),
+				'count'     => intval( $signal_state['count'], 10 ),
 				'threshold' => $this->get_threshold(),
 			);
 		}
@@ -600,7 +608,7 @@ class ASFW_Bunny_Shield_Module {
 			return $backoff_state;
 		}
 
-		$list   = $this->get_or_create_access_list( array( $normalized_ip ), true );
+		$list = $this->get_or_create_access_list( array( $normalized_ip ), true );
 		if ( is_wp_error( $list ) ) {
 			return $this->record_failed_sync( $normalized_ip, $reason, $signal_state, $list );
 		}
@@ -609,7 +617,7 @@ class ASFW_Bunny_Shield_Module {
 		$entries = isset( $list['entries'] ) && is_array( $list['entries'] ) ? $list['entries'] : array();
 		if ( empty( $list['created'] ) && ! in_array( $normalized_ip, $entries, true ) ) {
 			$entries[] = $normalized_ip;
-			$result = $this->apply_remote_update( $list_id, $entries );
+			$result    = $this->apply_remote_update( $list_id, $entries );
 		} else {
 			$result = $list;
 		}
@@ -670,37 +678,37 @@ class ASFW_Bunny_Shield_Module {
 	}
 
 	public function get_status() {
-		$client       = $this->get_client();
-		$status       = array(
-			'enabled'         => $this->is_enabled(),
-			'mode'            => $this->get_mode(),
-			'action'          => $this->get_action(),
+		$client = $this->get_client();
+		$status = array(
+			'enabled'            => $this->is_enabled(),
+			'mode'               => $this->get_mode(),
+			'action'             => $this->get_action(),
 			'background_enabled' => $this->background_enabled(),
-			'scope_mode'      => ASFW_Feature_Registry::scope_mode( 'bunny_shield' ),
-			'contexts'        => ASFW_Feature_Registry::selected_contexts( 'bunny_shield' ),
-			'configured'      => $client->is_configured(),
-			'dry_run'         => $this->is_dry_run(),
-			'fail_open'       => $this->is_fail_open(),
-			'threshold'       => $this->get_threshold(),
-			'dedupe_window'   => $this->get_dedupe_window(),
-			'shield_zone_id'  => $this->get_shield_zone_id(),
-			'access_list_id'  => $this->get_access_list_id(),
-			'api_key_set'     => '' !== $this->get_api_key(),
-			'backoff'         => $this->get_backoff_state(),
-			'last_failure'    => $this->get_last_failure_state(),
-			'list'            => array(),
+			'scope_mode'         => ASFW_Feature_Registry::scope_mode( 'bunny_shield' ),
+			'contexts'           => ASFW_Feature_Registry::selected_contexts( 'bunny_shield' ),
+			'configured'         => $client->is_configured(),
+			'dry_run'            => $this->is_dry_run(),
+			'fail_open'          => $this->is_fail_open(),
+			'threshold'          => $this->get_threshold(),
+			'dedupe_window'      => $this->get_dedupe_window(),
+			'shield_zone_id'     => $this->get_shield_zone_id(),
+			'access_list_id'     => $this->get_access_list_id(),
+			'api_key_set'        => '' !== $this->get_api_key(),
+			'backoff'            => $this->get_backoff_state(),
+			'last_failure'       => $this->get_last_failure_state(),
+			'list'               => array(),
 		);
 
 		$summary = $client->list_access_lists();
 		if ( ! is_wp_error( $summary ) && isset( $summary['body'] ) && is_array( $summary['body'] ) ) {
 			$status['list'] = array(
-				'custom_lists'      => isset( $summary['body']['customLists'] ) ? $summary['body']['customLists'] : array(),
+				'custom_lists'       => isset( $summary['body']['customLists'] ) ? $summary['body']['customLists'] : array(),
 				'custom_entry_count' => isset( $summary['body']['customEntryCount'] ) ? intval( $summary['body']['customEntryCount'], 10 ) : 0,
 				'custom_list_count'  => isset( $summary['body']['customListCount'] ) ? intval( $summary['body']['customListCount'], 10 ) : 0,
 			);
 		} elseif ( is_wp_error( $summary ) ) {
 			$status['list_error'] = array(
-				'code'    => $summary->get_error_code(),
+				'code'     => $summary->get_error_code(),
 				'messages' => $summary->get_error_messages(),
 			);
 		}
@@ -751,8 +759,8 @@ class ASFW_Bunny_Shield_Module {
 
 		if ( $updated === $entries ) {
 			return array(
-				'status' => 'unchanged',
-				'ip'     => $normalized_ip,
+				'status'  => 'unchanged',
+				'ip'      => $normalized_ip,
 				'list_id' => $list_id,
 			);
 		}

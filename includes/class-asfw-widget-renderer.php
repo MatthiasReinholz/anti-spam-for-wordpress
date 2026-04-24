@@ -75,17 +75,17 @@ if ( ! class_exists( 'ASFW_Widget_Renderer', false ) ) {
 			return apply_filters( 'asfw_challenge_url', $challenge_url, $context );
 		}
 
-			public function get_widget_attrs( $mode, $language = null, $name = null, $context = null, $context_resolved = false ) {
-				$floating   = $this->options_service()->get_floating();
-				$delay      = $this->options_service()->get_delay();
-				$field_name = 'asfw';
+		public function get_widget_attrs( $mode, $language = null, $name = null, $context = null, $context_resolved = false ) {
+			$floating   = $this->options_service()->get_floating();
+			$delay      = $this->options_service()->get_delay();
+			$field_name = 'asfw';
 			if ( null !== $name && '' !== $name ) {
 				$field_name = sanitize_key( $name );
 			}
-				if ( ! $context_resolved ) {
-					$context = $this->context_helper_service()->get_widget_context( $mode, $field_name, $context );
-				}
-				$strings = wp_json_encode( $this->get_translations( $language ) );
+			if ( ! $context_resolved ) {
+				$context = $this->context_helper_service()->get_widget_context( $mode, $field_name, $context );
+			}
+			$strings = wp_json_encode( $this->get_translations( $language ) );
 			$auto    = $this->options_service()->get_auto();
 			$lazy    = $this->options_service()->get_lazy();
 			$attrs   = array(
@@ -162,7 +162,7 @@ if ( ! class_exists( 'ASFW_Widget_Renderer', false ) ) {
 				$field_name = sanitize_key( $name );
 			}
 			$normalized_context = $this->context_helper_service()->get_widget_context( $mode, $field_name, $context );
-				$attrs              = $this->get_widget_attrs( $mode, $language, $field_name, $normalized_context, true );
+				$attrs          = $this->get_widget_attrs( $mode, $language, $field_name, $normalized_context, true );
 			$signed_context     = $normalized_context;
 			if ( isset( $attrs['data-asfw-context'] ) ) {
 				$signed_context = $this->context_helper_service()->normalize_context( $attrs['data-asfw-context'] );

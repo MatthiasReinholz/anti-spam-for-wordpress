@@ -3,8 +3,16 @@ declare(strict_types=1);
 
 final class DisposableEmailModuleTest extends AsfwPluginTestCase
 {
+    private function enableEventLogging(): void
+    {
+        update_option('asfw_feature_event_logging_enabled', 1);
+        update_option('asfw_feature_event_logging_mode', 'log');
+        update_option('asfw_feature_event_logging_scope_mode', 'all');
+    }
+
     public function test_disposable_email_runtime_honors_wordpress_comments_scope_and_field_mapping(): void
     {
+        $this->enableEventLogging();
         update_option('asfw_feature_disposable_email_enabled', 1);
         update_option('asfw_feature_disposable_email_mode', 'log');
         update_option('asfw_feature_disposable_email_scope_mode', 'selected');
@@ -50,6 +58,7 @@ final class DisposableEmailModuleTest extends AsfwPluginTestCase
 
     public function test_disposable_email_candidate_filter_can_extend_runtime_checks(): void
     {
+        $this->enableEventLogging();
         update_option('asfw_feature_disposable_email_enabled', 1);
         update_option('asfw_feature_disposable_email_mode', 'log');
         update_option('asfw_feature_disposable_email_scope_mode', 'all');
@@ -91,6 +100,7 @@ final class DisposableEmailModuleTest extends AsfwPluginTestCase
 
     public function test_disposable_email_runtime_uses_fallback_email_field_detection_for_contact_form_7(): void
     {
+        $this->enableEventLogging();
         update_option('asfw_feature_disposable_email_enabled', 1);
         update_option('asfw_feature_disposable_email_mode', 'log');
         update_option('asfw_feature_disposable_email_scope_mode', 'all');
@@ -113,6 +123,7 @@ final class DisposableEmailModuleTest extends AsfwPluginTestCase
 
     public function test_disposable_email_runtime_uses_fallback_email_field_detection_for_gravityforms(): void
     {
+        $this->enableEventLogging();
         update_option('asfw_feature_disposable_email_enabled', 1);
         update_option('asfw_feature_disposable_email_mode', 'log');
         update_option('asfw_feature_disposable_email_scope_mode', 'all');
@@ -135,6 +146,7 @@ final class DisposableEmailModuleTest extends AsfwPluginTestCase
 
     public function test_disposable_email_runtime_blocks_contact_form_7_via_fallback_and_counts_context_failure(): void
     {
+        $this->enableEventLogging();
         update_option('asfw_feature_disposable_email_enabled', 1);
         update_option('asfw_feature_disposable_email_mode', 'block');
         update_option('asfw_feature_disposable_email_scope_mode', 'all');
@@ -161,6 +173,7 @@ final class DisposableEmailModuleTest extends AsfwPluginTestCase
 
     public function test_disposable_email_runtime_blocks_woocommerce_register_on_billing_email_fallback(): void
     {
+        $this->enableEventLogging();
         update_option('asfw_feature_disposable_email_enabled', 1);
         update_option('asfw_feature_disposable_email_mode', 'block');
         update_option('asfw_feature_disposable_email_scope_mode', 'all');

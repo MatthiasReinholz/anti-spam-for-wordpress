@@ -22,6 +22,6 @@ WP_Plugin_Base_Admin_UI_Loader::register_page(
 		'style_handle'           => '__PLUGIN_SLUG__-admin-ui',
 		'rest_namespace'         => '__REST_API_NAMESPACE__',
 		'plugin_name'            => '__PLUGIN_NAME__',
-		'experimental_dataviews' => 'true' === '__ADMIN_UI_EXPERIMENTAL_DATAVIEWS__',
+		'experimental_dataviews' => (bool) filter_var( '__ADMIN_UI_EXPERIMENTAL_DATAVIEWS__', FILTER_VALIDATE_BOOLEAN ),
 	)
 );

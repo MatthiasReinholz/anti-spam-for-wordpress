@@ -67,25 +67,25 @@ class ASFW_Content_Heuristics_Module {
 	}
 
 	public function analyze_submission( $context = null ) {
-		$context     = sanitize_key( (string) $context );
-		$terms     = $this->get_heuristic_terms();
+		$context    = sanitize_key( (string) $context );
+		$terms      = $this->get_heuristic_terms();
 		$candidates = $this->collect_candidate_text();
-		$score     = 0;
-		$reasons   = array();
-		$matches   = array();
+		$score      = 0;
+		$reasons    = array();
+		$matches    = array();
 
 		foreach ( $candidates as $field_name => $value ) {
 			$normalized = strtolower( $value );
 			if ( preg_match_all( '/https?:\/\/[^\s]+/i', $value, $url_matches ) ) {
 				$url_count = count( $url_matches[0] );
 				if ( $url_count > 0 ) {
-					$score += $url_count;
+					$score    += $url_count;
 					$reasons[] = 'urls:' . $field_name;
 				}
 			}
 
 			if ( preg_match( '/(.)\1{6,}/', $value ) ) {
-				$score += 2;
+				$score    += 2;
 				$reasons[] = 'repetition:' . $field_name;
 			}
 
@@ -101,24 +101,24 @@ class ASFW_Content_Heuristics_Module {
 				}
 			}
 
-				if (
+			if (
 					false !== strpos( $field_name, 'email' ) &&
 					$this->disposable_module instanceof ASFW_Disposable_Email_Module &&
 					$this->disposable_module->is_enabled( $context )
 				) {
-					if ( $this->disposable_module->is_disposable_email( $value ) ) {
-						$score += 2;
-						$reasons[] = 'disposable_email:' . $field_name;
-					}
+				if ( $this->disposable_module->is_disposable_email( $value ) ) {
+					$score    += 2;
+					$reasons[] = 'disposable_email:' . $field_name;
 				}
+			}
 		}
 
 		return array(
-			'score'      => $score,
-			'reasons'    => array_values( array_unique( $reasons ) ),
-			'matches'    => array_values( array_unique( $matches ) ),
-			'threshold'  => $this->is_strict() ? 2 : 4,
-			'fields'     => count( $candidates ),
+			'score'     => $score,
+			'reasons'   => array_values( array_unique( $reasons ) ),
+			'matches'   => array_values( array_unique( $matches ) ),
+			'threshold' => $this->is_strict() ? 2 : 4,
+			'fields'    => count( $candidates ),
 		);
 	}
 
@@ -130,22 +130,22 @@ class ASFW_Content_Heuristics_Module {
 		}
 
 			$analysis = $this->analyze_submission( $event_context );
-			if ( $analysis['score'] < $analysis['threshold'] ) {
-				return;
-			}
-			if ( ! ASFW_Feature_Registry::is_enabled( 'event_logging', $event_context ) ) {
-				return;
-			}
+		if ( $analysis['score'] < $analysis['threshold'] ) {
+			return;
+		}
+		if ( ! ASFW_Feature_Registry::is_enabled( 'event_logging', $event_context ) ) {
+			return;
+		}
 
 			$this->store->record_event(
 				'heuristic_flagged',
-			array(
-				'event_status'  => 'flagged',
-				'event_context' => $event_context,
-				'module_name'   => 'content-heuristics',
-				'details'       => $analysis + array( 'field_name' => sanitize_key( (string) $field_name ) ),
-			)
-		);
+				array(
+					'event_status'  => 'flagged',
+					'event_context' => $event_context,
+					'module_name'   => 'content-heuristics',
+					'details'       => $analysis + array( 'field_name' => sanitize_key( (string) $field_name ) ),
+				)
+			);
 
 		do_action( 'asfw_content_heuristics_flagged', $analysis, $event_context, $field_name );
 	}

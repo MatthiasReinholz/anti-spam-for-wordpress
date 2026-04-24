@@ -18,7 +18,7 @@ class ASFW_Admin_Pages {
 
 	public function register() {
 		add_submenu_page(
-			null,
+			asfw_hidden_submenu_parent_slug(),
 			__( 'Events', 'anti-spam-for-wordpress' ),
 			__( 'Events', 'anti-spam-for-wordpress' ),
 			'manage_options',
@@ -27,7 +27,7 @@ class ASFW_Admin_Pages {
 		);
 
 		add_submenu_page(
-			null,
+			asfw_hidden_submenu_parent_slug(),
 			__( 'Analytics', 'anti-spam-for-wordpress' ),
 			__( 'Analytics', 'anti-spam-for-wordpress' ),
 			'manage_options',
@@ -103,14 +103,16 @@ class ASFW_Admin_Pages {
 	}
 
 	protected function get_events_filters_from_request() {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.NonceVerification.Missing -- Read-only admin filters do not change state.
 		$raw = array(
-			'date_from'  => isset( $_GET['asfw_date_from'] ) ? wp_unslash( $_GET['asfw_date_from'] ) : '',
-			'date_to'    => isset( $_GET['asfw_date_to'] ) ? wp_unslash( $_GET['asfw_date_to'] ) : '',
-			'context'    => isset( $_GET['asfw_context'] ) ? wp_unslash( $_GET['asfw_context'] ) : '',
-			'type'       => isset( $_GET['asfw_event_type'] ) ? wp_unslash( $_GET['asfw_event_type'] ) : '',
-			'feature'    => isset( $_GET['asfw_feature'] ) ? wp_unslash( $_GET['asfw_feature'] ) : '',
-			'decision'   => isset( $_GET['asfw_decision'] ) ? wp_unslash( $_GET['asfw_decision'] ) : '',
+			'date_from' => isset( $_GET['asfw_date_from'] ) ? sanitize_text_field( wp_unslash( $_GET['asfw_date_from'] ) ) : '',
+			'date_to'   => isset( $_GET['asfw_date_to'] ) ? sanitize_text_field( wp_unslash( $_GET['asfw_date_to'] ) ) : '',
+			'context'   => isset( $_GET['asfw_context'] ) ? sanitize_text_field( wp_unslash( $_GET['asfw_context'] ) ) : '',
+			'type'      => isset( $_GET['asfw_event_type'] ) ? sanitize_text_field( wp_unslash( $_GET['asfw_event_type'] ) ) : '',
+			'feature'   => isset( $_GET['asfw_feature'] ) ? sanitize_text_field( wp_unslash( $_GET['asfw_feature'] ) ) : '',
+			'decision'  => isset( $_GET['asfw_decision'] ) ? sanitize_text_field( wp_unslash( $_GET['asfw_decision'] ) ) : '',
 		);
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended, WordPress.Security.NonceVerification.Missing
 
 		return array(
 			'date_from' => $this->sanitize_date_filter( $raw['date_from'] ),
@@ -160,7 +162,15 @@ class ASFW_Admin_Pages {
 			);
 			?>
 			<?php if ( '' !== $last_run ) : ?>
-				<?php echo esc_html( sprintf( __( ' Last maintenance run: %s UTC.', 'anti-spam-for-wordpress' ), $last_run ) ); ?>
+				<?php
+				echo esc_html(
+					sprintf(
+						/* translators: %s: last maintenance run time in UTC. */
+						__( ' Last maintenance run: %s UTC.', 'anti-spam-for-wordpress' ),
+						$last_run
+					)
+				);
+				?>
 			<?php else : ?>
 				<?php echo esc_html__( ' Last maintenance run: not recorded yet.', 'anti-spam-for-wordpress' ); ?>
 			<?php endif; ?>
@@ -170,7 +180,7 @@ class ASFW_Admin_Pages {
 
 	public function render_events_page() {
 		$filters = $this->get_events_filters_from_request();
-		$events   = $this->store->fetch_events(
+		$events  = $this->store->fetch_events(
 			array_merge(
 				$filters,
 				array( 'limit' => 50 )
@@ -213,8 +223,8 @@ class ASFW_Admin_Pages {
 	}
 
 	public function render_analytics_page() {
-		$filters = $this->get_events_filters_from_request();
-		$events  = $this->store->fetch_events(
+		$filters          = $this->get_events_filters_from_request();
+		$events           = $this->store->fetch_events(
 			array_merge(
 				$filters,
 				array(
@@ -251,11 +261,11 @@ class ASFW_Admin_Pages {
 					);
 				}
 				$key = 'verify_passed' === $event_type ? 'pass' : 'fail';
-				$daily_verify[ $day ][ $key ]++;
+				++$daily_verify[ $day ][ $key ];
 			}
 
 			if ( 'rate_limited' === $event_type ) {
-				$rate_limit_total++;
+				++$rate_limit_total;
 			}
 
 			if ( in_array( $event_type, array( 'disposable_email_hit', 'content_heuristic_hit', 'feature_runtime_disabled', 'bunny_sync_success', 'bunny_sync_failed', 'bunny_dry_run' ), true ) ) {

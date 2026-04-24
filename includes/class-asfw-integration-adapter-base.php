@@ -16,9 +16,9 @@ if ( ! class_exists( 'ASFW_Integration_Adapter_Base', false ) ) {
 		protected $bootstrap_path = '';
 
 		public function __construct( $adapter_id = '', $available = true, $priority = 10, $bootstrap_path = '' ) {
-			$this->adapter_id = sanitize_key( (string) $adapter_id );
-			$this->available  = (bool) $available;
-			$this->priority   = (int) $priority;
+			$this->adapter_id     = sanitize_key( (string) $adapter_id );
+			$this->available      = (bool) $available;
+			$this->priority       = (int) $priority;
 			$this->bootstrap_path = (string) $bootstrap_path;
 		}
 

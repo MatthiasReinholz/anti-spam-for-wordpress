@@ -74,12 +74,13 @@ final class BunnyShieldTest extends AsfwPluginTestCase
         $this->assertFalse($this->plugin()->is_bunny_background_enabled());
     }
 
-    public function test_bunny_api_key_sanitizer_allows_operator_clear(): void
+    public function test_bunny_api_key_sanitizer_preserves_blank_write_only_submissions(): void
     {
         update_option(AntiSpamForWordPressPlugin::$option_bunny_api_key, 'legacy-key');
         update_option(AntiSpamForWordPressPlugin::$option_feature_bunny_shield_api_key, 'feature-key');
 
-        $this->assertSame('', asfw_sanitize_bunny_api_key_option(''));
+        $this->assertSame('feature-key', asfw_sanitize_bunny_api_key_option(''));
+        $this->assertSame('rotated-key', asfw_sanitize_bunny_api_key_option('rotated-key'));
     }
 
     public function test_bunny_client_uses_wp_http_api_with_timeout_and_user_agent(): void

@@ -184,6 +184,9 @@ final class EventStoreTest extends AsfwPluginTestCase
 
     public function test_disposable_email_runtime_block_records_a_contract_event(): void
     {
+        update_option('asfw_feature_event_logging_enabled', 1);
+        update_option('asfw_feature_event_logging_mode', 'log');
+        update_option('asfw_feature_event_logging_scope_mode', 'all');
         update_option('asfw_feature_disposable_email_enabled', 1);
         update_option('asfw_feature_disposable_email_mode', 'block');
         update_option('asfw_feature_disposable_email_scope_mode', 'all');
@@ -250,6 +253,9 @@ final class EventStoreTest extends AsfwPluginTestCase
 
         $this->assertCount(1, $events);
         $this->assertSame('2026-01-01 10:00:00', $events[0]['created_at']);
+        $this->assertNotEmpty($GLOBALS['asfw_test_db_fetch_args']);
+        $lastFetchArgs = $GLOBALS['asfw_test_db_fetch_args'][count($GLOBALS['asfw_test_db_fetch_args']) - 1];
+        $this->assertSame(50, $lastFetchArgs['limit']);
         $this->assertSame(
             1,
             $store->count_events(
@@ -260,5 +266,53 @@ final class EventStoreTest extends AsfwPluginTestCase
                 )
             )
         );
+    }
+
+    public function test_event_logging_defaults_to_disabled_for_fresh_installs(): void
+    {
+        $this->assertFalse(ASFW_Feature_Registry::is_enabled('event_logging'));
+        $this->assertSame('off', ASFW_Feature_Registry::mode('event_logging'));
+        $this->assertSame(0, (int) get_option('asfw_feature_event_logging_enabled', 1));
+        $this->assertSame('off', (string) get_option('asfw_feature_event_logging_mode', ''));
+    }
+
+    public function test_canonical_type_variant_fetches_are_bounded_by_requested_page_window(): void
+    {
+        $store = ASFW_Control_Plane::store();
+        $table = $store->get_table_name();
+
+        for ($index = 1; $index <= 5; $index++) {
+            $GLOBALS['asfw_test_db_tables'][$table][] = array(
+                'id' => $index,
+                'event_type' => $index % 2 === 0 ? 'verify_failed' : 'verification_failed',
+                'created_at' => '2026-01-0' . $index . ' 10:00:00',
+                'context' => 'contact-form-7',
+                'feature' => 'core',
+                'decision' => 'failed',
+                'ip_hash' => null,
+                'email_hash' => null,
+                'details' => '{}',
+            );
+        }
+
+        $events = $store->fetch_events(
+            array(
+                'type' => 'verify_failed',
+                'limit' => 2,
+                'offset' => 1,
+            )
+        );
+
+        $this->assertCount(2, $events);
+        $this->assertSame(array(4, 3), array_map('intval', array_column($events, 'id')));
+
+        $variantFetches = array_slice($GLOBALS['asfw_test_db_fetch_args'], -2);
+        $this->assertCount(2, $variantFetches);
+        foreach ($variantFetches as $fetchArgs) {
+            $this->assertSame(3, $fetchArgs['limit']);
+            $this->assertSame(0, $fetchArgs['offset']);
+        }
+
+        $this->assertSame(5, $store->count_events(array('type' => 'verify_failed')));
     }
 }

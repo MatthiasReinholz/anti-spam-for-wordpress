@@ -77,11 +77,11 @@ if ( ! function_exists( 'asfw_rest_operation_analytics_read' ) ) {
 				}
 
 				$key = 'verify_passed' === $event_type ? 'pass' : 'fail';
-				$daily_verify[ $day ][ $key ]++;
+				++$daily_verify[ $day ][ $key ];
 			}
 
 			if ( 'rate_limited' === $event_type ) {
-				$rate_limit_total++;
+				++$rate_limit_total;
 			}
 
 			if ( in_array( $event_type, array( 'disposable_email_hit', 'content_heuristic_hit', 'feature_runtime_disabled', 'bunny_sync_success', 'bunny_sync_failed', 'bunny_dry_run' ), true ) ) {
@@ -128,15 +128,15 @@ if ( ! function_exists( 'asfw_rest_operation_analytics_read' ) ) {
 		}
 
 		return array(
-			'filters' => $filters,
-			'logging_enabled' => ASFW_Feature_Registry::is_enabled( 'event_logging' ),
-			'sample' => array(
-				'total_events'     => intval( $total_count, 10 ),
-				'analyzed_events'  => count( $events ),
-				'truncated'        => intval( $total_count, 10 ) > $sample_cap,
-				'sample_cap'       => $sample_cap,
+			'filters'          => $filters,
+			'logging_enabled'  => ASFW_Feature_Registry::is_enabled( 'event_logging' ),
+			'sample'           => array(
+				'total_events'    => intval( $total_count, 10 ),
+				'analyzed_events' => count( $events ),
+				'truncated'       => intval( $total_count, 10 ) > $sample_cap,
+				'sample_cap'      => $sample_cap,
 			),
-			'cards' => array(
+			'cards'            => array(
 				'rate_limit_total' => intval( $rate_limit_total, 10 ),
 			),
 			'daily_challenges' => $challenge_rows,

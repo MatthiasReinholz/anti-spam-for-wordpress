@@ -5,6 +5,7 @@
 /.github
 /dist
 /node_modules
+/.wp-plugin-base-admin-ui
 /scripts
 /docs
 /__DISTIGNORE_FILE__

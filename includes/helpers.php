@@ -84,9 +84,10 @@ function asfw_enqueue_scripts() {
 		'asfw-widget-wp',
 		'ASFW_RUNTIME',
 		array(
-			'defaultFieldName' => 'asfw',
-			'honeypotEnabled'  => $plugin ? (bool) $plugin->get_honeypot() : false,
-			'lazy'             => $plugin ? (bool) $plugin->get_lazy() : false,
+			'defaultFieldName'   => 'asfw',
+			'honeypotEnabled'    => $plugin ? (bool) $plugin->get_honeypot() : false,
+			'lazy'               => $plugin ? (bool) $plugin->get_lazy() : false,
+			/* translators: %s: number of seconds remaining before the form can be submitted. */
 			'submitDelayMessage' => __( 'Please wait %ss...', 'anti-spam-for-wordpress' ),
 		)
 	);
@@ -119,7 +120,7 @@ function asfw_get_posted_payload( $key ) {
 		return '';
 	}
 
-	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- The payload must be read verbatim before cryptographic validation.
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- The payload must be read verbatim before cryptographic validation.
 	return trim( (string) wp_unslash( $_POST[ $key ] ) );
 }
 
@@ -162,8 +163,8 @@ function asfw_is_context_guard_supported( $context ) {
 }
 
 function asfw_emit_context_guard_result( $feature, $context, $result ) {
-	$mode    = ASFW_Feature_Registry::active_mode( $feature );
-	$success = ! ( $result instanceof WP_Error );
+	$mode       = ASFW_Feature_Registry::active_mode( $feature );
+	$success    = ! ( $result instanceof WP_Error );
 	$error_code = $result instanceof WP_Error ? $result->get_error_code() : '';
 	do_action( 'asfw_guard_result', $feature, ASFW_Feature_Registry::normalize_context( $context ), $success, $mode, $error_code );
 
@@ -253,7 +254,12 @@ function asfw_sanitize_slug_option( $value ) {
 function asfw_sanitize_bunny_api_key_option( $value ) {
 	$value = trim( (string) $value );
 	if ( '' === $value ) {
-		return '';
+		$current = trim( (string) get_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_api_key, '' ) );
+		if ( '' === $current ) {
+			$current = trim( (string) get_option( AntiSpamForWordPressPlugin::$option_bunny_api_key, '' ) );
+		}
+
+		return $current;
 	}
 
 	return sanitize_text_field( $value );

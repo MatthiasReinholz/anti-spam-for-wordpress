@@ -1,13 +1,15 @@
 parameters:
   level: 5
   paths:
-    - .
+    - admin
+    - data
+    - includes
+    - integrations
+    - lib
+    - public
+    - __MAIN_PLUGIN_FILE__
+    - uninstall.php
   excludePaths:
-    - .git (?)
-    - .github (?)
-    - .wp-plugin-base (?)
-    - .wp-plugin-base-quality-pack (?)
-    - dist (?)
-    - node_modules (?)
-    - tests
-    - vendor (?)
+    analyse:
+      - assets/admin-ui/index.asset.php
+      - integrations/formidable/AntiSpamWidgetFieldType.php

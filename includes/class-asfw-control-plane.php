@@ -23,14 +23,14 @@ class ASFW_Control_Plane {
 
 		self::$initialized = true;
 
-		self::$store = new ASFW_Event_Store();
+		self::$store             = new ASFW_Event_Store();
 		self::$disposable_module = new ASFW_Disposable_Email_Module( self::$store );
-		self::$content_module = new ASFW_Content_Heuristics_Module( self::$store, self::$disposable_module );
-		self::$bunny_module = new ASFW_Bunny_Shield_Module();
-		self::$maintenance = new ASFW_Maintenance( self::$store, self::$disposable_module );
-		self::$logger = new ASFW_Event_Logger( self::$store );
-		self::$admin_pages = new ASFW_Admin_Pages( self::$store, self::$disposable_module, self::$content_module );
-		self::$cli = new ASFW_CLI_Command( self::$store, self::$maintenance, self::$disposable_module, self::$bunny_module );
+		self::$content_module    = new ASFW_Content_Heuristics_Module( self::$store, self::$disposable_module );
+		self::$bunny_module      = new ASFW_Bunny_Shield_Module();
+		self::$maintenance       = new ASFW_Maintenance( self::$store, self::$disposable_module );
+		self::$logger            = new ASFW_Event_Logger( self::$store );
+		self::$admin_pages       = new ASFW_Admin_Pages( self::$store, self::$disposable_module, self::$content_module );
+		self::$cli               = new ASFW_CLI_Command( self::$store, self::$maintenance, self::$disposable_module, self::$bunny_module );
 
 		self::$logger->register_hooks();
 		self::$disposable_module->register_hooks();
@@ -41,7 +41,7 @@ class ASFW_Control_Plane {
 
 		add_action( 'admin_menu', array( self::$admin_pages, 'register' ) );
 
-		if ( class_exists( 'WP_CLI', false ) && method_exists( 'WP_CLI', 'add_command' ) ) {
+		if ( class_exists( 'WP_CLI', false ) ) {
 			WP_CLI::add_command( 'asfw', self::$cli );
 		}
 
