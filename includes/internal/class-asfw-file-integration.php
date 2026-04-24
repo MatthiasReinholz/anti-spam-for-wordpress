@@ -25,18 +25,16 @@ class ASFW_File_Integration extends ASFW_Integration_Adapter_Base implements ASF
 		return $this->bootstrap_path();
 	}
 
-	public function bootstrap_path(): string {
-		return parent::bootstrap_path();
-	}
-
 	public function register(): void {
 		$bootstrap_path = $this->bootstrap_path();
 		if ( ! is_readable( $bootstrap_path ) ) {
 			throw new RuntimeException(
-				sprintf(
-					'ASFW integration bootstrap missing or unreadable for "%s" at %s',
-					$this->id(),
-					$bootstrap_path
+				esc_html(
+					sprintf(
+						'ASFW integration bootstrap missing or unreadable for "%s" at %s',
+						$this->id(),
+						$bootstrap_path
+					)
 				)
 			);
 		}
@@ -46,10 +44,12 @@ class ASFW_File_Integration extends ASFW_Integration_Adapter_Base implements ASF
 		if ( null !== $this->bootstrap_callback ) {
 			if ( ! is_callable( $this->bootstrap_callback ) ) {
 				throw new RuntimeException(
-					sprintf(
-						'ASFW integration bootstrap callback for "%s" at %s is not callable',
-						$this->id(),
-						$bootstrap_path
+					esc_html(
+						sprintf(
+							'ASFW integration bootstrap callback for "%s" at %s is not callable',
+							$this->id(),
+							$bootstrap_path
+						)
 					)
 				);
 			}

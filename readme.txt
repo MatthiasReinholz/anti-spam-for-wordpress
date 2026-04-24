@@ -1,13 +1,13 @@
 === Anti Spam for WordPress ===
 Contributors: matthiasreinholz
-Tags: spam, anti-spam, antispam, captcha, proof-of-work, gdpr, privacy
+Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
 Version: 0.6.1
 Stable tag: 0.6.1
-Requires at least: 5.0
+Requires at least: 6.4
 Requires PHP: 8.0
-Tested up to: 6.8
+Tested up to: 6.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -70,10 +70,16 @@ Important: client-only button disabling is cosmetic UX, not a standalone securit
 
 = Installation =
 
+Requires WordPress 6.4 or newer and PHP 8.0 or newer.
+
 1. Download the `.zip` from the [Releases](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/releases).
 2. Upload the `anti-spam-for-wordpress` folder to the `/wp-content/plugins/` directory.
 3. Activate the plugin through the Plugins menu in WordPress.
 4. Review the settings and enable the integrations you need.
+
+= Uninstalling =
+
+Uninstalling the plugin removes Anti Spam for WordPress options, transient challenge/rate-limit state, scheduled maintenance hooks, and the local event table for each site in a multisite network. Export event data before uninstalling if you need to keep it.
 
 = REST API =
 

@@ -16,8 +16,8 @@ class ASFW_Bunny_Shield_Client {
 
 	public function __construct( $api_key = '', $shield_zone_id = 0, $user_agent = null ) {
 		$this->api_key        = trim( (string) $api_key );
-		$this->shield_zone_id  = max( 0, intval( $shield_zone_id, 10 ) );
-		$this->user_agent      = null === $user_agent ? $this->default_user_agent() : trim( (string) $user_agent );
+		$this->shield_zone_id = max( 0, intval( $shield_zone_id, 10 ) );
+		$this->user_agent     = null === $user_agent ? $this->default_user_agent() : trim( (string) $user_agent );
 	}
 
 	public function is_configured() {
@@ -99,36 +99,36 @@ class ASFW_Bunny_Shield_Client {
 
 		$status_code = function_exists( 'wp_remote_retrieve_response_code' ) ? intval( wp_remote_retrieve_response_code( $response ), 10 ) : 0;
 		$raw_body    = function_exists( 'wp_remote_retrieve_body' ) ? (string) wp_remote_retrieve_body( $response ) : '';
-			$decoded     = $this->decode_body( $raw_body );
+			$decoded = $this->decode_body( $raw_body );
 
-			if ( $status_code < 200 || $status_code >= 300 ) {
-				$message = __( 'Bunny Shield request failed.', 'anti-spam-for-wordpress' );
-				if ( is_array( $decoded ) && isset( $decoded['error']['message'] ) && is_string( $decoded['error']['message'] ) ) {
-					$message = $decoded['error']['message'];
-				}
+		if ( $status_code < 200 || $status_code >= 300 ) {
+			$message = __( 'Bunny Shield request failed.', 'anti-spam-for-wordpress' );
+			if ( is_array( $decoded ) && isset( $decoded['error']['message'] ) && is_string( $decoded['error']['message'] ) ) {
+				$message = $decoded['error']['message'];
+			}
 
 			return new WP_Error(
 				'asfw_bunny_http_error',
 				$message,
-					array(
-						'status' => $status_code,
-						'body'   => is_array( $decoded ) ? $decoded : $raw_body,
-						'path'   => $path,
-					)
-				);
-			}
+				array(
+					'status' => $status_code,
+					'body'   => is_array( $decoded ) ? $decoded : $raw_body,
+					'path'   => $path,
+				)
+			);
+		}
 
-			if ( ! is_array( $decoded ) ) {
-				return new WP_Error(
-					'asfw_bunny_invalid_response',
-					__( 'Bunny Shield returned an invalid response body.', 'anti-spam-for-wordpress' ),
-					array(
-						'status' => $status_code,
-						'body'   => $raw_body,
-						'path'   => $path,
-					)
-				);
-			}
+		if ( ! is_array( $decoded ) ) {
+			return new WP_Error(
+				'asfw_bunny_invalid_response',
+				__( 'Bunny Shield returned an invalid response body.', 'anti-spam-for-wordpress' ),
+				array(
+					'status' => $status_code,
+					'body'   => $raw_body,
+					'path'   => $path,
+				)
+			);
+		}
 
 		return array(
 			'status' => $status_code,

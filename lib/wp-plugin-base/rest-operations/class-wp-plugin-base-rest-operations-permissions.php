@@ -202,6 +202,7 @@ if ( ! class_exists( 'WP_Plugin_Base_REST_Operations_Permissions' ) ) {
 			}
 
 			$filtered_scopes = apply_filters(
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Hook is scoped by the configured plugin slug.
 				$plugin_slug . '_rest_granted_scopes',
 				$granted_scopes,
 				$operation,

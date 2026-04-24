@@ -18,9 +18,11 @@ require_once __DIR__ . '/class-wp-plugin-base-rest-operations-executor.php';
 require_once __DIR__ . '/class-wp-plugin-base-rest-operations-rest-adapter.php';
 require_once __DIR__ . '/class-wp-plugin-base-rest-operations-abilities-adapter.php';
 
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Managed foundation bootstrap uses the foundation prefix.
 $wp_plugin_base_rest_operations_bootstrap = dirname( __DIR__, 3 ) . '/includes/rest-operations/bootstrap.php';
 
 if ( file_exists( $wp_plugin_base_rest_operations_bootstrap ) ) {
+	// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Managed foundation bootstrap uses a generic local variable.
 	$operations = require $wp_plugin_base_rest_operations_bootstrap;
 	if ( is_array( $operations ) ) {
 		WP_Plugin_Base_REST_Operations_Registry::register_many( $operations );
@@ -38,7 +40,7 @@ add_action(
 	}
 );
 
-if ( 'true' === '__REST_ABILITIES_ENABLED__' ) {
+if ( (bool) filter_var( '__REST_ABILITIES_ENABLED__', FILTER_VALIDATE_BOOLEAN ) ) {
 	add_action(
 		'wp_abilities_api_categories_init',
 		static function () {

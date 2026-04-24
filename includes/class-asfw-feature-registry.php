@@ -6,13 +6,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class ASFW_Feature_Registry {
 
-	const FEATURE_MODES = array( 'off', 'log', 'block', 'challenge' );
+	const FEATURE_MODES        = array( 'off', 'log', 'block', 'challenge' );
 	const ACTIVE_FEATURE_MODES = array( 'off', 'log', 'block' );
-	const SCOPE_MODES = array( 'all', 'selected' );
+	const SCOPE_MODES          = array( 'all', 'selected' );
 
 	public static function definitions() {
 		$definitions = array(
-			'event_logging' => array(
+			'event_logging'      => array(
 				'id'                 => 'event_logging',
 				'label'              => __( 'Event logging', 'anti-spam-for-wordpress' ),
 				'section'            => 'asfw_control_plane_settings_section',
@@ -20,62 +20,62 @@ final class ASFW_Feature_Registry {
 				'mode_hint'          => __( 'Use log mode for observability. Block is reserved for future enforcement paths.', 'anti-spam-for-wordpress' ),
 				'scope_hint'         => __( 'Apply event logging everywhere or only for selected contexts.', 'anti-spam-for-wordpress' ),
 				'contexts_hint'      => __( 'Enter one normalized context per line or use commas.', 'anti-spam-for-wordpress' ),
-					'enabled_option'     => 'asfw_feature_event_logging_enabled',
-					'scope_mode_option'  => 'asfw_feature_event_logging_scope_mode',
-					'contexts_option'    => 'asfw_feature_event_logging_contexts',
-					'mode_option'        => 'asfw_feature_event_logging_mode',
-					'background_option'  => '',
-					'default_enabled'    => true,
-					'default_scope_mode' => 'all',
-					'default_contexts'   => array(),
-					'default_mode'       => 'log',
-					'show_in_settings'   => true,
-				),
-			'disposable_email' => array(
-				'id'                 => 'disposable_email',
-				'label'              => __( 'Disposable email list', 'anti-spam-for-wordpress' ),
-				'section'            => 'asfw_control_plane_settings_section',
-				'description'        => __( 'Maintain the disposable-domain dataset used by runtime email policy checks.', 'anti-spam-for-wordpress' ),
-				'mode_hint'          => __( 'Log mode records disposable-email hits. Block mode rejects matching submissions during verification.', 'anti-spam-for-wordpress' ),
-				'scope_hint'         => __( 'Apply disposable-email detection everywhere or only for selected contexts.', 'anti-spam-for-wordpress' ),
-				'contexts_hint'      => __( 'Enter one normalized context per line or use commas.', 'anti-spam-for-wordpress' ),
-				'background_label'   => __( 'Auto-refresh disposable domain list', 'anti-spam-for-wordpress' ),
-				'background_hint'    => __( 'Refresh the cached disposable-domain list during scheduled maintenance.', 'anti-spam-for-wordpress' ),
-				'enabled_option'     => 'asfw_feature_disposable_email_enabled',
-				'scope_mode_option'  => 'asfw_feature_disposable_email_scope_mode',
-				'contexts_option'    => 'asfw_feature_disposable_email_contexts',
-				'mode_option'        => 'asfw_feature_disposable_email_mode',
-				'background_option'  => 'asfw_feature_disposable_email_background_enabled',
-				'default_enabled'    => false,
-				'default_scope_mode' => 'all',
-				'default_contexts'   => array(),
-				'default_mode'       => 'off',
-				'default_background' => false,
-				'legacy_background_option' => 'asfw_disposable_email_auto_refresh',
-				'show_in_settings'   => true,
-			),
-			'content_heuristics' => array(
-				'id'                 => 'content_heuristics',
-				'label'              => __( 'Content heuristics', 'anti-spam-for-wordpress' ),
-				'section'            => 'asfw_control_plane_settings_section',
-				'description'        => __( 'Score submitted content for spam indicators after a verification succeeds.', 'anti-spam-for-wordpress' ),
-				'mode_hint'          => __( 'Log mode records suspicious submissions. Block is reserved until a blocking path is implemented.', 'anti-spam-for-wordpress' ),
-				'scope_hint'         => __( 'Apply heuristics everywhere or only for selected contexts.', 'anti-spam-for-wordpress' ),
-				'contexts_hint'      => __( 'Enter one normalized context per line or use commas.', 'anti-spam-for-wordpress' ),
-				'enabled_option'     => 'asfw_feature_content_heuristics_enabled',
-				'scope_mode_option'  => 'asfw_feature_content_heuristics_scope_mode',
-				'contexts_option'    => 'asfw_feature_content_heuristics_contexts',
-				'mode_option'        => 'asfw_feature_content_heuristics_mode',
+				'enabled_option'     => 'asfw_feature_event_logging_enabled',
+				'scope_mode_option'  => 'asfw_feature_event_logging_scope_mode',
+				'contexts_option'    => 'asfw_feature_event_logging_contexts',
+				'mode_option'        => 'asfw_feature_event_logging_mode',
 				'background_option'  => '',
 				'default_enabled'    => false,
 				'default_scope_mode' => 'all',
 				'default_contexts'   => array(),
 				'default_mode'       => 'off',
-				'legacy_enabled_option' => 'asfw_content_heuristics_enabled',
-				'legacy_active_mode' => 'log',
 				'show_in_settings'   => true,
 			),
-			'ip_feeds' => array(
+			'disposable_email'   => array(
+				'id'                       => 'disposable_email',
+				'label'                    => __( 'Disposable email list', 'anti-spam-for-wordpress' ),
+				'section'                  => 'asfw_control_plane_settings_section',
+				'description'              => __( 'Maintain the disposable-domain dataset used by runtime email policy checks.', 'anti-spam-for-wordpress' ),
+				'mode_hint'                => __( 'Log mode records disposable-email hits. Block mode rejects matching submissions during verification.', 'anti-spam-for-wordpress' ),
+				'scope_hint'               => __( 'Apply disposable-email detection everywhere or only for selected contexts.', 'anti-spam-for-wordpress' ),
+				'contexts_hint'            => __( 'Enter one normalized context per line or use commas.', 'anti-spam-for-wordpress' ),
+				'background_label'         => __( 'Auto-refresh disposable domain list', 'anti-spam-for-wordpress' ),
+				'background_hint'          => __( 'Refresh the cached disposable-domain list during scheduled maintenance.', 'anti-spam-for-wordpress' ),
+				'enabled_option'           => 'asfw_feature_disposable_email_enabled',
+				'scope_mode_option'        => 'asfw_feature_disposable_email_scope_mode',
+				'contexts_option'          => 'asfw_feature_disposable_email_contexts',
+				'mode_option'              => 'asfw_feature_disposable_email_mode',
+				'background_option'        => 'asfw_feature_disposable_email_background_enabled',
+				'default_enabled'          => false,
+				'default_scope_mode'       => 'all',
+				'default_contexts'         => array(),
+				'default_mode'             => 'off',
+				'default_background'       => false,
+				'legacy_background_option' => 'asfw_disposable_email_auto_refresh',
+				'show_in_settings'         => true,
+			),
+			'content_heuristics' => array(
+				'id'                    => 'content_heuristics',
+				'label'                 => __( 'Content heuristics', 'anti-spam-for-wordpress' ),
+				'section'               => 'asfw_control_plane_settings_section',
+				'description'           => __( 'Score submitted content for spam indicators after a verification succeeds.', 'anti-spam-for-wordpress' ),
+				'mode_hint'             => __( 'Log mode records suspicious submissions. Block is reserved until a blocking path is implemented.', 'anti-spam-for-wordpress' ),
+				'scope_hint'            => __( 'Apply heuristics everywhere or only for selected contexts.', 'anti-spam-for-wordpress' ),
+				'contexts_hint'         => __( 'Enter one normalized context per line or use commas.', 'anti-spam-for-wordpress' ),
+				'enabled_option'        => 'asfw_feature_content_heuristics_enabled',
+				'scope_mode_option'     => 'asfw_feature_content_heuristics_scope_mode',
+				'contexts_option'       => 'asfw_feature_content_heuristics_contexts',
+				'mode_option'           => 'asfw_feature_content_heuristics_mode',
+				'background_option'     => '',
+				'default_enabled'       => false,
+				'default_scope_mode'    => 'all',
+				'default_contexts'      => array(),
+				'default_mode'          => 'off',
+				'legacy_enabled_option' => 'asfw_content_heuristics_enabled',
+				'legacy_active_mode'    => 'log',
+				'show_in_settings'      => true,
+			),
+			'ip_feeds'           => array(
 				'id'                 => 'ip_feeds',
 				'label'              => __( 'IP feeds', 'anti-spam-for-wordpress' ),
 				'section'            => '',
@@ -91,7 +91,7 @@ final class ASFW_Feature_Registry {
 				'default_background' => false,
 				'show_in_settings'   => false,
 			),
-				'bunny_shield' => array(
+			'bunny_shield'       => array(
 				'id'                 => 'bunny_shield',
 				'label'              => __( 'Bunny Shield', 'anti-spam-for-wordpress' ),
 				'section'            => 'asfw_bunny_settings_section',
@@ -108,13 +108,13 @@ final class ASFW_Feature_Registry {
 				'background_option'  => 'asfw_feature_bunny_shield_background_enabled',
 				'default_enabled'    => false,
 				'default_scope_mode' => 'all',
-					'default_contexts'   => array(),
-					'default_mode'       => 'off',
-					'default_background' => false,
-					'legacy_active_mode' => 'block',
-					'show_in_settings'   => true,
-				),
-			'math_challenge' => array(
+				'default_contexts'   => array(),
+				'default_mode'       => 'off',
+				'default_background' => false,
+				'legacy_active_mode' => 'block',
+				'show_in_settings'   => true,
+			),
+			'math_challenge'     => array(
 				'id'                 => 'math_challenge',
 				'label'              => __( 'Math challenge', 'anti-spam-for-wordpress' ),
 				'section'            => 'asfw_security_settings_section',
@@ -133,7 +133,7 @@ final class ASFW_Feature_Registry {
 				'default_mode'       => 'off',
 				'show_in_settings'   => true,
 			),
-			'submit_delay' => array(
+			'submit_delay'       => array(
 				'id'                 => 'submit_delay',
 				'label'              => __( 'Submit delay', 'anti-spam-for-wordpress' ),
 				'section'            => 'asfw_security_settings_section',
@@ -253,7 +253,7 @@ final class ASFW_Feature_Registry {
 
 		$normalized_context = self::normalize_context( $context );
 		foreach ( $selected_contexts as $selected_context ) {
-			if ( $normalized_context === self::normalize_context( $selected_context ) ) {
+			if ( self::normalize_context( $selected_context ) === $normalized_context ) {
 				return true;
 			}
 		}
@@ -370,7 +370,7 @@ final class ASFW_Feature_Registry {
 
 	public static function get_integration_features() {
 		$features = array(
-			'coblocks' => self::build_integration_feature(
+			'coblocks'                   => self::build_integration_feature(
 				'coblocks',
 				__( 'CoBlocks', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_coblocks,
@@ -381,7 +381,7 @@ final class ASFW_Feature_Registry {
 				false,
 				! asfw_plugin_active( 'coblocks' )
 			),
-			'contact_form_7' => self::build_integration_feature(
+			'contact_form_7'             => self::build_integration_feature(
 				'contact_form_7',
 				__( 'Contact Form 7', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_contact_form_7,
@@ -392,7 +392,7 @@ final class ASFW_Feature_Registry {
 				true,
 				! asfw_plugin_active( 'contact-form-7' )
 			),
-			'elementor' => self::build_integration_feature(
+			'elementor'                  => self::build_integration_feature(
 				'elementor',
 				__( 'Elementor Pro Forms', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_elementor,
@@ -403,7 +403,7 @@ final class ASFW_Feature_Registry {
 				false,
 				! asfw_plugin_active( 'elementor' )
 			),
-			'enfold_theme' => self::build_integration_feature(
+			'enfold_theme'               => self::build_integration_feature(
 				'enfold_theme',
 				__( 'Enfold Theme', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_enfold_theme,
@@ -414,7 +414,7 @@ final class ASFW_Feature_Registry {
 				false,
 				! self::is_enfold_theme_available()
 			),
-			'formidable' => self::build_integration_feature(
+			'formidable'                 => self::build_integration_feature(
 				'formidable',
 				__( 'Formidable Forms', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_formidable,
@@ -425,7 +425,7 @@ final class ASFW_Feature_Registry {
 				false,
 				! asfw_plugin_active( 'formidable' )
 			),
-			'forminator' => self::build_integration_feature(
+			'forminator'                 => self::build_integration_feature(
 				'forminator',
 				__( 'Forminator', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_forminator,
@@ -436,7 +436,7 @@ final class ASFW_Feature_Registry {
 				false,
 				! asfw_plugin_active( 'forminator' )
 			),
-			'gravityforms' => self::build_integration_feature(
+			'gravityforms'               => self::build_integration_feature(
 				'gravityforms',
 				__( 'Gravity Forms', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_gravityforms,
@@ -447,7 +447,7 @@ final class ASFW_Feature_Registry {
 				false,
 				! asfw_plugin_active( 'gravityforms' )
 			),
-			'html_forms' => self::build_integration_feature(
+			'html_forms'                 => self::build_integration_feature(
 				'html_forms',
 				__( 'HTML Forms', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_html_forms,
@@ -458,7 +458,7 @@ final class ASFW_Feature_Registry {
 				true,
 				! asfw_plugin_active( 'html-forms' )
 			),
-			'wpdiscuz' => self::build_integration_feature(
+			'wpdiscuz'                   => self::build_integration_feature(
 				'wpdiscuz',
 				__( 'WPDiscuz', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_wpdiscuz,
@@ -469,7 +469,7 @@ final class ASFW_Feature_Registry {
 				false,
 				! asfw_plugin_active( 'wpdiscuz' )
 			),
-			'wpforms' => self::build_integration_feature(
+			'wpforms'                    => self::build_integration_feature(
 				'wpforms',
 				__( 'WPForms', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_wpforms,
@@ -480,7 +480,7 @@ final class ASFW_Feature_Registry {
 				false,
 				! asfw_plugin_active( 'wpforms' )
 			),
-			'woocommerce_register' => self::build_integration_feature(
+			'woocommerce_register'       => self::build_integration_feature(
 				'woocommerce_register',
 				__( 'WooCommerce register page', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_woocommerce_register,
@@ -502,7 +502,7 @@ final class ASFW_Feature_Registry {
 				false,
 				! asfw_plugin_active( 'woocommerce' )
 			),
-			'woocommerce_login' => self::build_integration_feature(
+			'woocommerce_login'          => self::build_integration_feature(
 				'woocommerce_login',
 				__( 'WooCommerce login page', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_woocommerce_login,
@@ -513,7 +513,7 @@ final class ASFW_Feature_Registry {
 				false,
 				! asfw_plugin_active( 'woocommerce' )
 			),
-			'custom' => self::build_integration_feature(
+			'custom'                     => self::build_integration_feature(
 				'custom',
 				__( 'Custom HTML', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_custom,
@@ -529,7 +529,7 @@ final class ASFW_Feature_Registry {
 					'[anti_spam_widget]'
 				)
 			),
-			'wordpress_register' => self::build_integration_feature(
+			'wordpress_register'         => self::build_integration_feature(
 				'wordpress_register',
 				__( 'Register page', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_wordpress_register,
@@ -540,7 +540,7 @@ final class ASFW_Feature_Registry {
 				false,
 				false
 			),
-			'wordpress_reset_password' => self::build_integration_feature(
+			'wordpress_reset_password'   => self::build_integration_feature(
 				'wordpress_reset_password',
 				__( 'Reset password page', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_wordpress_reset_password,
@@ -551,7 +551,7 @@ final class ASFW_Feature_Registry {
 				false,
 				false
 			),
-			'wordpress_login' => self::build_integration_feature(
+			'wordpress_login'            => self::build_integration_feature(
 				'wordpress_login',
 				__( 'Login page', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_wordpress_login,
@@ -562,7 +562,7 @@ final class ASFW_Feature_Registry {
 				false,
 				false
 			),
-			'wordpress_comments' => self::build_integration_feature(
+			'wordpress_comments'         => self::build_integration_feature(
 				'wordpress_comments',
 				__( 'Comments', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_wordpress_comments,
@@ -594,13 +594,13 @@ final class ASFW_Feature_Registry {
 
 	public static function get_context_catalog() {
 		$catalog = array(
-			'generic' => array(
+			'generic'        => array(
 				'context'     => 'generic',
 				'label'       => __( 'Generic widget', 'anti-spam-for-wordpress' ),
 				'group'       => 'core',
 				'description' => __( 'Fallback context used when no explicit context is supplied.', 'anti-spam-for-wordpress' ),
 			),
-			'form:captcha' => array(
+			'form:captcha'   => array(
 				'context'     => 'form:captcha',
 				'label'       => __( 'Form widget', 'anti-spam-for-wordpress' ),
 				'group'       => 'core',
@@ -612,7 +612,7 @@ final class ASFW_Feature_Registry {
 				'group'       => 'core',
 				'description' => __( 'Automatic context used when the widget is rendered in shortcode mode without an explicit context.', 'anti-spam-for-wordpress' ),
 			),
-			'form:custom' => array(
+			'form:custom'    => array(
 				'context'     => 'form:custom',
 				'label'       => __( 'Custom form widget', 'anti-spam-for-wordpress' ),
 				'group'       => 'core',
@@ -755,5 +755,4 @@ final class ASFW_Feature_Registry {
 		$definitions = self::definitions();
 		return isset( $definitions[ $feature ] ) && is_array( $definitions[ $feature ] ) ? $definitions[ $feature ] : null;
 	}
-
 }

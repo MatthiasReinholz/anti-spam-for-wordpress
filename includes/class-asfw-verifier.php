@@ -134,38 +134,38 @@ if ( ! class_exists( 'ASFW_Verifier', false ) ) {
 			return true;
 		}
 
-			public function resolve_expected_context( $expected_context, $field_name = 'asfw' ) {
-				$normalized_expected = '';
-				if ( null !== $expected_context && '' !== $expected_context ) {
-					$normalized_expected = $this->context_helper_service()->normalize_context( $expected_context );
-				}
-
-				$posted_context   = asfw_get_posted_value( $this->context_helper_service()->get_context_field_name( $field_name ) );
-				$posted_signature = asfw_get_posted_value( $this->context_helper_service()->get_context_signature_field_name( $field_name ) );
-				if ( '' !== $posted_context || '' !== $posted_signature ) {
-					if ( '' === $posted_context || '' === $posted_signature ) {
-						return new WP_Error( 'asfw_missing_context', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-					}
-
-					$normalized_context = $this->context_helper_service()->normalize_context( $posted_context );
-					$expected_signature = $this->context_helper_service()->sign_widget_context( $normalized_context, $field_name );
-					if ( ! hash_equals( $expected_signature, $posted_signature ) ) {
-						return new WP_Error( 'asfw_invalid_context_signature', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-					}
-
-					if ( '' !== $normalized_expected && $normalized_context !== $normalized_expected ) {
-						return new WP_Error( 'asfw_context_mismatch', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-					}
-
-					return $normalized_context;
-				}
-
-				if ( '' !== $normalized_expected ) {
-					return $normalized_expected;
-				}
-
-				return new WP_Error( 'asfw_missing_context', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+		public function resolve_expected_context( $expected_context, $field_name = 'asfw' ) {
+			$normalized_expected = '';
+			if ( null !== $expected_context && '' !== $expected_context ) {
+				$normalized_expected = $this->context_helper_service()->normalize_context( $expected_context );
 			}
+
+			$posted_context   = asfw_get_posted_value( $this->context_helper_service()->get_context_field_name( $field_name ) );
+			$posted_signature = asfw_get_posted_value( $this->context_helper_service()->get_context_signature_field_name( $field_name ) );
+			if ( '' !== $posted_context || '' !== $posted_signature ) {
+				if ( '' === $posted_context || '' === $posted_signature ) {
+					return new WP_Error( 'asfw_missing_context', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+				}
+
+				$normalized_context = $this->context_helper_service()->normalize_context( $posted_context );
+				$expected_signature = $this->context_helper_service()->sign_widget_context( $normalized_context, $field_name );
+				if ( ! hash_equals( $expected_signature, $posted_signature ) ) {
+					return new WP_Error( 'asfw_invalid_context_signature', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+				}
+
+				if ( '' !== $normalized_expected && $normalized_context !== $normalized_expected ) {
+					return new WP_Error( 'asfw_context_mismatch', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+				}
+
+				return $normalized_context;
+			}
+
+			if ( '' !== $normalized_expected ) {
+				return $normalized_expected;
+			}
+
+			return new WP_Error( 'asfw_missing_context', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+		}
 
 		public function validate_solution( $payload, $hmac_key = null, $expected_context = null ) {
 			if ( null === $hmac_key ) {
@@ -309,13 +309,14 @@ if ( ! class_exists( 'ASFW_Verifier', false ) ) {
 		public function verify( $payload, $hmac_key = null, $context = null, $field_name = 'asfw' ) {
 			$resolved_context = null;
 			$result           = $this->validate_request( $payload, $hmac_key, $context, $field_name, $resolved_context );
-			$success = ! ( $result instanceof WP_Error );
+			$success          = ! ( $result instanceof WP_Error );
 
 			if ( $success && class_exists( 'ASFW_Control_Plane', false ) ) {
 				$disposable_module = ASFW_Control_Plane::disposable_module();
 				if ( $disposable_module instanceof ASFW_Disposable_Email_Module ) {
 					$analysis_context = '' !== trim( (string) $resolved_context ) ? $resolved_context : $context;
-					$analysis         = $disposable_module->analyze_submission( $analysis_context, $_POST );
+					// phpcs:ignore WordPress.Security.NonceVerification.Missing -- The proof-of-work verifier inspects the current submission payload as part of anti-spam validation.
+					$analysis = $disposable_module->analyze_submission( $analysis_context, $_POST );
 					if ( ! empty( $analysis['hit'] ) && ! empty( $analysis['blocked'] ) ) {
 						$rate_limit_context = $this->context_helper_service()->normalize_context( $analysis_context );
 						if ( '' === $rate_limit_context ) {

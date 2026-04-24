@@ -19,16 +19,17 @@ class ASFW_CLI_Command {
 	}
 
 	protected function cli_log( $message ) {
-		if ( class_exists( 'WP_CLI', false ) && method_exists( 'WP_CLI', 'log' ) ) {
-			WP_CLI::log( $message );
+		if ( class_exists( 'WP_CLI', false ) ) {
+			WP_CLI::log( (string) $message );
 			return;
 		}
 
-		echo $message . PHP_EOL;
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- WP-CLI output must remain raw so JSON responses stay machine-readable.
+		echo (string) $message . PHP_EOL;
 	}
 
 	protected function cli_success( $message ) {
-		if ( class_exists( 'WP_CLI', false ) && method_exists( 'WP_CLI', 'success' ) ) {
+		if ( class_exists( 'WP_CLI', false ) ) {
 			WP_CLI::success( $message );
 			return;
 		}
@@ -37,7 +38,7 @@ class ASFW_CLI_Command {
 	}
 
 	protected function cli_warning( $message ) {
-		if ( class_exists( 'WP_CLI', false ) && method_exists( 'WP_CLI', 'warning' ) ) {
+		if ( class_exists( 'WP_CLI', false ) ) {
 			WP_CLI::warning( $message );
 			return;
 		}
@@ -46,12 +47,13 @@ class ASFW_CLI_Command {
 	}
 
 	protected function cli_error( $message ) {
-		if ( class_exists( 'WP_CLI', false ) && method_exists( 'WP_CLI', 'error' ) ) {
+		if ( class_exists( 'WP_CLI', false ) ) {
 			WP_CLI::error( $message );
 			return;
 		}
 
-		throw new RuntimeException( $message );
+		// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI exceptions must preserve raw messages for scripts and tests.
+		throw new RuntimeException( (string) $message );
 	}
 
 	protected function yes_requested( array $assoc_args ) {
@@ -99,6 +101,8 @@ class ASFW_CLI_Command {
 	}
 
 	public function feature( array $args, array $assoc_args ) {
+		unset( $assoc_args );
+
 		$subcommand = isset( $args[0] ) ? $args[0] : 'list';
 
 		switch ( $subcommand ) {
@@ -124,9 +128,9 @@ class ASFW_CLI_Command {
 						'module' => isset( $assoc_args['module'] ) ? $assoc_args['module'] : '',
 						'status' => isset( $assoc_args['status'] ) ? $assoc_args['status'] : '',
 					)
-					);
+				);
 					$this->cli_log( wp_json_encode( $events ) );
-					return $events;
+				return $events;
 
 			case 'prune':
 				if ( ! $this->yes_requested( $assoc_args ) ) {

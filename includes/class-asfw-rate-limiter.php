@@ -26,11 +26,42 @@ if ( ! class_exists( 'ASFW_Rate_Limiter', false ) ) {
 			return $this->options_service;
 		}
 
-			public function get_rate_limit_key( $type, $context ) {
-				$context_key = (string) ASFW_Feature_Registry::normalize_context( $context );
+		private function get_rate_limit_lock_key( $type, $context ) {
+			return $this->get_rate_limit_key( $type, $context ) . '_lock';
+		}
 
-				return 'asfw_rl_' . sanitize_key( $type ) . '_' . md5( $this->client_identity_service()->get_client_fingerprint() . '|' . $context_key );
+		private function acquire_rate_limit_lock( $type, $context ) {
+			$lock_key = $this->get_rate_limit_lock_key( $type, $context );
+			$now      = time();
+
+			for ( $attempt = 0; $attempt < 3; $attempt++ ) {
+				if ( add_option( $lock_key, (string) $now, '', false ) ) {
+					return true;
+				}
+
+				$locked_at = intval( get_option( $lock_key, '0' ), 10 );
+				if ( $locked_at > 0 && $locked_at < ( $now - 5 ) ) {
+					delete_option( $lock_key );
+					continue;
+				}
+
+				if ( function_exists( 'usleep' ) ) {
+					usleep( 25000 );
+				}
 			}
+
+			return false;
+		}
+
+		private function release_rate_limit_lock( $type, $context ) {
+			delete_option( $this->get_rate_limit_lock_key( $type, $context ) );
+		}
+
+		public function get_rate_limit_key( $type, $context ) {
+			$context_key = (string) ASFW_Feature_Registry::normalize_context( $context );
+
+			return 'asfw_rl_' . sanitize_key( $type ) . '_' . md5( $this->client_identity_service()->get_client_fingerprint() . '|' . $context_key );
+		}
 
 		public function get_rate_limit_limit( $type ) {
 			if ( 'challenge' === $type ) {
@@ -88,17 +119,27 @@ if ( ! class_exists( 'ASFW_Rate_Limiter', false ) ) {
 		}
 
 		public function increment_rate_limit( $type, $context ) {
-			$state = $this->get_rate_limit_state( $type, $context );
+			$locked = $this->acquire_rate_limit_lock( $type, $context );
+			$state  = $this->get_rate_limit_state( $type, $context );
 			if ( $state['limit'] <= 0 ) {
+				if ( $locked ) {
+					$this->release_rate_limit_lock( $type, $context );
+				}
 				return $state;
 			}
 
-			++$state['count'];
-			set_transient(
-				$this->get_rate_limit_key( $type, $context ),
-				array( 'count' => $state['count'] ),
-				$state['window']
-			);
+			try {
+				++$state['count'];
+				set_transient(
+					$this->get_rate_limit_key( $type, $context ),
+					array( 'count' => $state['count'] ),
+					$state['window']
+				);
+			} finally {
+				if ( $locked ) {
+					$this->release_rate_limit_lock( $type, $context );
+				}
+			}
 
 			return $state;
 		}

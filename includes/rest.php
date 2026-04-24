@@ -6,10 +6,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 add_action(
 	'rest_api_init',
-		function () {
-			register_rest_route(
-				'anti-spam-for-wordpress/v1',
-				'challenge',
+	function () {
+		register_rest_route(
+			'anti-spam-for-wordpress/v1',
+			'challenge',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => 'asfw_generate_challenge_endpoint',
@@ -19,27 +19,27 @@ add_action(
 						'required'          => false,
 						'sanitize_callback' => 'sanitize_text_field',
 					),
+				),
+			)
+		);
+
+			register_rest_route(
+				'anti-spam-for-wordpress/v1',
+				'submit-delay-token',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => 'asfw_generate_submit_delay_token_endpoint',
+					'permission_callback' => '__return_true',
+					'args'                => array(
+						'context' => array(
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
 					),
 				)
 			);
-
-				register_rest_route(
-					'anti-spam-for-wordpress/v1',
-					'submit-delay-token',
-					array(
-						'methods'             => WP_REST_Server::READABLE,
-						'callback'            => 'asfw_generate_submit_delay_token_endpoint',
-						'permission_callback' => '__return_true',
-						'args'                => array(
-							'context' => array(
-								'required'          => false,
-								'sanitize_callback' => 'sanitize_text_field',
-							),
-						),
-					)
-				);
-			}
-		);
+	}
+);
 
 function asfw_generate_challenge_endpoint( WP_REST_Request $request ) {
 	$origin_classification = asfw_classify_challenge_request_origin( $request );
@@ -191,25 +191,5 @@ function asfw_rest_request_header( WP_REST_Request $request, $name ) {
 		return '';
 	}
 
-	if ( method_exists( $request, 'get_header' ) ) {
-		return (string) $request->get_header( $name );
-	}
-
-	if ( method_exists( $request, 'get_headers' ) ) {
-		$headers = $request->get_headers();
-		if ( is_array( $headers ) ) {
-			foreach ( $headers as $header_name => $value ) {
-				if ( strtolower( (string) $header_name ) !== $name ) {
-					continue;
-				}
-				if ( is_array( $value ) ) {
-					return (string) reset( $value );
-				}
-
-				return (string) $value;
-			}
-		}
-	}
-
-	return '';
+	return (string) $request->get_header( $name );
 }

@@ -4,6 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound -- Formidable field class name is kept for integration compatibility.
 class AntiSpamWidgetFieldType extends FrmFieldType {
 
 	protected $type = 'anti_spam_widget';

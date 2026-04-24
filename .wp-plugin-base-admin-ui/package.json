@@ -16,5 +16,12 @@
     "@wordpress/element": "6.44.0",
     "@wordpress/i18n": "6.17.0",
     "@wordpress/scripts": "32.0.0"
+  },
+  "overrides": {
+    "basic-ftp": "5.3.0",
+    "minimatch": "3.1.5",
+    "serialize-javascript": "7.0.5",
+    "uuid": "14.0.0",
+    "webpack-dev-server": "5.2.3"
   }
 }

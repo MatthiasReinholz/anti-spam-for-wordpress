@@ -42,14 +42,14 @@ if ( asfw_plugin_active( 'html-forms' ) ) {
 							if ( false === asfw_verify_posted_widget( 'captcha' === $mode ? 'html-forms' : null ) ) {
 								return 'asfw_invalid';
 							}
+						}
 					}
-				}
 
-				return $error_code;
-			},
-			10,
-			3
-		);
+					return $error_code;
+				},
+				10,
+				3
+			);
 
 		add_filter(
 			'hf_form_message_asfw_invalid',

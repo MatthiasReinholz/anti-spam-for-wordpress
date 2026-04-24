@@ -10,9 +10,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Author: Matthias Reinholz
  * Author URI: https://matthiasreinholz.com
  * Version: 0.6.1
- * Requires at least: 5.0
+ * Requires at least: 6.4
  * Requires PHP: 8.0
- * Tested up to: 6.8
+ * Tested up to: 6.9
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: anti-spam-for-wordpress
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 
 define( 'ASFW_FILE', __FILE__ );
-define('ASFW_VERSION', '0.6.1');
+define( 'ASFW_VERSION', '0.6.1' );
 define( 'ASFW_WEBSITE', 'https://matthiasreinholz.com' );
 define( 'ASFW_WIDGET_VERSION', '1.0.0' );
 define( 'ASFW_DB_VERSION', 1 );
@@ -53,16 +53,14 @@ require_once __DIR__ . '/lib/wp-plugin-base/rest-operations/bootstrap.php';
 require_once __DIR__ . '/lib/wp-plugin-base/admin-ui/bootstrap.php';
 require_once __DIR__ . '/public/widget.php';
 
-if ( function_exists( 'asfw_seed_control_plane_defaults' ) ) {
-	asfw_seed_control_plane_defaults();
-}
-
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Static property names are part of the legacy plugin API.
 AntiSpamForWordPressPlugin::$widget_script_src = plugin_dir_url( __FILE__ ) . 'public/asfw-widget.js';
 AntiSpamForWordPressPlugin::$widget_style_src  = plugin_dir_url( __FILE__ ) . 'public/asfw-widget.css';
 AntiSpamForWordPressPlugin::$wp_script_src     = plugin_dir_url( __FILE__ ) . 'public/script.js';
 AntiSpamForWordPressPlugin::$admin_script_src  = plugin_dir_url( __FILE__ ) . 'public/admin.js';
 AntiSpamForWordPressPlugin::$admin_css_src     = plugin_dir_url( __FILE__ ) . 'public/admin.css';
 AntiSpamForWordPressPlugin::$custom_script_src = plugin_dir_url( __FILE__ ) . 'public/custom.js';
+// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 
 register_activation_hook( __FILE__, 'asfw_activate' );
 register_deactivation_hook( __FILE__, 'asfw_deactivate' );
@@ -99,13 +97,10 @@ add_shortcode(
 );
 
 function asfw_init() {
+	if ( function_exists( 'asfw_seed_control_plane_defaults' ) ) {
+		asfw_seed_control_plane_defaults();
+	}
 	asfw_initialize_control_plane();
-
-	load_plugin_textdomain(
-		'anti-spam-for-wordpress',
-		false,
-		dirname( plugin_basename( __FILE__ ) ) . '/languages/'
-	);
 }
 
 function asfw_activate() {

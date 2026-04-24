@@ -89,13 +89,9 @@ if ( ! function_exists( 'asfw_rest_privacy_target_options' ) ) {
 		);
 
 		foreach ( $pages as $page ) {
-			if ( ! is_object( $page ) || ! isset( $page->ID ) ) {
-				continue;
-			}
-
 			$options[] = array(
 				'value' => (string) $page->ID,
-				'label' => isset( $page->post_title ) ? (string) $page->post_title : (string) $page->ID,
+				'label' => '' !== (string) $page->post_title ? (string) $page->post_title : (string) $page->ID,
 			);
 		}
 
@@ -113,6 +109,11 @@ if ( ! function_exists( 'asfw_rest_normalize_field_value' ) ) {
 	 */
 	function asfw_rest_normalize_field_value( array $field, $value ) {
 		$type = asfw_rest_normalize_field_type( $field );
+		$args = isset( $field['args'] ) && is_array( $field['args'] ) ? $field['args'] : array();
+
+		if ( ! empty( $args['write_only'] ) ) {
+			return '';
+		}
 
 		if ( 'checkbox' === $type ) {
 			return ! empty( $value );
@@ -195,7 +196,7 @@ if ( ! function_exists( 'asfw_rest_registered_option_allowlist' ) ) {
 			}
 		}
 
-		$allowlist = array_values( array_unique( array_filter( $allowlist ) ) );
+			$allowlist = array_values( array_unique( $allowlist ) );
 		sort( $allowlist );
 
 		return $allowlist;
@@ -288,9 +289,9 @@ if ( ! function_exists( 'asfw_rest_build_settings_payload' ) ) {
 					continue;
 				}
 
-				$option_name  = (string) $field['option'];
-				$current      = get_option( $option_name );
-				$field_args   = isset( $field['args'] ) && is_array( $field['args'] ) ? $field['args'] : array();
+				$option_name         = (string) $field['option'];
+				$current             = get_option( $option_name );
+				$field_args          = isset( $field['args'] ) && is_array( $field['args'] ) ? $field['args'] : array();
 				$normalized_fields[] = array(
 					'id'          => isset( $field['id'] ) ? (string) $field['id'] : $option_name,
 					'option'      => $option_name,
@@ -299,6 +300,7 @@ if ( ! function_exists( 'asfw_rest_build_settings_payload' ) ) {
 					'value'       => asfw_rest_normalize_field_value( $field, $current ),
 					'hint'        => isset( $field_args['hint'] ) ? (string) $field_args['hint'] : '',
 					'description' => isset( $field_args['description'] ) ? (string) $field_args['description'] : '',
+					'placeholder' => isset( $field_args['placeholder'] ) ? (string) $field_args['placeholder'] : '',
 					'disabled'    => ! empty( $field_args['disabled'] ),
 					'options'     => asfw_rest_field_options( $field ),
 				);
@@ -320,25 +322,27 @@ if ( ! function_exists( 'asfw_rest_build_settings_payload' ) ) {
 		$contexts = ASFW_Context_Catalog::get_contexts();
 
 		return array(
-			'sections' => $settings_sections,
-			'summary'  => array(
+			'sections'        => $settings_sections,
+			'summary'         => array(
 				'kill_switch' => ASFW_Feature_Registry::kill_switch_active() ? 'active' : 'inactive',
 				'rows'        => array_values( is_array( $summary_rows ) ? $summary_rows : array() ),
 			),
-			'context_catalog' => array_values( array_map(
-				static function ( $context, $entry ) {
-					$group = isset( $entry['group'] ) ? (string) $entry['group'] : 'integrations';
-					$description = isset( $entry['description'] ) ? (string) $entry['description'] : '';
-					return array(
-						'context'     => (string) $context,
-						'group'       => $group,
-						'group_label' => function_exists( 'asfw_context_catalog_group_label' ) ? (string) asfw_context_catalog_group_label( $group ) : $group,
-						'description' => $description,
-					);
-				},
-				array_keys( $contexts ),
-				array_values( $contexts )
-			) ),
+			'context_catalog' => array_values(
+				array_map(
+					static function ( $context, $entry ) {
+						$group = isset( $entry['group'] ) ? (string) $entry['group'] : 'integrations';
+						$description = isset( $entry['description'] ) ? (string) $entry['description'] : '';
+						return array(
+							'context'     => (string) $context,
+							'group'       => $group,
+							'group_label' => function_exists( 'asfw_context_catalog_group_label' ) ? (string) asfw_context_catalog_group_label( $group ) : $group,
+							'description' => $description,
+						);
+					},
+					array_keys( $contexts ),
+					array_values( $contexts )
+				)
+			),
 		);
 	}
 }
@@ -404,7 +408,7 @@ if ( ! function_exists( 'asfw_rest_operation_settings_update' ) ) {
 			}
 
 			update_option( $option, $sanitized );
-			if ( class_exists( 'ASFW_Settings_Registrar', false ) && method_exists( 'ASFW_Settings_Registrar', 'sync_legacy_feature_options' ) ) {
+			if ( class_exists( 'ASFW_Settings_Registrar', false ) ) {
 				ASFW_Settings_Registrar::sync_legacy_feature_options( $option );
 			}
 			$updated[] = $option;

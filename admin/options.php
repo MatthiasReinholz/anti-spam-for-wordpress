@@ -96,7 +96,7 @@ function asfw_render_settings_summary_panel() {
 	$kill_switch = ASFW_Feature_Registry::kill_switch_active()
 		? __( 'Active', 'anti-spam-for-wordpress' )
 		: __( 'Inactive', 'anti-spam-for-wordpress' );
-	$rows = asfw_get_settings_summary_rows();
+	$rows        = asfw_get_settings_summary_rows();
 	?>
 	<div class="asfw-summary-panel">
 		<h2><?php echo esc_html__( 'Control plane summary', 'anti-spam-for-wordpress' ); ?></h2>
@@ -203,7 +203,7 @@ function asfw_context_catalog_group_label( $group ) {
 		return __( 'Core', 'anti-spam-for-wordpress' );
 	}
 
-	if ( 'wordpress' === $group ) {
+	if ( 'WordPress' === $group ) {
 		return __( 'WordPress', 'anti-spam-for-wordpress' );
 	}
 
@@ -215,14 +215,15 @@ function asfw_settings_field_callback( array $args ) {
 	$name        = $args['name'];
 	$hint        = isset( $args['hint'] ) ? $args['hint'] : null;
 	$description = isset( $args['description'] ) ? $args['description'] : null;
+	$placeholder = isset( $args['placeholder'] ) ? $args['placeholder'] : '';
 	$setting     = get_option( $name );
-	$value       = isset( $setting ) ? esc_attr( $setting ) : '';
+	$value       = isset( $setting ) && empty( $args['write_only'] ) ? esc_attr( $setting ) : '';
 
 	if ( 'checkbox' === $type ) {
 		$value = 1;
 	}
 	?>
-	<input autocomplete="off" class="regular-text" type="<?php echo esc_attr( $type ); ?>" name="<?php echo esc_attr( $name ); ?>" id="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $value ); ?>" <?php checked( 1, $setting, 'checkbox' === $type ); ?>>
+	<input autocomplete="off" class="regular-text" type="<?php echo esc_attr( $type ); ?>" name="<?php echo esc_attr( $name ); ?>" id="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $value ); ?>" placeholder="<?php echo esc_attr( $placeholder ); ?>" <?php checked( 1, $setting, 'checkbox' === $type ); ?>>
 	<?php if ( ! empty( $description ) ) { ?>
 		<label class="description" for="<?php echo esc_attr( $name ); ?>"><?php echo esc_html( $description ); ?></label>
 	<?php } ?>

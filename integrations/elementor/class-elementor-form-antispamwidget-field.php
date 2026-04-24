@@ -5,6 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( class_exists( '\ElementorPro\Modules\Forms\Fields\Field_Base', false ) ) {
+	// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound -- Elementor field class name is kept for integration compatibility.
 	class Elementor_Form_AntiSpamWidget_Field extends \ElementorPro\Modules\Forms\Fields\Field_Base {
 
 		public function get_type() {

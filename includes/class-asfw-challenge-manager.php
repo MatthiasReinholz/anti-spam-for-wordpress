@@ -175,7 +175,7 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 			$secret_number = random_int( $min_secret, $max_secret );
 			$challenge     = hash( 'sha256', $salt . $secret_number );
 			$signature     = hash_hmac( 'sha256', $challenge, $hmac_key );
-			$issued_at_ms = (int) round( microtime( true ) * 1000 );
+			$issued_at_ms  = (int) round( microtime( true ) * 1000 );
 			set_transient(
 				$this->get_challenge_transient_key( $challenge_id ),
 				array(
@@ -313,19 +313,19 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 			);
 		}
 
-				public function render_submit_delay_fields( $context, $delay_ms ) {
-					$token_url  = add_query_arg(
-						array(
-							'context' => $this->context_helper_service()->normalize_context( $context ),
-						),
-						get_rest_url( null, '/anti-spam-for-wordpress/v1/submit-delay-token' )
-					);
-					$html       = '<input type="hidden" name="' . esc_attr( $this->get_submit_delay_token_field_name() ) . '" value="">';
-					$html      .= '<input type="hidden" name="' . esc_attr( $this->get_submit_delay_signature_field_name() ) . '" value="">';
-					$html      .= '<span class="asfw-submit-delay-status" role="status" aria-live="polite" data-asfw-submit-delay-ms="' . esc_attr( (string) intval( $delay_ms, 10 ) ) . '" data-asfw-submit-delay-mode="' . esc_attr( ASFW_Feature_Registry::active_mode( 'submit_delay' ) ) . '" data-asfw-submit-delay-until="0" data-asfw-submit-delay-token-url="' . esc_url( $token_url ) . '">' . esc_html__( 'Preparing submit...', 'anti-spam-for-wordpress' ) . '</span>';
+		public function render_submit_delay_fields( $context, $delay_ms ) {
+			$token_url = add_query_arg(
+				array(
+					'context' => $this->context_helper_service()->normalize_context( $context ),
+				),
+				get_rest_url( null, '/anti-spam-for-wordpress/v1/submit-delay-token' )
+			);
+			$html      = '<input type="hidden" name="' . esc_attr( $this->get_submit_delay_token_field_name() ) . '" value="">';
+			$html     .= '<input type="hidden" name="' . esc_attr( $this->get_submit_delay_signature_field_name() ) . '" value="">';
+			$html     .= '<span class="asfw-submit-delay-status" role="status" aria-live="polite" data-asfw-submit-delay-ms="' . esc_attr( (string) intval( $delay_ms, 10 ) ) . '" data-asfw-submit-delay-mode="' . esc_attr( ASFW_Feature_Registry::active_mode( 'submit_delay' ) ) . '" data-asfw-submit-delay-until="0" data-asfw-submit-delay-token-url="' . esc_url( $token_url ) . '">' . esc_html__( 'Preparing submit...', 'anti-spam-for-wordpress' ) . '</span>';
 
-				return $html;
-			}
+			return $html;
+		}
 
 		public function validate_submit_delay_submission( $context, $delay_ms ) {
 			$token_id  = asfw_get_posted_value( $this->get_submit_delay_token_field_name() );

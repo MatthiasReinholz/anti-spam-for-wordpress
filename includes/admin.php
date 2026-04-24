@@ -33,9 +33,13 @@ function asfw_redirect_legacy_admin_page( $tab = 'settings' ) {
 	exit;
 }
 
+function asfw_hidden_submenu_parent_slug() {
+	return apply_filters( 'asfw_hidden_submenu_parent_slug', null );
+}
+
 function asfw_register_legacy_admin_routes() {
 	add_submenu_page(
-		null,
+		asfw_hidden_submenu_parent_slug(),
 		__( 'Anti Spam for WordPress', 'anti-spam-for-wordpress' ),
 		__( 'Anti Spam for WordPress', 'anti-spam-for-wordpress' ),
 		'manage_options',
@@ -62,6 +66,7 @@ function asfw_handle_legacy_admin_redirect() {
 		return;
 	}
 
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.NonceVerification.Missing -- Read-only legacy admin redirect routing does not change state.
 	$page = isset( $_GET['page'] ) ? sanitize_key( (string) wp_unslash( $_GET['page'] ) ) : '';
 	if ( '' === $page ) {
 		return;

@@ -82,11 +82,13 @@ class ASFW_Event_Logger {
 	}
 
 	protected function get_posted_field_value( $field_name ) {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Event logging reads submitted fields after verification to store privacy-preserving hashes only.
 		if ( '' === $field_name || ! isset( $_POST[ $field_name ] ) || is_array( $_POST[ $field_name ] ) || is_object( $_POST[ $field_name ] ) ) {
 			return '';
 		}
 
-		return trim( strtolower( (string) wp_unslash( $_POST[ $field_name ] ) ) );
+		return trim( strtolower( (string) sanitize_text_field( wp_unslash( $_POST[ $field_name ] ) ) ) );
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
 	}
 
 	public function log_challenge_issued( array $challenge_data, $context, $challenge_id ) {
@@ -187,8 +189,8 @@ class ASFW_Event_Logger {
 				'feature'  => 'core',
 				'ip_hash'  => '' !== $user_hash ? $user_hash : $this->get_actor_hash(),
 				'details'  => array(
-					'options' => $options,
-					'count'   => count( $options ),
+					'options'      => $options,
+					'count'        => count( $options ),
 					'subject_hash' => $user_hash,
 				),
 			)
@@ -267,18 +269,18 @@ class ASFW_Event_Logger {
 		$this->store->record_event(
 			'disposable_email_hit',
 			array(
-				'decision' => 'matched',
-				'context'  => $event_context,
-				'feature'  => 'content-heuristics',
-				'ip_hash'  => $this->get_actor_hash(),
+				'decision'   => 'matched',
+				'context'    => $event_context,
+				'feature'    => 'content-heuristics',
+				'ip_hash'    => $this->get_actor_hash(),
 				'email_hash' => $email_hash,
-				'details'  => array(
-					'field_name'       => sanitize_key( (string) $field_name ),
-					'matched_fields'   => $matched_fields,
-					'matched_count'    => count( $matched_fields ),
+				'details'    => array(
+					'field_name'     => sanitize_key( (string) $field_name ),
+					'matched_fields' => $matched_fields,
+					'matched_count'  => count( $matched_fields ),
 				),
 			)
-			);
+		);
 	}
 
 	protected function bunny_context_from_state( array $state ) {

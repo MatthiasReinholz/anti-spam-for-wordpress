@@ -65,10 +65,10 @@ function asfw_sanitize_trusted_proxies_option( $value ) {
 }
 
 function asfw_sanitize_secret_option( $value ) {
-	$value = trim( wp_strip_all_tags( (string) $value ) );
+	$value   = trim( wp_strip_all_tags( (string) $value ) );
+	$current = trim( (string) get_option( AntiSpamForWordPressPlugin::$option_secret, '' ) );
 	if ( '' === $value ) {
-		$current = trim( (string) get_option( AntiSpamForWordPressPlugin::$option_secret, '' ) );
-		$plugin  = asfw_plugin_instance();
+		$plugin = asfw_plugin_instance();
 
 		if ( '' !== $current ) {
 			return $current;
@@ -76,6 +76,14 @@ function asfw_sanitize_secret_option( $value ) {
 
 		if ( $plugin instanceof AntiSpamForWordPressPlugin ) {
 			return $plugin->random_secret();
+		}
+
+		return bin2hex( random_bytes( 32 ) );
+	}
+
+	if ( strlen( $value ) < 32 ) {
+		if ( '' !== $current ) {
+			return $current;
 		}
 
 		return bin2hex( random_bytes( 32 ) );

@@ -16,6 +16,8 @@ $GLOBALS['asfw_test_registered_settings'] = $GLOBALS['asfw_test_registered_setti
 $GLOBALS['asfw_test_settings_sections'] = $GLOBALS['asfw_test_settings_sections'] ?? array();
 $GLOBALS['asfw_test_settings_fields'] = $GLOBALS['asfw_test_settings_fields'] ?? array();
 $GLOBALS['asfw_test_db_tables'] = $GLOBALS['asfw_test_db_tables'] ?? array();
+$GLOBALS['asfw_test_db_fetch_args'] = $GLOBALS['asfw_test_db_fetch_args'] ?? array();
+$GLOBALS['asfw_test_db_queries'] = $GLOBALS['asfw_test_db_queries'] ?? array();
 $GLOBALS['asfw_test_dbdelta_queries'] = $GLOBALS['asfw_test_dbdelta_queries'] ?? array();
 $GLOBALS['asfw_test_cron_events'] = $GLOBALS['asfw_test_cron_events'] ?? array();
 $GLOBALS['asfw_test_cli_commands'] = $GLOBALS['asfw_test_cli_commands'] ?? array();
@@ -729,6 +731,8 @@ function asfw_test_reset_state(array $options = array(), ?array $active_plugins 
     $GLOBALS['asfw_test_settings_sections'] = array();
     $GLOBALS['asfw_test_settings_fields'] = array();
     $GLOBALS['asfw_test_db_tables'] = array();
+    $GLOBALS['asfw_test_db_fetch_args'] = array();
+    $GLOBALS['asfw_test_db_queries'] = array();
     $GLOBALS['asfw_test_dbdelta_queries'] = array();
     $GLOBALS['asfw_test_cron_events'] = array();
     $GLOBALS['asfw_test_rest_routes'] = array();
@@ -829,6 +833,22 @@ class WP_Error
 
         return $messages;
     }
+
+    public function get_error_data($code = '')
+    {
+        if ($code === '') {
+            $code = $this->get_error_code();
+        }
+
+        if ($code === '' || !isset($this->errors[$code])) {
+            return null;
+        }
+
+        $entries = $this->errors[$code];
+        $last = end($entries);
+
+        return is_array($last) && array_key_exists('data', $last) ? $last['data'] : null;
+    }
 }
 
 class WP_Post
@@ -871,6 +891,11 @@ class WP_REST_Request
         return $this->params;
     }
 
+    public function get_header($name)
+    {
+        return '';
+    }
+
     public function set_param($name, $value)
     {
         $this->params[$name] = $value;
@@ -907,6 +932,7 @@ class WP_REST_Response
 class wpdb
 {
     public $prefix = 'wp_';
+    public $options = 'wp_options';
     public $insert_id = 0;
 
     public function get_charset_collate()
@@ -986,6 +1012,7 @@ class wpdb
 
     public function asfw_fetch_events($table, array $args)
     {
+        $GLOBALS['asfw_test_db_fetch_args'][] = $args;
         $this->ensure_table($table);
         $rows = array_map(array($this, 'asfw_normalize_event_row'), $GLOBALS['asfw_test_db_tables'][$table]);
 
@@ -1009,6 +1036,27 @@ class wpdb
             }));
         }
 
+        $dateFrom = $this->asfw_normalize_date_input($args['date_from'] ?? '', false);
+        $dateTo = $this->asfw_normalize_date_input($args['date_to'] ?? '', true);
+        if ($dateFrom !== '' || $dateTo !== '') {
+            $rows = array_values(array_filter($rows, static function ($row) use ($dateFrom, $dateTo) {
+                $createdAt = (string) ($row['created_at'] ?? '');
+                if ($createdAt === '') {
+                    return false;
+                }
+
+                if ($dateFrom !== '' && $createdAt < $dateFrom) {
+                    return false;
+                }
+
+                if ($dateTo !== '' && $createdAt > $dateTo) {
+                    return false;
+                }
+
+                return true;
+            }));
+        }
+
         usort($rows, static function ($left, $right) {
             return ($right['id'] ?? 0) <=> ($left['id'] ?? 0);
         });
@@ -1025,6 +1073,68 @@ class wpdb
     public function asfw_count_events($table, array $args)
     {
         return count($this->asfw_fetch_events($table, array_merge($args, array('limit' => PHP_INT_MAX, 'offset' => 0))));
+    }
+
+    protected function asfw_normalize_date_input($value, bool $endOfDay = false): string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+
+        $timestamp = strtotime($value);
+        if ($timestamp === false) {
+            return '';
+        }
+
+        return gmdate($endOfDay ? 'Y-m-d 23:59:59' : 'Y-m-d 00:00:00', $timestamp);
+    }
+
+    public function query($query)
+    {
+        $query = (string) $query;
+        $GLOBALS['asfw_test_db_queries'][] = $query;
+
+        if (preg_match('/DROP TABLE IF EXISTS\s+([^\s;]+)/i', $query, $matches)) {
+            unset($GLOBALS['asfw_test_db_tables'][trim($matches[1], '`')]);
+
+            return 1;
+        }
+
+        if (preg_match('/DELETE FROM\s+([^\s]+)\s+WHERE option_name LIKE \'([^\']*)\'/i', $query, $matches)) {
+            $pattern = str_replace(array('\\_', '\\%'), array('_', '%'), $matches[2]);
+            $regex = '/^' . str_replace('%', '.*', preg_quote($pattern, '/')) . '$/';
+            $deleted = 0;
+            foreach (array_keys($GLOBALS['asfw_test_options']) as $optionName) {
+                if (preg_match($regex, (string) $optionName)) {
+                    unset($GLOBALS['asfw_test_options'][$optionName]);
+                    $deleted++;
+                }
+            }
+
+            return $deleted;
+        }
+
+        return 0;
+    }
+
+    public function prepare($query, ...$args)
+    {
+        if (count($args) === 1 && is_array($args[0])) {
+            $args = $args[0];
+        }
+
+        foreach ($args as $arg) {
+            $replacement = is_int($arg) ? (string) $arg : "'" . addslashes((string) $arg) . "'";
+            $query = preg_replace('/%[sd]/', $replacement, (string) $query, 1);
+        }
+
+        return (string) $query;
+    }
+
+    public function esc_like($text)
+    {
+        return addcslashes((string) $text, '_%\\');
     }
 
     public function asfw_type_counts($table)

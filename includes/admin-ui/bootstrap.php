@@ -22,6 +22,6 @@ WP_Plugin_Base_Admin_UI_Loader::register_page(
 		'style_handle'           => 'anti-spam-for-wordpress-admin-ui',
 		'rest_namespace'         => 'anti-spam-for-wordpress/v1',
 		'plugin_name'            => 'Anti Spam for WordPress',
-		'experimental_dataviews' => 'true' === 'false',
+		'experimental_dataviews' => false,
 	)
 );

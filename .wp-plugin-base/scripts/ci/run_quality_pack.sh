@@ -95,7 +95,7 @@ run_quality_pack_with_docker() {
   write_phpstan_config "$COMPOSER_WORK_DIR/vendor/szepeviktor/phpstan-wordpress/extension.neon"
 
   php "$COMPOSER_WORK_DIR/vendor/bin/phpcs" --standard="$ROOT_DIR/.phpcs.xml.dist"
-  php "$COMPOSER_WORK_DIR/vendor/bin/phpstan" analyse --configuration="$PHPSTAN_CONFIG" --no-progress
+  php "$COMPOSER_WORK_DIR/vendor/bin/phpstan" analyse --configuration="$PHPSTAN_CONFIG" --no-progress --memory-limit=1G
   php "$COMPOSER_WORK_DIR/vendor/bin/phpunit" --configuration="$ROOT_DIR/phpunit.xml.dist"
 }
 
@@ -106,7 +106,7 @@ run_quality_pack_with_local_bundle() {
   composer --working-dir="$TOOLS_DIR" audit --locked --no-interaction --no-dev
 
   php "$TOOLS_DIR/vendor/bin/phpcs" --standard="$ROOT_DIR/.phpcs.xml.dist"
-  php "$TOOLS_DIR/vendor/bin/phpstan" analyse --configuration="$PHPSTAN_CONFIG" --no-progress
+  php "$TOOLS_DIR/vendor/bin/phpstan" analyse --configuration="$PHPSTAN_CONFIG" --no-progress --memory-limit=1G
   php "$TOOLS_DIR/vendor/bin/phpunit" --configuration="$ROOT_DIR/phpunit.xml.dist"
 }
 

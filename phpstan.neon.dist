@@ -1,0 +1,15 @@
+parameters:
+  level: 5
+  paths:
+    - admin
+    - data
+    - includes
+    - integrations
+    - lib
+    - public
+    - anti-spam-for-wordpress.php
+    - uninstall.php
+  excludePaths:
+    analyse:
+      - assets/admin-ui/index.asset.php
+      - integrations/formidable/AntiSpamWidgetFieldType.php
