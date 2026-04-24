@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Anti Spam for WordPress 0.6.1\n"
+"Project-Id-Version: Anti Spam for WordPress 0.6.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/anti-spam-for-wordpress\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-21T10:53:20+00:00\n"
+"POT-Creation-Date: 2026-04-24T14:10:15+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: anti-spam-for-wordpress\n"
@@ -17,8 +17,8 @@ msgstr ""
 #. Plugin Name of the plugin
 #: anti-spam-for-wordpress.php
 #: admin/options.php:26
-#: includes/admin.php:39
-#: includes/admin.php:40
+#: includes/admin.php:43
+#: includes/admin.php:44
 msgid "Anti Spam for WordPress"
 msgstr ""
 
@@ -56,10 +56,10 @@ msgid "Enabled"
 msgstr ""
 
 #: admin/options.php:79
-#: includes/class-asfw-settings-schema.php:145
-#: includes/class-asfw-settings-schema.php:159
-#: includes/class-asfw-settings-schema.php:179
-#: includes/class-asfw-settings-schema.php:302
+#: includes/class-asfw-settings-schema.php:151
+#: includes/class-asfw-settings-schema.php:165
+#: includes/class-asfw-settings-schema.php:185
+#: includes/class-asfw-settings-schema.php:313
 msgid "Disabled"
 msgstr ""
 
@@ -94,7 +94,7 @@ msgstr ""
 
 #: admin/options.php:110
 #: includes/class-asfw-admin-pages.php:59
-#: includes/class-asfw-admin-pages.php:138
+#: includes/class-asfw-admin-pages.php:140
 #: assets/admin-ui/index.js:1
 msgid "Feature"
 msgstr ""
@@ -157,7 +157,7 @@ msgstr ""
 
 #: admin/options.php:183
 #: includes/class-asfw-admin-pages.php:58
-#: includes/class-asfw-admin-pages.php:134
+#: includes/class-asfw-admin-pages.php:136
 #: assets/admin-ui/index.js:1
 msgid "Context"
 msgstr ""
@@ -186,17 +186,17 @@ msgstr ""
 msgid "Integrations"
 msgstr ""
 
-#: admin/options.php:287
+#: admin/options.php:288
 #: includes/rest-operations/settings-operations.php:77
 msgid "No link"
 msgstr ""
 
-#: admin/options.php:288
+#: admin/options.php:289
 #: includes/rest-operations/settings-operations.php:81
 msgid "Custom URL"
 msgstr ""
 
-#: anti-spam-for-wordpress.php:146
+#: anti-spam-for-wordpress.php:141
 #: includes/class-asfw-options.php:65
 msgid "Protected by Anti Spam for WordPress"
 msgstr ""
@@ -205,21 +205,21 @@ msgstr ""
 msgid "Unable to resolve admin destination."
 msgstr ""
 
-#: includes/admin.php:54
+#: includes/admin.php:58
 #: assets/admin-ui/index.js:1
 msgid "Settings"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:22
 #: includes/class-asfw-admin-pages.php:23
-#: includes/class-asfw-admin-pages.php:181
+#: includes/class-asfw-admin-pages.php:191
 #: assets/admin-ui/index.js:1
 msgid "Events"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:31
 #: includes/class-asfw-admin-pages.php:32
-#: includes/class-asfw-admin-pages.php:272
+#: includes/class-asfw-admin-pages.php:282
 #: assets/admin-ui/index.js:1
 msgid "Analytics"
 msgstr ""
@@ -235,7 +235,7 @@ msgid "Type"
 msgstr ""
 
 #: includes/class-asfw-admin-pages.php:57
-#: includes/class-asfw-admin-pages.php:140
+#: includes/class-asfw-admin-pages.php:142
 #: assets/admin-ui/index.js:1
 msgid "Decision"
 msgstr ""
@@ -249,94 +249,95 @@ msgstr ""
 msgid "Event logging is currently disabled. Enable the Event logging feature to collect and display runtime data."
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:130
+#: includes/class-asfw-admin-pages.php:132
 #: assets/admin-ui/index.js:1
 msgid "Date from"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:132
+#: includes/class-asfw-admin-pages.php:134
 #: assets/admin-ui/index.js:1
 msgid "Date to"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:136
+#: includes/class-asfw-admin-pages.php:138
 #: assets/admin-ui/index.js:1
 msgid "Event type"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:142
+#: includes/class-asfw-admin-pages.php:144
 #: assets/admin-ui/index.js:1
 msgid "Apply filters"
 msgstr ""
 
 #. translators: 1: retention window in days.
-#: includes/class-asfw-admin-pages.php:157
+#: includes/class-asfw-admin-pages.php:159
 #, php-format
 msgid "Retention window: %d days."
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:163
+#. translators: %s: last maintenance run time in UTC.
+#: includes/class-asfw-admin-pages.php:169
 #, php-format
 msgid " Last maintenance run: %s UTC."
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:165
+#: includes/class-asfw-admin-pages.php:175
 msgid " Last maintenance run: not recorded yet."
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:182
+#: includes/class-asfw-admin-pages.php:192
 msgid "Read-only event log with hashed identifiers only."
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:199
+#: includes/class-asfw-admin-pages.php:209
 msgid "Label"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:200
+#: includes/class-asfw-admin-pages.php:210
 #: assets/admin-ui/index.js:1
 msgid "Count"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:273
+#: includes/class-asfw-admin-pages.php:283
 msgid "Aggregated event metrics derived from the local event store."
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:280
+#: includes/class-asfw-admin-pages.php:290
 msgid "Challenges issued by day"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:283
+#: includes/class-asfw-admin-pages.php:293
 msgid "Verify pass/fail by day"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:287
+#: includes/class-asfw-admin-pages.php:297
 #: assets/admin-ui/index.js:1
 msgid "Day"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:288
+#: includes/class-asfw-admin-pages.php:298
 #: assets/admin-ui/index.js:1
 msgid "Pass"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:289
+#: includes/class-asfw-admin-pages.php:299
 #: assets/admin-ui/index.js:1
 msgid "Fail"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:303
+#: includes/class-asfw-admin-pages.php:313
 msgid "Top contexts"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:306
+#: includes/class-asfw-admin-pages.php:316
 msgid "Rate-limit totals"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:307
+#: includes/class-asfw-admin-pages.php:317
 msgid "rate_limited"
 msgstr ""
 
-#: includes/class-asfw-admin-pages.php:309
+#: includes/class-asfw-admin-pages.php:319
 msgid "Feature-hit totals"
 msgstr ""
 
@@ -365,7 +366,7 @@ msgstr ""
 msgid "Invalid Bunny revoke request."
 msgstr ""
 
-#: includes/class-asfw-bunny-shield-module.php:714
+#: includes/class-asfw-bunny-shield-module.php:722
 msgid "The IP address is private, reserved, or invalid."
 msgstr ""
 
@@ -418,9 +419,9 @@ msgstr ""
 #: includes/class-asfw-verifier.php:250
 #: includes/class-asfw-verifier.php:257
 #: includes/class-asfw-verifier.php:264
-#: includes/class-asfw-verifier.php:325
-#: integrations/elementor/class-elementor-form-antispamwidget-field.php:71
-#: integrations/formidable/class-antispamwidgetfieldtype.php:48
+#: includes/class-asfw-verifier.php:326
+#: integrations/elementor/class-elementor-form-antispamwidget-field.php:72
+#: integrations/formidable/class-antispamwidgetfieldtype.php:49
 msgid "Verification failed."
 msgstr ""
 
@@ -704,7 +705,7 @@ msgstr ""
 msgid "Toggle the %s integration between disable and captcha modes."
 msgstr ""
 
-#: includes/class-asfw-rate-limiter.php:82
+#: includes/class-asfw-rate-limiter.php:113
 msgid "Too many verification attempts. Please wait and try again."
 msgstr ""
 
@@ -769,378 +770,383 @@ msgid "Secret key"
 msgstr ""
 
 #: includes/class-asfw-settings-schema.php:91
-msgid "Used to sign and verify local proof-of-work challenges."
+msgid "Leave blank to keep the current secret. Enter at least 32 characters to rotate it."
 msgstr ""
 
 #: includes/class-asfw-settings-schema.php:97
+#: includes/class-asfw-settings-schema.php:236
+msgid "Unchanged"
+msgstr ""
+
+#: includes/class-asfw-settings-schema.php:103
 msgid "Complexity"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:98
+#: includes/class-asfw-settings-schema.php:104
 msgid "Select the proof-of-work complexity for new challenges."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:100
+#: includes/class-asfw-settings-schema.php:106
 msgid "Low"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:101
+#: includes/class-asfw-settings-schema.php:107
 msgid "Medium"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:102
+#: includes/class-asfw-settings-schema.php:108
 msgid "High"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:109
+#: includes/class-asfw-settings-schema.php:115
 msgid "Expiration"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:110
+#: includes/class-asfw-settings-schema.php:116
 msgid "How long a challenge stays valid."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:112
+#: includes/class-asfw-settings-schema.php:118
 msgid "2 minutes"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:113
-#: includes/class-asfw-settings-schema.php:133
+#: includes/class-asfw-settings-schema.php:119
+#: includes/class-asfw-settings-schema.php:139
 msgid "5 minutes"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:114
-#: includes/class-asfw-settings-schema.php:134
+#: includes/class-asfw-settings-schema.php:120
+#: includes/class-asfw-settings-schema.php:140
 msgid "10 minutes"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:115
+#: includes/class-asfw-settings-schema.php:121
 msgid "30 minutes"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:124
+#: includes/class-asfw-settings-schema.php:130
 msgid "Lazy challenge loading"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:125
+#: includes/class-asfw-settings-schema.php:131
 msgid "Load challenge data on first interaction instead of immediately on page load."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:130
+#: includes/class-asfw-settings-schema.php:136
 msgid "Rate limit window"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:131
+#: includes/class-asfw-settings-schema.php:137
 msgid "Window used for challenge and failure rate limits."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:135
-#: includes/class-asfw-settings-schema.php:276
+#: includes/class-asfw-settings-schema.php:141
+#: includes/class-asfw-settings-schema.php:287
 msgid "15 minutes"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:142
+#: includes/class-asfw-settings-schema.php:148
 msgid "Max challenges per window"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:143
+#: includes/class-asfw-settings-schema.php:149
 msgid "Limit repeated challenge fetches from the same visitor."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:156
+#: includes/class-asfw-settings-schema.php:162
 msgid "Max failed verifications per window"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:157
+#: includes/class-asfw-settings-schema.php:163
 msgid "Throttle repeated bad submissions from the same visitor."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:170
+#: includes/class-asfw-settings-schema.php:176
 msgid "Honeypot field"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:171
+#: includes/class-asfw-settings-schema.php:177
 msgid "Add an off-screen trap field to catch simple bots."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:176
+#: includes/class-asfw-settings-schema.php:182
 msgid "Minimum submit time"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:177
+#: includes/class-asfw-settings-schema.php:183
 msgid "Reject submissions that complete too quickly."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:180
+#: includes/class-asfw-settings-schema.php:186
 msgid "2 seconds"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:181
+#: includes/class-asfw-settings-schema.php:187
 msgid "3 seconds"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:182
-#: includes/class-asfw-settings-schema.php:195
+#: includes/class-asfw-settings-schema.php:188
+#: includes/class-asfw-settings-schema.php:201
 msgid "5 seconds"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:183
+#: includes/class-asfw-settings-schema.php:189
 msgid "10 seconds"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:190
+#: includes/class-asfw-settings-schema.php:196
 msgid "Submit delay duration"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:191
+#: includes/class-asfw-settings-schema.php:197
 msgid "Delay duration used when the Submit delay feature is active for a context."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:193
+#: includes/class-asfw-settings-schema.php:199
 msgid "1 second"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:194
+#: includes/class-asfw-settings-schema.php:200
 msgid "2.5 seconds"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:202
+#: includes/class-asfw-settings-schema.php:208
 msgid "Visitor binding"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:203
+#: includes/class-asfw-settings-schema.php:209
 msgid "Choose how challenges and rate limits identify a visitor. IP + User Agent reduces collisions on shared IPs but is more sensitive to browser changes."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:205
+#: includes/class-asfw-settings-schema.php:211
 msgid "IP address"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:206
+#: includes/class-asfw-settings-schema.php:212
 msgid "IP address + User Agent"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:213
+#: includes/class-asfw-settings-schema.php:219
 msgid "Trusted proxies"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:214
+#: includes/class-asfw-settings-schema.php:220
 msgid "Optional comma-separated IPs or CIDR ranges for reverse proxies. When a request comes from one of these proxies, the plugin will trust forwarded client IP headers."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:223
+#: includes/class-asfw-settings-schema.php:229
 msgid "Bunny API key"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:224
-msgid "Used with the Bunny AccessKey header to manage Shield access lists."
+#: includes/class-asfw-settings-schema.php:230
+msgid "Leave blank to keep the current Bunny API key. Enter a new key to rotate it."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:231
+#: includes/class-asfw-settings-schema.php:242
 msgid "Shield zone ID"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:232
+#: includes/class-asfw-settings-schema.php:243
 msgid "The Shield zone that owns the custom access list."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:239
+#: includes/class-asfw-settings-schema.php:250
 msgid "Access list ID"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:240
+#: includes/class-asfw-settings-schema.php:251
 msgid "Leave empty to let the plugin auto-create or discover a list named “Anti Spam for WordPress”."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:247
+#: includes/class-asfw-settings-schema.php:258
 msgid "Dry run"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:248
+#: includes/class-asfw-settings-schema.php:259
 msgid "Keep automatic hooks observational. The CLI can still manage the remote list explicitly."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:253
+#: includes/class-asfw-settings-schema.php:264
 msgid "Fail open"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:254
+#: includes/class-asfw-settings-schema.php:265
 msgid "Treat Bunny API failures as operational warnings, keep local verification in control of submissions, and back off before retrying automatic syncs."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:259
+#: includes/class-asfw-settings-schema.php:270
 msgid "Escalation threshold"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:260
+#: includes/class-asfw-settings-schema.php:271
 msgid "How many local abuse signals must accumulate before a Bunny update is attempted."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:273
+#: includes/class-asfw-settings-schema.php:284
 msgid "TTL (minutes)"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:274
+#: includes/class-asfw-settings-schema.php:285
 msgid "Used for the local Bunny dedupe window. Bunny list retention is managed by Bunny Shield access-list behavior."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:277
+#: includes/class-asfw-settings-schema.php:288
 msgid "1 hour"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:278
+#: includes/class-asfw-settings-schema.php:289
 msgid "6 hours"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:279
+#: includes/class-asfw-settings-schema.php:290
 msgid "24 hours"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:286
+#: includes/class-asfw-settings-schema.php:297
 msgid "Bunny action"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:287
+#: includes/class-asfw-settings-schema.php:298
 msgid "Current runtime uses block-style access-list updates only. Challenge remains reserved for future contract expansion."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:289
-#: includes/class-asfw-settings-schema.php:568
+#: includes/class-asfw-settings-schema.php:300
+#: includes/class-asfw-settings-schema.php:582
 msgid "Block"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:299
+#: includes/class-asfw-settings-schema.php:310
 msgid "Auto verification"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:300
+#: includes/class-asfw-settings-schema.php:311
 msgid "Choose when the widget should start verification."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:303
+#: includes/class-asfw-settings-schema.php:314
 msgid "On page load"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:304
+#: includes/class-asfw-settings-schema.php:315
 msgid "On form focus"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:305
+#: includes/class-asfw-settings-schema.php:316
 msgid "On form submit"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:312
+#: includes/class-asfw-settings-schema.php:323
 msgid "Floating UI"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:313
+#: includes/class-asfw-settings-schema.php:324
 msgid "Enable the widget floating UI."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:318
+#: includes/class-asfw-settings-schema.php:329
 msgid "Delay"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:319
+#: includes/class-asfw-settings-schema.php:330
 msgid "Add a 1.5 second delay before verification completes."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:324
+#: includes/class-asfw-settings-schema.php:335
 msgid "Hide logo"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:325
+#: includes/class-asfw-settings-schema.php:336
 msgid "Hide the logo in the widget footer."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:330
+#: includes/class-asfw-settings-schema.php:341
 msgid "Footer text"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:331
+#: includes/class-asfw-settings-schema.php:342
 msgid "Shown in the widget footer when the footer is visible."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:337
+#: includes/class-asfw-settings-schema.php:348
 msgid "Privacy link"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:338
+#: includes/class-asfw-settings-schema.php:349
 msgid "Choose a page or switch to a custom URL for the footer privacy link."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:343
+#: includes/class-asfw-settings-schema.php:354
 msgid "Privacy URL"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:344
+#: includes/class-asfw-settings-schema.php:355
 msgid "Used when Custom URL is selected."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:350
+#: includes/class-asfw-settings-schema.php:361
 msgid "Open privacy link in new tab"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:351
+#: includes/class-asfw-settings-schema.php:362
 msgid "Open the privacy link in a new browser tab."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:356
+#: includes/class-asfw-settings-schema.php:367
 msgid "Hide footer"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:357
+#: includes/class-asfw-settings-schema.php:368
 msgid "Hide the widget footer entirely."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:506
+#: includes/class-asfw-settings-schema.php:520
 msgid "Disable"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:507
+#: includes/class-asfw-settings-schema.php:521
 msgid "Captcha"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:511
+#: includes/class-asfw-settings-schema.php:525
 msgid "Shortcode"
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-settings-schema.php:550
+#: includes/class-asfw-settings-schema.php:564
 #, php-format
 msgid "Enable %s"
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-settings-schema.php:561
+#: includes/class-asfw-settings-schema.php:575
 #, php-format
 msgid "%s mode"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:566
+#: includes/class-asfw-settings-schema.php:580
 msgid "Off"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:567
+#: includes/class-asfw-settings-schema.php:581
 msgid "Log"
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-settings-schema.php:578
+#: includes/class-asfw-settings-schema.php:592
 #, php-format
 msgid "%s scope"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:583
+#: includes/class-asfw-settings-schema.php:597
 msgid "All contexts"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:584
+#: includes/class-asfw-settings-schema.php:598
 msgid "Selected contexts"
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-settings-schema.php:594
+#: includes/class-asfw-settings-schema.php:608
 #, php-format
 msgid "%s selected contexts"
 msgstr ""
@@ -1182,7 +1188,8 @@ msgstr ""
 msgid "This form requires JavaScript."
 msgstr ""
 
-#: includes/helpers.php:90
+#. translators: %s: number of seconds remaining before the form can be submitted.
+#: includes/helpers.php:91
 #, php-format
 msgid "Please wait %ss..."
 msgstr ""
@@ -1213,28 +1220,28 @@ msgstr ""
 msgid "Submit-delay is not enabled for this context."
 msgstr ""
 
-#: integrations/elementor/class-elementor-form-antispamwidget-field.php:15
+#: integrations/elementor/class-elementor-form-antispamwidget-field.php:16
 #: integrations/formidable.php:27
 #: integrations/gravityforms/class-asfw-gfforms-field.php:12
 msgid "Anti Spam Widget"
 msgstr ""
 
-#: integrations/formidable/builder-field.php:1
+#: integrations/formidable/builder-field.php:6
 msgid "Anti Spam for WordPress will be displayed here."
 msgstr ""
 
-#: integrations/formidable/builder-settings.php:1
+#: integrations/formidable/builder-settings.php:6
 msgid "Configure Anti Spam for WordPress in the plugin settings."
 msgstr ""
 
 #: integrations/forminator.php:41
 #: integrations/gravityforms/class-asfw-gfforms-field.php:75
 #: integrations/html-forms.php:59
-#: integrations/woocommerce.php:128
-#: integrations/woocommerce.php:176
-#: integrations/woocommerce.php:188
-#: integrations/woocommerce.php:230
-#: integrations/woocommerce.php:243
+#: integrations/woocommerce.php:125
+#: integrations/woocommerce.php:173
+#: integrations/woocommerce.php:185
+#: integrations/woocommerce.php:227
+#: integrations/woocommerce.php:240
 #: integrations/wordpress.php:29
 #: integrations/wordpress.php:39
 #: integrations/wordpress.php:98
