@@ -19,7 +19,7 @@ function asfw_get_admin_ui_url( $tab = 'settings' ) {
 			'page' => 'anti-spam-for-wordpress-admin-ui',
 			'tab'  => $tab,
 		),
-		admin_url( 'admin.php' )
+		admin_url( 'options-general.php' )
 	);
 }
 
@@ -31,23 +31,6 @@ function asfw_redirect_legacy_admin_page( $tab = 'settings' ) {
 
 	wp_safe_redirect( $url );
 	exit;
-}
-
-function asfw_hidden_submenu_parent_slug() {
-	return apply_filters( 'asfw_hidden_submenu_parent_slug', null );
-}
-
-function asfw_register_legacy_admin_routes() {
-	add_submenu_page(
-		asfw_hidden_submenu_parent_slug(),
-		__( 'Anti Spam for WordPress', 'anti-spam-for-wordpress' ),
-		__( 'Anti Spam for WordPress', 'anti-spam-for-wordpress' ),
-		'manage_options',
-		'asfw_admin',
-		static function () {
-			asfw_redirect_legacy_admin_page( 'settings' );
-		}
-	);
 }
 
 function asfw_settings_link( $links ) {
@@ -85,6 +68,5 @@ function asfw_handle_legacy_admin_redirect() {
 
 if ( is_admin() ) {
 	add_action( 'admin_init', 'asfw_handle_legacy_admin_redirect' );
-	add_action( 'admin_menu', 'asfw_register_legacy_admin_routes' );
 	add_filter( 'plugin_action_links_' . plugin_basename( ASFW_FILE ), 'asfw_settings_link' );
 }

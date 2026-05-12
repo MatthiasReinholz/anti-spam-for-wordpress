@@ -34,12 +34,10 @@ final class BunnyContractTest extends AsfwPluginTestCase
         $this->assertSame('challenge', $this->plugin()->get_bunny_action());
     }
 
-    public function test_wrapper_classes_exist_for_contract_alignment(): void
+    public function test_schema_wrapper_exists_for_contract_alignment(): void
     {
         $this->assertTrue(class_exists('ASFW_Schema'));
         $this->assertTrue(is_subclass_of('ASFW_Schema', 'ASFW_Event_Store'));
-        $this->assertTrue(class_exists('ASFW_Admin_Events_Page'));
-        $this->assertTrue(class_exists('ASFW_Admin_Analytics_Page'));
     }
 
     private function enableBunnyFeature(array $overrides = array()): void

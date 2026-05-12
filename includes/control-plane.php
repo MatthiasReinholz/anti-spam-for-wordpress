@@ -12,7 +12,6 @@ require_once plugin_dir_path( __FILE__ ) . 'class-asfw-maintenance.php';
 require_once plugin_dir_path( __FILE__ ) . 'class-asfw-content-heuristics-module.php';
 require_once plugin_dir_path( __FILE__ ) . 'class-asfw-bunny-shield-client.php';
 require_once plugin_dir_path( __FILE__ ) . 'class-asfw-bunny-shield-module.php';
-require_once plugin_dir_path( __FILE__ ) . 'class-asfw-admin-pages.php';
 require_once plugin_dir_path( __FILE__ ) . 'class-asfw-cli-command.php';
 require_once plugin_dir_path( __FILE__ ) . 'class-asfw-control-plane.php';
 
@@ -26,6 +25,10 @@ function asfw_seed_control_plane_defaults() {
 
 	if ( null === get_option( AntiSpamForWordPressPlugin::$option_kill_switch, null ) ) {
 		update_option( AntiSpamForWordPressPlugin::$option_kill_switch, false );
+	}
+
+	if ( null === get_option( AntiSpamForWordPressPlugin::$option_privacy_legal_basis, null ) ) {
+		update_option( AntiSpamForWordPressPlugin::$option_privacy_legal_basis, ASFW_Privacy_Policy_Text::LEGAL_BASIS_REVIEW_REQUIRED );
 	}
 
 	if ( null === get_option( AntiSpamForWordPressPlugin::$option_bunny_enabled, null ) ) {

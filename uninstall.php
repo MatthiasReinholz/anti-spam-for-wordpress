@@ -38,6 +38,7 @@ if ( ! function_exists( 'asfw_uninstall_option_names' ) ) {
 			'asfw_privacy_page',
 			'asfw_privacy_url',
 			'asfw_privacy_new_tab',
+			'asfw_privacy_legal_basis',
 			'asfw_lazy',
 			'asfw_rate_limit_max_challenges',
 			'asfw_rate_limit_max_failures',

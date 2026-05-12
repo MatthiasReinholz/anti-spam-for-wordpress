@@ -21,6 +21,7 @@ $GLOBALS['asfw_test_db_queries'] = $GLOBALS['asfw_test_db_queries'] ?? array();
 $GLOBALS['asfw_test_dbdelta_queries'] = $GLOBALS['asfw_test_dbdelta_queries'] ?? array();
 $GLOBALS['asfw_test_cron_events'] = $GLOBALS['asfw_test_cron_events'] ?? array();
 $GLOBALS['asfw_test_cli_commands'] = $GLOBALS['asfw_test_cli_commands'] ?? array();
+$GLOBALS['asfw_test_privacy_policy_content'] = $GLOBALS['asfw_test_privacy_policy_content'] ?? array();
 $GLOBALS['asfw_test_locale'] = $GLOBALS['asfw_test_locale'] ?? 'en_US';
 $GLOBALS['asfw_active_plugins'] = $GLOBALS['asfw_active_plugins'] ?? array(
 	'woocommerce/woocommerce.php',
@@ -617,6 +618,16 @@ function submit_button($text = null)
     return true;
 }
 
+function wp_add_privacy_policy_content($plugin_name, $policy_text)
+{
+    $GLOBALS['asfw_test_privacy_policy_content'][] = array(
+        'plugin_name' => (string) $plugin_name,
+        'policy_text' => (string) $policy_text,
+    );
+
+    return true;
+}
+
 function register_setting($option_group, $option_name, $args = array())
 {
     $GLOBALS['asfw_test_registered_settings'][] = array(
@@ -656,12 +667,46 @@ function add_settings_field($id, $title, $callback, $page, $section = 'default',
 
 function add_options_page($page_title, $menu_title, $capability, $menu_slug, $callback = '', $position = null)
 {
-    return true;
+    $GLOBALS['asfw_test_options_pages'][] = array(
+        'page_title' => $page_title,
+        'menu_title' => $menu_title,
+        'capability' => $capability,
+        'menu_slug' => $menu_slug,
+        'callback' => $callback,
+        'position' => $position,
+    );
+
+    return 'settings_page_' . $menu_slug;
+}
+
+function add_menu_page($page_title, $menu_title, $capability, $menu_slug, $callback = '', $icon_url = '', $position = null)
+{
+    $GLOBALS['asfw_test_menu_pages'][] = array(
+        'page_title' => $page_title,
+        'menu_title' => $menu_title,
+        'capability' => $capability,
+        'menu_slug' => $menu_slug,
+        'callback' => $callback,
+        'icon_url' => $icon_url,
+        'position' => $position,
+    );
+
+    return 'toplevel_page_' . $menu_slug;
 }
 
 function add_submenu_page($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback = '', $position = null)
 {
-    return true;
+    $GLOBALS['asfw_test_submenu_pages'][] = array(
+        'parent_slug' => $parent_slug,
+        'page_title' => $page_title,
+        'menu_title' => $menu_title,
+        'capability' => $capability,
+        'menu_slug' => $menu_slug,
+        'callback' => $callback,
+        'position' => $position,
+    );
+
+    return 'settings_page_' . $menu_slug;
 }
 
 function get_admin_url($blog_id = null, $path = '', $scheme = 'admin')
@@ -730,12 +775,16 @@ function asfw_test_reset_state(array $options = array(), ?array $active_plugins 
     $GLOBALS['asfw_test_registered_settings'] = array();
     $GLOBALS['asfw_test_settings_sections'] = array();
     $GLOBALS['asfw_test_settings_fields'] = array();
+    $GLOBALS['asfw_test_menu_pages'] = array();
+    $GLOBALS['asfw_test_options_pages'] = array();
+    $GLOBALS['asfw_test_submenu_pages'] = array();
     $GLOBALS['asfw_test_db_tables'] = array();
     $GLOBALS['asfw_test_db_fetch_args'] = array();
     $GLOBALS['asfw_test_db_queries'] = array();
     $GLOBALS['asfw_test_dbdelta_queries'] = array();
     $GLOBALS['asfw_test_cron_events'] = array();
     $GLOBALS['asfw_test_rest_routes'] = array();
+    $GLOBALS['asfw_test_privacy_policy_content'] = array();
 
     foreach (array(
         'REMOTE_ADDR',

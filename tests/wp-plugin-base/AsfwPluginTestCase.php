@@ -22,6 +22,7 @@ abstract class AsfwPluginTestCase extends TestCase
         update_option(AntiSpamForWordPressPlugin::$option_rate_limit_max_failures, '10');
         update_option(AntiSpamForWordPressPlugin::$option_honeypot, 1);
         update_option(AntiSpamForWordPressPlugin::$option_kill_switch, 0);
+        update_option(AntiSpamForWordPressPlugin::$option_privacy_legal_basis, ASFW_Privacy_Policy_Text::LEGAL_BASIS_REVIEW_REQUIRED);
         update_option(AntiSpamForWordPressPlugin::$option_min_submit_time, '0');
         update_option(AntiSpamForWordPressPlugin::$option_visitor_binding, 'ip');
         update_option(AntiSpamForWordPressPlugin::$option_trusted_proxies, '');

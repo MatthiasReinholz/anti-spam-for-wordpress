@@ -152,6 +152,124 @@ function SettingsField( { field, value, onChange, values } ) {
 	} );
 }
 
+function ShortcodeBlock() {
+	return createElement(
+		Card,
+		null,
+		createElement(
+			CardHeader,
+			null,
+			createElement(
+				'strong',
+				null,
+				__( 'Shortcode', 'anti-spam-for-wordpress' )
+			)
+		),
+		createElement(
+			CardBody,
+			null,
+			createElement(
+				'p',
+				null,
+				__(
+					'Use [anti_spam_widget] in custom form templates when automatic placement is not available.',
+					'anti-spam-for-wordpress'
+				)
+			),
+			createElement(
+				'code',
+				{ className: 'asfw-admin-ui-code-block' },
+				'[anti_spam_widget mode="captcha" context="custom:contact" name="asfw"]'
+			),
+			createElement(
+				'p',
+				{ className: 'asfw-admin-ui-muted' },
+				__(
+					'Supported attributes: mode, context, name, and language. If Custom HTML is disabled, pass mode="captcha" or mode="shortcode" explicitly.',
+					'anti-spam-for-wordpress'
+				)
+			)
+		)
+	);
+}
+
+function PrivacyPolicyTextCard( { payload } ) {
+	const [ copied, setCopied ] = useState( false );
+	const text = String( payload?.text || '' );
+
+	if ( text === '' ) {
+		return null;
+	}
+
+	const copyText = async () => {
+		if ( window.navigator?.clipboard?.writeText ) {
+			await window.navigator.clipboard.writeText( text );
+			setCopied( true );
+			window.setTimeout( () => setCopied( false ), 2000 );
+		}
+	};
+
+	return createElement(
+		Card,
+		null,
+		createElement(
+			CardHeader,
+			null,
+			createElement(
+				'strong',
+				null,
+				__( 'Privacy policy text', 'anti-spam-for-wordpress' )
+			)
+		),
+		createElement(
+			CardBody,
+			null,
+			createElement(
+				'p',
+				null,
+				__(
+					'Suggested replacement copy for your privacy policy. This is not legal consultation; consult your lawyer before using it because each site can have different legal requirements.',
+					'anti-spam-for-wordpress'
+				)
+			),
+			payload?.summary
+				? createElement(
+						'p',
+						{ className: 'asfw-admin-ui-muted' },
+						String( payload.summary )
+				  )
+				: null,
+			createElement( TextareaControl, {
+				label: __( 'Suggested text', 'anti-spam-for-wordpress' ),
+				value: text,
+				readOnly: true,
+				rows: 14,
+				className: 'asfw-privacy-policy-textarea',
+				onChange: () => {},
+			} ),
+			createElement(
+				Flex,
+				{ justify: 'flex-start', gap: 3, align: 'center' },
+				createElement(
+					Button,
+					{ variant: 'secondary', onClick: copyText },
+					copied
+						? __( 'Copied', 'anti-spam-for-wordpress' )
+						: __( 'Copy text', 'anti-spam-for-wordpress' )
+				),
+				createElement(
+					'span',
+					{ className: 'asfw-admin-ui-muted' },
+					__(
+						'This suggested text updates when you change relevant plugin settings. Review it before updating your privacy policy page.',
+						'anti-spam-for-wordpress'
+					)
+				)
+			)
+		)
+	);
+}
+
 function SettingsTab( {
 	payload,
 	values,
@@ -167,9 +285,6 @@ function SettingsTab( {
 	const sections = Array.isArray( payload?.sections ) ? payload.sections : [];
 	const summaryRows = Array.isArray( payload?.summary?.rows )
 		? payload.summary.rows
-		: [];
-	const contexts = Array.isArray( payload?.context_catalog )
-		? payload.context_catalog
 		: [];
 	const killSwitch = payload?.summary?.kill_switch === 'active';
 
@@ -285,6 +400,9 @@ function SettingsTab( {
 				)
 			)
 		),
+		createElement( PrivacyPolicyTextCard, {
+			payload: payload?.privacy_policy_text,
+		} ),
 		createElement(
 			'form',
 			{
@@ -332,6 +450,7 @@ function SettingsTab( {
 					)
 				)
 			),
+			createElement( ShortcodeBlock ),
 			createElement(
 				Flex,
 				{ justify: 'flex-start', gap: 3 },
@@ -339,75 +458,6 @@ function SettingsTab( {
 					Button,
 					{ variant: 'primary', type: 'submit', isBusy: isSaving },
 					__( 'Save Settings', 'anti-spam-for-wordpress' )
-				)
-			)
-		),
-		createElement(
-			Card,
-			null,
-			createElement(
-				CardHeader,
-				null,
-				createElement(
-					'strong',
-					null,
-					__( 'Context Catalog', 'anti-spam-for-wordpress' )
-				)
-			),
-			createElement(
-				CardBody,
-				null,
-				createElement(
-					'table',
-					{ className: 'widefat striped' },
-					createElement(
-						'thead',
-						null,
-						createElement(
-							'tr',
-							null,
-							createElement(
-								'th',
-								null,
-								__( 'Context', 'anti-spam-for-wordpress' )
-							),
-							createElement(
-								'th',
-								null,
-								__( 'Group', 'anti-spam-for-wordpress' )
-							),
-							createElement(
-								'th',
-								null,
-								__( 'Description', 'anti-spam-for-wordpress' )
-							)
-						)
-					),
-					createElement(
-						'tbody',
-						null,
-						contexts.map( ( entry ) =>
-							createElement(
-								'tr',
-								{ key: entry.context },
-								createElement(
-									'td',
-									null,
-									createElement( 'code', null, entry.context )
-								),
-								createElement(
-									'td',
-									null,
-									entry.group_label || entry.group || ''
-								),
-								createElement(
-									'td',
-									null,
-									entry.description || ''
-								)
-							)
-						)
-					)
 				)
 			)
 		)
@@ -1132,7 +1182,12 @@ export default function App() {
 			setSettingsValues( buildSettingsDraft( nextPayload || {} ) );
 			setNotice( {
 				status: 'success',
-				message: __( 'Settings saved.', 'anti-spam-for-wordpress' ),
+				message: response?.privacy_policy_text_updated
+					? __(
+							'Settings saved. The suggested privacy policy text was updated; review whether your privacy policy page needs changes.',
+							'anti-spam-for-wordpress'
+					  )
+					: __( 'Settings saved.', 'anti-spam-for-wordpress' ),
 			} );
 		} catch ( error ) {
 			setNotice( {

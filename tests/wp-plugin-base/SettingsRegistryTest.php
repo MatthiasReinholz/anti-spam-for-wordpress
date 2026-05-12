@@ -7,16 +7,32 @@ final class WpPluginBaseSettingsRegistryTest extends AsfwPluginTestCase
 	{
 		asfw_settings_init();
 
+		$this->assertSame(
+			array(
+				'asfw_integrations_settings_section',
+				'asfw_general_settings_section',
+				'asfw_security_settings_section',
+				'asfw_widget_settings_section',
+				'asfw_control_plane_settings_section',
+				'asfw_bunny_settings_section',
+			),
+			array_column($GLOBALS['asfw_test_settings_sections'], 'id')
+		);
+		$this->assertSectionRegistered('asfw_integrations_settings_section');
+		$this->assertSectionRegistered('asfw_general_settings_section');
+		$this->assertSectionRegistered('asfw_security_settings_section');
+		$this->assertSectionRegistered('asfw_widget_settings_section');
 		$this->assertSectionRegistered('asfw_control_plane_settings_section');
-		$this->assertSectionRegistered('asfw_context_catalog_section');
-			$this->assertFieldRegistered('asfw_settings_kill_switch_field');
-			$this->assertFieldRegistered('asfw_settings_event_logging_retention_days_field');
+		$this->assertSectionRegistered('asfw_bunny_settings_section');
+		$this->assertFieldRegistered('asfw_settings_kill_switch_field');
+		$this->assertFieldRegistered('asfw_settings_event_logging_retention_days_field');
 		$this->assertFieldRegistered('asfw_settings_event_logging_mode_field');
 		$this->assertFieldRegistered('asfw_settings_content_heuristics_scope_mode_field');
 		$this->assertFieldRegistered('asfw_settings_bunny_shield_background_field');
 		$this->assertFieldRegistered('asfw_settings_math_challenge_mode_field');
 		$this->assertFieldRegistered('asfw_settings_submit_delay_mode_field');
 		$this->assertFieldRegistered('asfw_settings_feature_submit_delay_ms_field');
+		$this->assertFieldRegistered('asfw_settings_privacy_legal_basis_field');
 		$this->assertFieldRegistered('asfw_settings_contact_form_7_integration_field');
 		$this->assertFieldRegistered('asfw_settings_wordpress_login_integration_field');
 
@@ -33,9 +49,15 @@ final class WpPluginBaseSettingsRegistryTest extends AsfwPluginTestCase
 		$submit_delay_ms = $this->findRegisteredSetting(AntiSpamForWordPressPlugin::$option_feature_submit_delay_ms);
 		$this->assertTrue(is_callable($submit_delay_ms['args']['sanitize_callback']));
 
+		$privacy_legal_basis = $this->findRegisteredSetting(AntiSpamForWordPressPlugin::$option_privacy_legal_basis);
+		$this->assertTrue(is_callable($privacy_legal_basis['args']['sanitize_callback']));
+
 		$contact_form_7 = $this->findField('asfw_settings_contact_form_7_integration_field');
 		$this->assertTrue((bool) $contact_form_7['args']['disabled']);
 		$this->assertArrayHasKey('shortcode', $contact_form_7['args']['options']);
+
+		$wordpress_login = $this->findField('asfw_settings_wordpress_login_integration_field');
+		$this->assertSame('asfw_integrations_settings_section', $wordpress_login['section']);
 
 		$bunny_action = $this->findField('asfw_settings_bunny_action_field');
 		$this->assertSame(array('block' => 'Block'), $bunny_action['args']['options']);
@@ -97,6 +119,18 @@ final class WpPluginBaseSettingsRegistryTest extends AsfwPluginTestCase
 		$this->assertSame('legacy-list', (string) get_option(AntiSpamForWordPressPlugin::$option_feature_bunny_shield_access_list_id));
 		$this->assertSame('9', (string) get_option(AntiSpamForWordPressPlugin::$option_feature_bunny_shield_threshold));
 		$this->assertSame('60', (string) get_option(AntiSpamForWordPressPlugin::$option_feature_bunny_shield_ttl_minutes));
+	}
+
+	public function test_seed_defaults_sets_privacy_legal_basis_review_required(): void
+	{
+		delete_option(AntiSpamForWordPressPlugin::$option_privacy_legal_basis);
+
+		asfw_seed_control_plane_defaults();
+
+		$this->assertSame(
+			ASFW_Privacy_Policy_Text::LEGAL_BASIS_REVIEW_REQUIRED,
+			get_option(AntiSpamForWordPressPlugin::$option_privacy_legal_basis)
+		);
 	}
 
 	public function test_options_privacy_url_uses_custom_url_when_custom_target_is_selected(): void
@@ -251,4 +285,5 @@ final class WpPluginBaseSettingsRegistryTest extends AsfwPluginTestCase
 
 		return array();
 	}
+
 }
