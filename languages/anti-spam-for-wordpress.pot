@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-12T08:55:58+00:00\n"
+"POT-Creation-Date: 2026-05-12T15:19:40+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: anti-spam-for-wordpress\n"
@@ -489,134 +489,130 @@ msgstr ""
 msgid "Legitimate interests (Article 6(1)(f) GDPR)"
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:80
+#: includes/class-asfw-privacy-policy-text.php:84
 msgid "Use of Anti Spam for WordPress"
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:81
+#: includes/class-asfw-privacy-policy-text.php:85
 msgid "We use the Anti Spam for WordPress plugin on this website to protect forms and interactive website areas against spam, automated submissions, and abuse. The plugin replaces external CAPTCHA or Cloudflare Turnstile-style verification with self-hosted anti-spam checks that run in our WordPress installation."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:92
+#: includes/class-asfw-privacy-policy-text.php:96
 msgid "If content heuristics are active for a protected form, submitted form content may be inspected locally for spam indicators such as suspicious links, repeated characters, or configured spam terms."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:96
+#: includes/class-asfw-privacy-policy-text.php:100
 msgid "If the math challenge feature is active, the plugin may display a simple arithmetic question and store a short-lived signed challenge token to validate the answer."
 msgstr ""
 
 #. translators: %s is the configured submit delay in seconds.
-#: includes/class-asfw-privacy-policy-text.php:102
+#: includes/class-asfw-privacy-policy-text.php:106
 #, php-format
 msgid "If the submit delay feature is active, the plugin may issue a signed delay token and reject submissions sent before the configured waiting period of approximately %s seconds has passed."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:108
+#: includes/class-asfw-privacy-policy-text.php:112
 msgid "This suggested text is not legal consultation. Please review and adjust it to the forms, purposes, retention periods, legal basis, and other legal requirements that apply to your specific website, and consult your lawyer before using it in your privacy policy."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:168
+#: includes/class-asfw-privacy-policy-text.php:172
 msgid "The processing is based on your consent pursuant to Article 6(1)(a) GDPR. You may withdraw your consent at any time without affecting the lawfulness of processing carried out based on consent before withdrawal."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:172
+#: includes/class-asfw-privacy-policy-text.php:176
 msgid "The processing is based on our legitimate interests pursuant to Article 6(1)(f) GDPR in protecting our website, forms, and users from spam and abuse. You may object to processing based on legitimate interests where the legal requirements are met."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:175
-msgid "[Review required: Please insert or verify the applicable legal basis for this anti-spam processing, for example consent under Article 6(1)(a) GDPR or legitimate interests under Article 6(1)(f) GDPR, depending on your website implementation.]"
-msgstr ""
-
 #. translators: %s is a comma-separated list of protected form integrations.
-#: includes/class-asfw-privacy-policy-text.php:184
+#: includes/class-asfw-privacy-policy-text.php:188
 #, php-format
 msgid "Protection is currently configured for: %s."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:188
+#: includes/class-asfw-privacy-policy-text.php:192
 msgid "The plugin kill switch is currently active, so protection is disabled until it is turned on again."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:190
+#: includes/class-asfw-privacy-policy-text.php:194
 msgid "No protected form integration is currently enabled."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:194
+#: includes/class-asfw-privacy-policy-text.php:198
 msgid "IP address and user agent"
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:195
+#: includes/class-asfw-privacy-policy-text.php:199
 #: includes/class-asfw-settings-schema.php:201
 msgid "IP address"
 msgstr ""
 
 #. translators: %s describes the visitor data used for local fingerprints.
-#: includes/class-asfw-privacy-policy-text.php:199
+#: includes/class-asfw-privacy-policy-text.php:203
 #, php-format
 msgid "To distinguish regular users from automated submissions, the plugin processes the visitor %s to create a local, server-side fingerprint."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:202
+#: includes/class-asfw-privacy-policy-text.php:206
 msgid "The plugin issues signed proof-of-work challenges and guard tokens that can include timestamps, request context, challenge identifiers, signatures, and short-lived verification state stored in WordPress transients."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:205
+#: includes/class-asfw-privacy-policy-text.php:209
 msgid "When a request comes through a configured trusted proxy, forwarded client IP headers may be used to identify the visitor IP address for anti-spam checks."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:209
+#: includes/class-asfw-privacy-policy-text.php:213
 msgid "A hidden honeypot field may be added to protected forms to detect simple automated submissions."
 msgstr ""
 
 #. translators: %s is the configured minimum submit time in seconds.
-#: includes/class-asfw-privacy-policy-text.php:215
+#: includes/class-asfw-privacy-policy-text.php:219
 #, php-format
 msgid "Submissions may be rejected if they are completed in less than %s seconds."
 msgstr ""
 
 #. translators: %s is the rate-limit window in seconds.
-#: includes/class-asfw-privacy-policy-text.php:223
+#: includes/class-asfw-privacy-policy-text.php:227
 #, php-format
 msgid "Challenge requests and failed verifications may be rate-limited during a window of approximately %s seconds."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:233
+#: includes/class-asfw-privacy-policy-text.php:237
 msgid "Event logging is currently disabled. Apart from short-lived challenge, guard, and rate-limit state, the plugin does not keep a long-term local event log for these anti-spam checks."
 msgstr ""
 
 #. translators: %d is the local event log retention period in days.
-#: includes/class-asfw-privacy-policy-text.php:238
+#: includes/class-asfw-privacy-policy-text.php:242
 #, php-format
 msgid "When event logging is enabled, verification events, rate-limit events, guard checks, and settings changes are stored locally for approximately %d days. These logs may include hashed IP addresses, hashed user identifiers, hashed email addresses when email checks match, and technical metadata such as context, decision, feature, and error codes. Hashing reduces direct identifiability but may still qualify as personal data depending on the circumstances."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:244
+#: includes/class-asfw-privacy-policy-text.php:248
 msgid "If disposable email detection is active for a protected form, submitted email addresses may be checked locally against a disposable-domain list. Matching email addresses may be blocked or logged depending on the configured mode."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:247
+#: includes/class-asfw-privacy-policy-text.php:251
 msgid "The disposable-domain list may be refreshed from the configured remote source during scheduled maintenance; submitted visitor data is not sent for that list refresh."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:255
+#: includes/class-asfw-privacy-policy-text.php:259
 msgid "With the current plugin settings, this suggested text does not include an external anti-spam data transfer for CAPTCHA-style verification. Bunny Shield remote synchronization is not active."
 msgstr ""
 
 #. translators: 1: Bunny escalation threshold, 2: local dedupe TTL in minutes.
-#: includes/class-asfw-privacy-policy-text.php:260
+#: includes/class-asfw-privacy-policy-text.php:264
 #, php-format
 msgid "If repeated abuse signals are detected, IP addresses associated with failed or rate-limited attempts may be transmitted to Bunny Shield to update a remote access list. This can happen after approximately %1$d local abuse signals, and local deduplication state is kept for approximately %2$d minutes."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:267
+#: includes/class-asfw-privacy-policy-text.php:271
 msgid "Generated from the current anti-spam, logging, visitor identification, and external sync settings."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:270
+#: includes/class-asfw-privacy-policy-text.php:274
 msgid "It includes Bunny Shield external IP synchronization."
 msgstr ""
 
-#: includes/class-asfw-privacy-policy-text.php:273
+#: includes/class-asfw-privacy-policy-text.php:277
 msgid "It currently describes local/self-hosted anti-spam processing only."
 msgstr ""
 
@@ -1258,7 +1254,15 @@ msgid "Privacy policy text"
 msgstr ""
 
 #: assets/admin-ui/index.js:1
-msgid "Suggested replacement copy for your privacy policy. This is not legal consultation; consult your lawyer before using it because each site can have different legal requirements."
+msgid "Suggested copy for your privacy policy. This is not legal consultation; consult your lawyer before using it because each site can have different legal requirements."
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Use the privacy text legal basis setting above and save your settings so the suggested privacy policy text can be generated."
+msgstr ""
+
+#: assets/admin-ui/index.js:1
+msgid "Save Settings"
 msgstr ""
 
 #: assets/admin-ui/index.js:1
@@ -1303,10 +1307,6 @@ msgstr ""
 
 #: assets/admin-ui/index.js:1
 msgid "Experimental"
-msgstr ""
-
-#: assets/admin-ui/index.js:1
-msgid "Save Settings"
 msgstr ""
 
 #: assets/admin-ui/index.js:1

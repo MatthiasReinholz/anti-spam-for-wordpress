@@ -182,10 +182,8 @@ final class WpPluginBaseAdminUiOperationsTest extends AsfwPluginTestCase
 
         $this->assertArrayHasKey('privacy_policy_text', $payload);
         $this->assertIsArray($payload['privacy_policy_text']);
-        $this->assertStringContainsString(
-            'Use of Anti Spam for WordPress',
-            $payload['privacy_policy_text']['text']
-        );
+        $this->assertSame('', $payload['privacy_policy_text']['text']);
+        $this->assertStringNotContainsString('[Review required:', $payload['privacy_policy_text']['text']);
     }
 
     public function test_relevant_setting_changes_return_privacy_policy_text_update_flag(): void
@@ -241,7 +239,8 @@ final class WpPluginBaseAdminUiOperationsTest extends AsfwPluginTestCase
             ASFW_Privacy_Policy_Text::LEGAL_BASIS_REVIEW_REQUIRED,
             get_option(AntiSpamForWordPressPlugin::$option_privacy_legal_basis)
         );
-        $this->assertStringContainsString('[Review required:', $response['settings']['privacy_policy_text']['text']);
+        $this->assertSame('', $response['settings']['privacy_policy_text']['text']);
+        $this->assertStringNotContainsString('[Review required:', $response['settings']['privacy_policy_text']['text']);
         $this->assertStringNotContainsString('invalid-basis', $response['settings']['privacy_policy_text']['text']);
     }
 
