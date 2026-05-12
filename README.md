@@ -56,10 +56,40 @@ Important: client-only button disable behavior is **not** a security control. Pr
 
 After activation, review these settings/admin surfaces:
 
-- `Anti Spam for WordPress` (top-level admin menu): tabbed admin app with `Settings`, `Events`, and `Analytics`.
-- Legacy links (`Settings -> Anti Spam`, `Settings -> Events`, `Settings -> Analytics`) are preserved and redirect to the matching tab.
+- `Settings -> Anti Spam for WordPress`: tabbed admin app with `Settings`, `Events`, and `Analytics`.
+- Old query slugs (`asfw_admin`, `asfw_events`, `asfw_analytics`) redirect to the matching tab for compatibility, but they are not registered as separate admin pages.
 
 Event logging is disabled by default. Enable `Event logging` and set its mode to `log` or `block` before expecting Events/Analytics pages and event-based CLI reporting to populate.
+
+The Settings tab is ordered around the normal setup path:
+
+- `Protection Placements`: core WordPress placements first, then supported form and commerce integrations.
+- `Core Challenge`: secret, proof-of-work complexity, and challenge expiration.
+- `Security Hardening`: lazy loading, rate limits, honeypot, submit timing, math challenge, and submit delay.
+- `Widget and Shortcode`: widget behavior, footer/privacy link, and `[anti_spam_widget]` usage.
+- `Observability and Policy`: kill switch, event logging, disposable-email checks, and content heuristics.
+- `Bunny Shield`: optional remote access-list escalation.
+
+## Privacy Policy Text
+
+The Settings tab includes suggested privacy policy text for sites replacing Cloudflare Turnstile or another CAPTCHA-style service with Anti Spam for WordPress. The text is generated from the saved plugin settings, including visitor binding, event logging, disposable email checks, content heuristics, guard features, and Bunny Shield sync. The same suggestion is registered with the WordPress Privacy Policy Guide when that WordPress feature is available.
+
+Review the generated text before adding it to a privacy policy. It is operational guidance for site owners, not legal consultation; consult your lawyer before using it because each site can have different legal requirements.
+
+## Shortcode
+
+Use `[anti_spam_widget]` when automatic placement is not available in custom form markup.
+
+```text
+[anti_spam_widget mode="captcha" context="custom:contact" name="asfw"]
+```
+
+Supported attributes:
+
+- `mode`: `captcha` or `shortcode`. Required when the Custom HTML placement is disabled.
+- `context`: optional normalized context used for logging, scoping, and verification.
+- `name`: form field name. Defaults to `asfw`.
+- `language`: optional widget language override.
 
 ## WP-CLI
 
@@ -119,12 +149,19 @@ Uninstalling the plugin removes Anti Spam for WordPress options, transient chall
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch model, CI expectations, and release process.
+See [docs/admin-settings.md](docs/admin-settings.md) for the admin settings, shortcode, REST route, and agent reference.
 
 Release preparation and release publishing can be driven from GitHub Actions through the `prepare-release`, `finalize-release`, and `release` workflows.
 
 ## REST API
 
-This plugin requires the WordPress REST API. If you are using any plugin that disables the REST API, allow the endpoint `/anti-spam-for-wordpress/v1/challenge`.
+This plugin requires the WordPress REST API. If you are using any plugin that disables or filters the REST API, allow these routes:
+
+- `/anti-spam-for-wordpress/v1/challenge`
+- `/anti-spam-for-wordpress/v1/submit-delay-token` when Submit delay is enabled
+- `/anti-spam-for-wordpress/v1/admin/settings` for authenticated administrators
+- `/anti-spam-for-wordpress/v1/admin/events` for authenticated administrators
+- `/anti-spam-for-wordpress/v1/admin/analytics` for authenticated administrators
 
 ## Bunny Shield
 

@@ -13,7 +13,6 @@ class ASFW_Control_Plane {
 	protected static $disposable_module;
 	protected static $content_module;
 	protected static $bunny_module;
-	protected static $admin_pages;
 	protected static $cli;
 
 	public static function init() {
@@ -29,7 +28,6 @@ class ASFW_Control_Plane {
 		self::$bunny_module      = new ASFW_Bunny_Shield_Module();
 		self::$maintenance       = new ASFW_Maintenance( self::$store, self::$disposable_module );
 		self::$logger            = new ASFW_Event_Logger( self::$store );
-		self::$admin_pages       = new ASFW_Admin_Pages( self::$store, self::$disposable_module, self::$content_module );
 		self::$cli               = new ASFW_CLI_Command( self::$store, self::$maintenance, self::$disposable_module, self::$bunny_module );
 
 		self::$logger->register_hooks();
@@ -38,8 +36,6 @@ class ASFW_Control_Plane {
 		self::$bunny_module->register_hooks();
 		self::$maintenance->register_hooks();
 		self::$maintenance->maybe_schedule();
-
-		add_action( 'admin_menu', array( self::$admin_pages, 'register' ) );
 
 		if ( class_exists( 'WP_CLI', false ) ) {
 			WP_CLI::add_command( 'asfw', self::$cli );
@@ -56,7 +52,6 @@ class ASFW_Control_Plane {
 			'disposable_module' => self::$disposable_module,
 			'content_module'    => self::$content_module,
 			'bunny_module'      => self::$bunny_module,
-			'admin_pages'       => self::$admin_pages,
 			'cli'               => self::$cli,
 		);
 	}
@@ -83,10 +78,6 @@ class ASFW_Control_Plane {
 
 	public static function bunny_module() {
 		return self::$bunny_module;
-	}
-
-	public static function admin_pages() {
-		return self::$admin_pages;
 	}
 
 	public static function cli() {

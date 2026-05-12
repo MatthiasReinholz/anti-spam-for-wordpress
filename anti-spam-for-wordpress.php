@@ -34,6 +34,7 @@ require_once __DIR__ . '/includes/class-asfw-settings-definitions.php';
 require_once __DIR__ . '/includes/class-asfw-settings-renderer.php';
 require_once __DIR__ . '/includes/class-asfw-settings-registrar.php';
 require_once __DIR__ . '/includes/class-antispamforwordpressplugin.php';
+require_once __DIR__ . '/includes/class-asfw-privacy-policy-text.php';
 require_once __DIR__ . '/includes/class-asfw-options.php';
 require_once __DIR__ . '/includes/class-asfw-context-helper.php';
 require_once __DIR__ . '/includes/class-asfw-client-identity.php';
@@ -47,8 +48,6 @@ require_once __DIR__ . '/includes/class-asfw-integration-registry.php';
 require_once __DIR__ . '/includes/rest.php';
 require_once __DIR__ . '/includes/control-plane.php';
 require_once __DIR__ . '/includes/class-asfw-schema.php';
-require_once __DIR__ . '/includes/class-asfw-admin-events-page.php';
-require_once __DIR__ . '/includes/class-asfw-admin-analytics-page.php';
 require_once __DIR__ . '/lib/wp-plugin-base/rest-operations/bootstrap.php';
 require_once __DIR__ . '/lib/wp-plugin-base/admin-ui/bootstrap.php';
 require_once __DIR__ . '/public/widget.php';
@@ -57,8 +56,6 @@ require_once __DIR__ . '/public/widget.php';
 AntiSpamForWordPressPlugin::$widget_script_src = plugin_dir_url( __FILE__ ) . 'public/asfw-widget.js';
 AntiSpamForWordPressPlugin::$widget_style_src  = plugin_dir_url( __FILE__ ) . 'public/asfw-widget.css';
 AntiSpamForWordPressPlugin::$wp_script_src     = plugin_dir_url( __FILE__ ) . 'public/script.js';
-AntiSpamForWordPressPlugin::$admin_script_src  = plugin_dir_url( __FILE__ ) . 'public/admin.js';
-AntiSpamForWordPressPlugin::$admin_css_src     = plugin_dir_url( __FILE__ ) . 'public/admin.css';
 AntiSpamForWordPressPlugin::$custom_script_src = plugin_dir_url( __FILE__ ) . 'public/custom.js';
 // phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 
@@ -144,6 +141,10 @@ function asfw_activate() {
 
 	if ( get_option( AntiSpamForWordPressPlugin::$option_privacy_new_tab, null ) === null ) {
 		update_option( AntiSpamForWordPressPlugin::$option_privacy_new_tab, false );
+	}
+
+	if ( get_option( AntiSpamForWordPressPlugin::$option_privacy_legal_basis, null ) === null ) {
+		update_option( AntiSpamForWordPressPlugin::$option_privacy_legal_basis, ASFW_Privacy_Policy_Text::LEGAL_BASIS_REVIEW_REQUIRED );
 	}
 
 	if ( get_option( AntiSpamForWordPressPlugin::$option_integration_custom, '' ) === '' ) {

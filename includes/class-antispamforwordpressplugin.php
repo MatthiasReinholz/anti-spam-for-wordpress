@@ -26,10 +26,6 @@ class AntiSpamForWordPressPlugin {
 
 	public static $wp_script_src = '';
 
-	public static $admin_script_src = '';
-
-	public static $admin_css_src = '';
-
 	public static $custom_script_src = '';
 
 	public static $widget_style_src = '';
@@ -61,6 +57,8 @@ class AntiSpamForWordPressPlugin {
 	public static $option_privacy_url = 'asfw_privacy_url';
 
 	public static $option_privacy_new_tab = 'asfw_privacy_new_tab';
+
+	public static $option_privacy_legal_basis = 'asfw_privacy_legal_basis';
 
 	public static $option_lazy = 'asfw_lazy';
 

@@ -49,12 +49,12 @@ final class ASFW_Settings_Registrar {
 		}
 
 		$section_order = array(
-			'asfw_control_plane_settings_section',
+			'asfw_integrations_settings_section',
 			'asfw_general_settings_section',
 			'asfw_security_settings_section',
-			'asfw_bunny_settings_section',
 			'asfw_widget_settings_section',
-			'asfw_integrations_settings_section',
+			'asfw_control_plane_settings_section',
+			'asfw_bunny_settings_section',
 		);
 
 		foreach ( $section_order as $section_id ) {
@@ -71,12 +71,6 @@ final class ASFW_Settings_Registrar {
 				// the `asfw_settings_schema_fields` and
 				// `asfw_settings_external_registered_settings` filters.
 				do_action( 'asfw_settings_integrations' );
-			}
-		}
-
-		if ( ! empty( $fields_by_section['asfw_wordpress_settings_section'] ) ) {
-			foreach ( $fields_by_section['asfw_wordpress_settings_section'] as $field ) {
-				ASFW_Settings_Renderer::register_settings_field( $field );
 			}
 		}
 	}

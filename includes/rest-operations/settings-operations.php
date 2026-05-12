@@ -196,7 +196,7 @@ if ( ! function_exists( 'asfw_rest_registered_option_allowlist' ) ) {
 			}
 		}
 
-			$allowlist = array_values( array_unique( $allowlist ) );
+		$allowlist = array_values( array_unique( $allowlist ) );
 		sort( $allowlist );
 
 		return $allowlist;
@@ -262,6 +262,27 @@ if ( ! function_exists( 'asfw_rest_sanitize_option_value' ) ) {
 	}
 }
 
+if ( ! function_exists( 'asfw_rest_option_values_equal' ) ) {
+	/**
+	 * Compares option values after REST sanitization without forcing lossy casts.
+	 *
+	 * @param mixed $left  First value.
+	 * @param mixed $right Second value.
+	 * @return bool
+	 */
+	function asfw_rest_option_values_equal( $left, $right ) {
+		if ( is_array( $left ) || is_array( $right ) ) {
+			return wp_json_encode( $left ) === wp_json_encode( $right );
+		}
+
+		if ( is_bool( $left ) || is_bool( $right ) ) {
+			return (bool) $left === (bool) $right;
+		}
+
+		return (string) $left === (string) $right;
+	}
+}
+
 if ( ! function_exists( 'asfw_rest_build_settings_payload' ) ) {
 	/**
 	 * Builds the settings payload used by the admin app.
@@ -319,30 +340,13 @@ if ( ! function_exists( 'asfw_rest_build_settings_payload' ) ) {
 			$summary_rows = asfw_get_settings_summary_rows();
 		}
 
-		$contexts = ASFW_Context_Catalog::get_contexts();
-
 		return array(
-			'sections'        => $settings_sections,
-			'summary'         => array(
+			'sections'            => $settings_sections,
+			'summary'             => array(
 				'kill_switch' => ASFW_Feature_Registry::kill_switch_active() ? 'active' : 'inactive',
 				'rows'        => array_values( is_array( $summary_rows ) ? $summary_rows : array() ),
 			),
-			'context_catalog' => array_values(
-				array_map(
-					static function ( $context, $entry ) {
-						$group = isset( $entry['group'] ) ? (string) $entry['group'] : 'integrations';
-						$description = isset( $entry['description'] ) ? (string) $entry['description'] : '';
-						return array(
-							'context'     => (string) $context,
-							'group'       => $group,
-							'group_label' => function_exists( 'asfw_context_catalog_group_label' ) ? (string) asfw_context_catalog_group_label( $group ) : $group,
-							'description' => $description,
-						);
-					},
-					array_keys( $contexts ),
-					array_values( $contexts )
-				)
-			),
+			'privacy_policy_text' => class_exists( 'ASFW_Privacy_Policy_Text', false ) ? ASFW_Privacy_Policy_Text::payload() : array(),
 		);
 	}
 }
@@ -387,15 +391,19 @@ if ( ! function_exists( 'asfw_rest_operation_settings_update' ) ) {
 			$values = $payload['data'];
 		}
 
-		$allowlist = array_fill_keys( asfw_rest_registered_option_allowlist(), true );
-		$callbacks = asfw_rest_registered_sanitize_callbacks();
-		$updated   = array();
+		$allowlist                   = array_fill_keys( asfw_rest_registered_option_allowlist(), true );
+		$callbacks                   = asfw_rest_registered_sanitize_callbacks();
+		$privacy_relevant_options    = class_exists( 'ASFW_Privacy_Policy_Text', false ) ? array_fill_keys( ASFW_Privacy_Policy_Text::get_relevant_options(), true ) : array();
+		$privacy_policy_text_updated = false;
+		$updated                     = array();
 
 		foreach ( $values as $option => $raw_value ) {
 			$option = (string) $option;
 			if ( '' === $option || ! isset( $allowlist[ $option ] ) ) {
 				continue;
 			}
+
+			$old_value = get_option( $option );
 
 			if ( is_string( $raw_value ) ) {
 				$raw_value = wp_unslash( $raw_value );
@@ -411,12 +419,16 @@ if ( ! function_exists( 'asfw_rest_operation_settings_update' ) ) {
 			if ( class_exists( 'ASFW_Settings_Registrar', false ) ) {
 				ASFW_Settings_Registrar::sync_legacy_feature_options( $option );
 			}
+			if ( isset( $privacy_relevant_options[ $option ] ) && ! asfw_rest_option_values_equal( $old_value, $sanitized ) ) {
+				$privacy_policy_text_updated = true;
+			}
 			$updated[] = $option;
 		}
 
 		return array(
-			'updated'  => $updated,
-			'settings' => asfw_rest_build_settings_payload(),
+			'updated'                     => $updated,
+			'privacy_policy_text_updated' => $privacy_policy_text_updated,
+			'settings'                    => asfw_rest_build_settings_payload(),
 		);
 	}
 }

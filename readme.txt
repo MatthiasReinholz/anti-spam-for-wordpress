@@ -83,8 +83,13 @@ Uninstalling the plugin removes Anti Spam for WordPress options, transient chall
 
 = REST API =
 
-This plugin requires the WordPress REST API. If you use a plugin that disables the REST API, allow the endpoint `/anti-spam-for-wordpress/v1/challenge`.
-When the optional submit-delay feature is enabled, also allow `/anti-spam-for-wordpress/v1/submit-delay-token`.
+This plugin requires the WordPress REST API. If you use a plugin that disables or filters the REST API, allow these routes:
+
+* `/anti-spam-for-wordpress/v1/challenge`
+* `/anti-spam-for-wordpress/v1/submit-delay-token` when Submit delay is enabled
+* `/anti-spam-for-wordpress/v1/admin/settings` for authenticated administrators
+* `/anti-spam-for-wordpress/v1/admin/events` for authenticated administrators
+* `/anti-spam-for-wordpress/v1/admin/analytics` for authenticated administrators
 
 If you use a CDN or edge cache, bypass caching for `/wp-json/anti-spam-for-wordpress/v1/challenge` and `/wp-json/anti-spam-for-wordpress/v1/submit-delay-token` (when submit-delay is enabled).
 
@@ -93,6 +98,12 @@ The challenge endpoint stays public so the widget can fetch challenges without a
 If your site sends Content Security Policy headers, allow the domain serving the plugin scripts in `script-src` and permit the widget styles in `style-src`.
 
 If your site is behind Cloudflare, a load balancer, or another reverse proxy, add the proxy IPs or CIDR ranges to the Trusted proxies setting so the plugin can safely read forwarded client IP headers.
+
+= Privacy Policy Text =
+
+The Settings tab includes suggested privacy policy text for sites replacing Cloudflare Turnstile or another CAPTCHA-style service with Anti Spam for WordPress. The text is generated from the saved plugin settings, including visitor binding, event logging, disposable email checks, content heuristics, guard features, and Bunny Shield sync. The same suggestion is registered with the WordPress Privacy Policy Guide when that WordPress feature is available.
+
+Review the generated text before adding it to a privacy policy. It is operational guidance for site owners, not legal consultation; consult your lawyer before using it because each site can have different legal requirements.
 
 The default settings are intentionally conservative:
 
@@ -123,10 +134,27 @@ Commands that mutate or delete data require `--yes` (`events prune`, `events pur
 
 Admin pages:
 
-* `Anti Spam for WordPress` top-level admin menu for a tabbed admin app (`Settings`, `Events`, `Analytics`).
-* Legacy `Settings -> Anti Spam`, `Settings -> Events`, and `Settings -> Analytics` links are preserved and redirect to the corresponding tab.
+* `Settings -> Anti Spam for WordPress` opens the tabbed admin app (`Settings`, `Events`, `Analytics`).
+* Old `asfw_admin`, `asfw_events`, and `asfw_analytics` query slugs redirect to the corresponding tab for compatibility, but they are not registered as separate admin pages.
+
+Settings organization:
+
+* Protection Placements: WordPress placements first, then form and commerce integrations.
+* Core Challenge: proof-of-work secret, complexity, and expiration.
+* Security Hardening: lazy loading, rate limits, honeypot, submit timing, math challenge, and submit delay.
+* Widget and Shortcode: widget behavior, footer/privacy link, and `[anti_spam_widget]` usage.
+* Observability and Policy: kill switch, event logging, disposable-email checks, and content heuristics.
+* Bunny Shield: optional remote access-list escalation.
 
 Event logging is disabled by default. Enable `Event logging` and set its mode to `log` or `block` before expecting Events/Analytics pages and event-based CLI reporting to populate.
+
+Shortcode:
+
+Use `[anti_spam_widget]` when automatic placement is not available in custom form markup.
+
+`[anti_spam_widget mode="captcha" context="custom:contact" name="asfw"]`
+
+Supported attributes are `mode`, `context`, `name`, and `language`. If the Custom HTML placement is disabled, pass `mode="captcha"` or `mode="shortcode"` explicitly.
 
 = Source Code =
 

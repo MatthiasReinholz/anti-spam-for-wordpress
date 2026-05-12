@@ -60,3 +60,36 @@ function asfw_sanitize_event_detail_value( $value, $path = array() ) {
 function asfw_sanitize_event_details( $details ) {
 	return asfw_sanitize_event_detail_value( $details );
 }
+
+function asfw_register_privacy_policy_content() {
+	if ( ! function_exists( 'wp_add_privacy_policy_content' ) || ! class_exists( 'ASFW_Privacy_Policy_Text', false ) ) {
+		return;
+	}
+
+	$payload = ASFW_Privacy_Policy_Text::payload();
+	$text    = isset( $payload['text'] ) ? trim( (string) $payload['text'] ) : '';
+	if ( '' === $text ) {
+		return;
+	}
+
+	$paragraphs = preg_split( "/\n\s*\n/", $text );
+	if ( ! is_array( $paragraphs ) || empty( $paragraphs ) ) {
+		return;
+	}
+
+	$title = array_shift( $paragraphs );
+	$html  = '<h2>' . esc_html( $title ) . '</h2>';
+	foreach ( $paragraphs as $paragraph ) {
+		$paragraph = trim( (string) $paragraph );
+		if ( '' === $paragraph ) {
+			continue;
+		}
+		$html .= '<p>' . esc_html( $paragraph ) . '</p>';
+	}
+
+	wp_add_privacy_policy_content( __( 'Anti Spam for WordPress', 'anti-spam-for-wordpress' ), $html );
+}
+
+if ( is_admin() ) {
+	add_action( 'admin_init', 'asfw_register_privacy_policy_content' );
+}

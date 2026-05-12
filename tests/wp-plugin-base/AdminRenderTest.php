@@ -3,35 +3,6 @@ declare(strict_types=1);
 
 final class WpPluginBaseAdminRenderTest extends AsfwPluginTestCase
 {
-	public function test_admin_page_uses_asfw_classes_and_no_inline_styles(): void
-	{
-		ob_start();
-		asfw_options_page_html();
-		$html = (string) ob_get_clean();
-
-		$this->assertStringContainsString('class="asfw-head"', $html);
-		$this->assertStringContainsString('class="asfw-logo"', $html);
-		$this->assertStringContainsString('class="asfw-page-meta"', $html);
-		$this->assertStringContainsString('class="asfw-summary-panel"', $html);
-		$this->assertStringContainsString('Control plane summary', $html);
-		$this->assertStringContainsString('Kill switch:', $html);
-		$this->assertStringNotContainsString('altcha-', $html);
-		$this->assertStringNotContainsString('display:flex', $html);
-		$this->assertStringNotContainsString('flex-grow: 1', $html);
-		$this->assertStringNotContainsString('opacity: 0.8', $html);
-	}
-
-	public function test_context_catalog_section_renders_context_table(): void
-	{
-		ob_start();
-		asfw_context_catalog_section_callback();
-		$html = (string) ob_get_clean();
-
-		$this->assertStringContainsString('form:captcha', $html);
-		$this->assertStringContainsString('wordpress:login', $html);
-		$this->assertStringContainsString('asfw-context-table', $html);
-	}
-
 	public function test_control_plane_and_bunny_section_copy_mentions_mode_driven_contract(): void
 	{
 		ob_start();

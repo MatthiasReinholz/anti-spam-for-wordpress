@@ -535,7 +535,7 @@ final class ASFW_Feature_Registry {
 				AntiSpamForWordPressPlugin::$option_integration_wordpress_register,
 				'get_integration_wordpress_register',
 				'asfw_settings_wordpress_register_integration_field',
-				'asfw_wordpress_settings_section',
+				'asfw_integrations_settings_section',
 				'wordpress:register',
 				false,
 				false
@@ -546,7 +546,7 @@ final class ASFW_Feature_Registry {
 				AntiSpamForWordPressPlugin::$option_integration_wordpress_reset_password,
 				'get_integration_wordpress_reset_password',
 				'asfw_settings_wordpress_reset_password_integration_field',
-				'asfw_wordpress_settings_section',
+				'asfw_integrations_settings_section',
 				'wordpress:reset-password',
 				false,
 				false
@@ -557,7 +557,7 @@ final class ASFW_Feature_Registry {
 				AntiSpamForWordPressPlugin::$option_integration_wordpress_login,
 				'get_integration_wordpress_login',
 				'asfw_settings_wordpress_login_integration_field',
-				'asfw_wordpress_settings_section',
+				'asfw_integrations_settings_section',
 				'wordpress:login',
 				false,
 				false
@@ -568,11 +568,26 @@ final class ASFW_Feature_Registry {
 				AntiSpamForWordPressPlugin::$option_integration_wordpress_comments,
 				'get_integration_wordpress_comments',
 				'asfw_settings_wordpress_comments_integration_field',
-				'asfw_wordpress_settings_section',
+				'asfw_integrations_settings_section',
 				'wordpress:comments',
 				false,
 				false
 			),
+		);
+
+		$features = array_merge(
+			array_filter(
+				$features,
+				static function ( $feature ) {
+					return is_array( $feature ) && isset( $feature['group'] ) && strtolower( 'WordPress' ) === $feature['group'];
+				}
+			),
+			array_filter(
+				$features,
+				static function ( $feature ) {
+					return ! ( is_array( $feature ) && isset( $feature['group'] ) && strtolower( 'WordPress' ) === $feature['group'] );
+				}
+			)
 		);
 
 		return apply_filters( 'asfw_feature_registry_integrations', $features );
@@ -731,7 +746,7 @@ final class ASFW_Feature_Registry {
 			'getter'          => $getter,
 			'field_id'        => $field_id,
 			'section'         => $section,
-			'group'           => false !== strpos( $section, 'wordpress' ) ? 'wordpress' : 'integrations',
+			'group'           => 0 === strpos( $context, 'wordpress:' ) ? 'wordpress' : 'integrations',
 			'type'            => 'select',
 			'allow_shortcode' => (bool) $allow_shortcode,
 			'disabled'        => (bool) $disabled,

@@ -14,6 +14,7 @@ WP_Plugin_Base_Admin_UI_Loader::register_page(
 		'page_title'             => 'Anti Spam for WordPress',
 		'menu_title'             => 'Anti Spam for WordPress',
 		'capability'             => 'manage_options',
+		'parent_slug'            => 'options-general.php',
 		'menu_slug'              => 'anti-spam-for-wordpress-admin-ui',
 		'root_id'                => 'anti-spam-for-wordpress-admin-ui-root',
 		'plugin_slug'            => 'anti-spam-for-wordpress',

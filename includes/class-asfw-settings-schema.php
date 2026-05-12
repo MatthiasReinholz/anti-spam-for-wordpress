@@ -13,44 +13,34 @@ final class ASFW_Settings_Schema {
 			'asfw_settings_schema_sections',
 			array(
 				array(
-					'id'       => 'asfw_control_plane_settings_section',
-					'title'    => __( 'Control plane', 'anti-spam-for-wordpress' ),
-					'callback' => 'asfw_control_plane_section_callback',
+					'id'       => 'asfw_integrations_settings_section',
+					'title'    => __( 'Protection Placements', 'anti-spam-for-wordpress' ),
+					'callback' => 'asfw_integrations_section_callback',
 				),
 				array(
 					'id'       => 'asfw_general_settings_section',
-					'title'    => __( 'General', 'anti-spam-for-wordpress' ),
+					'title'    => __( 'Core Challenge', 'anti-spam-for-wordpress' ),
 					'callback' => 'asfw_general_section_callback',
 				),
 				array(
 					'id'       => 'asfw_security_settings_section',
-					'title'    => __( 'Security hardening', 'anti-spam-for-wordpress' ),
+					'title'    => __( 'Security Hardening', 'anti-spam-for-wordpress' ),
 					'callback' => 'asfw_security_section_callback',
+				),
+				array(
+					'id'       => 'asfw_widget_settings_section',
+					'title'    => __( 'Widget and Shortcode', 'anti-spam-for-wordpress' ),
+					'callback' => 'asfw_widget_section_callback',
+				),
+				array(
+					'id'       => 'asfw_control_plane_settings_section',
+					'title'    => __( 'Observability and Policy', 'anti-spam-for-wordpress' ),
+					'callback' => 'asfw_control_plane_section_callback',
 				),
 				array(
 					'id'       => 'asfw_bunny_settings_section',
 					'title'    => __( 'Bunny Shield', 'anti-spam-for-wordpress' ),
 					'callback' => 'asfw_bunny_section_callback',
-				),
-				array(
-					'id'       => 'asfw_widget_settings_section',
-					'title'    => __( 'Widget customization', 'anti-spam-for-wordpress' ),
-					'callback' => 'asfw_widget_section_callback',
-				),
-				array(
-					'id'       => 'asfw_integrations_settings_section',
-					'title'    => __( 'Integrations', 'anti-spam-for-wordpress' ),
-					'callback' => 'asfw_integrations_section_callback',
-				),
-				array(
-					'id'       => 'asfw_wordpress_settings_section',
-					'title'    => __( 'WordPress', 'anti-spam-for-wordpress' ),
-					'callback' => 'asfw_wordpress_section_callback',
-				),
-				array(
-					'id'       => 'asfw_context_catalog_section',
-					'title'    => __( 'Context catalog', 'anti-spam-for-wordpress' ),
-					'callback' => 'asfw_context_catalog_section_callback',
 				),
 			)
 		);
@@ -361,6 +351,15 @@ final class ASFW_Settings_Schema {
 					__( 'Open privacy link in new tab', 'anti-spam-for-wordpress' ),
 					__( 'Open the privacy link in a new browser tab.', 'anti-spam-for-wordpress' )
 				),
+				self::select_field(
+					'asfw_settings_privacy_legal_basis_field',
+					AntiSpamForWordPressPlugin::$option_privacy_legal_basis,
+					__( 'Privacy text legal basis', 'anti-spam-for-wordpress' ),
+					__( 'Choose the legal-basis sentence used in the suggested privacy policy text. Review this with your legal or privacy advisor.', 'anti-spam-for-wordpress' ),
+					ASFW_Privacy_Policy_Text::legal_basis_options(),
+					ASFW_Privacy_Policy_Text::LEGAL_BASIS_REVIEW_REQUIRED,
+					array_keys( ASFW_Privacy_Policy_Text::legal_basis_options() )
+				),
 				self::checkbox_field(
 					'asfw_settings_hidefooter_field',
 					AntiSpamForWordPressPlugin::$option_hidefooter,
@@ -369,8 +368,6 @@ final class ASFW_Settings_Schema {
 				),
 			),
 			'asfw_integrations_settings_section'  => array(),
-			'asfw_wordpress_settings_section'     => array(),
-			'asfw_context_catalog_section'        => array(),
 		);
 
 		foreach ( ASFW_Feature_Registry::get_integration_features() as $feature ) {
@@ -663,6 +660,7 @@ final class ASFW_Settings_Schema {
 			AntiSpamForWordPressPlugin::$option_privacy_page => 'asfw_widget_settings_section',
 			AntiSpamForWordPressPlugin::$option_privacy_url => 'asfw_widget_settings_section',
 			AntiSpamForWordPressPlugin::$option_privacy_new_tab => 'asfw_widget_settings_section',
+			AntiSpamForWordPressPlugin::$option_privacy_legal_basis => 'asfw_widget_settings_section',
 			AntiSpamForWordPressPlugin::$option_hidefooter => 'asfw_widget_settings_section',
 		);
 
