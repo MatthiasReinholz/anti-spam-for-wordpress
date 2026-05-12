@@ -75,7 +75,11 @@ final class ASFW_Privacy_Policy_Text {
 	}
 
 	public static function text( ?array $flags = null ) {
-		$flags      = is_array( $flags ) ? $flags : self::flags();
+		$flags = is_array( $flags ) ? $flags : self::flags();
+		if ( self::LEGAL_BASIS_REVIEW_REQUIRED === $flags['legal_basis'] ) {
+			return '';
+		}
+
 		$paragraphs = array(
 			__( 'Use of Anti Spam for WordPress', 'anti-spam-for-wordpress' ),
 			__( 'We use the Anti Spam for WordPress plugin on this website to protect forms and interactive website areas against spam, automated submissions, and abuse. The plugin replaces external CAPTCHA or Cloudflare Turnstile-style verification with self-hosted anti-spam checks that run in our WordPress installation.', 'anti-spam-for-wordpress' ),
@@ -172,7 +176,7 @@ final class ASFW_Privacy_Policy_Text {
 			return __( 'The processing is based on our legitimate interests pursuant to Article 6(1)(f) GDPR in protecting our website, forms, and users from spam and abuse. You may object to processing based on legitimate interests where the legal requirements are met.', 'anti-spam-for-wordpress' );
 		}
 
-		return __( '[Review required: Please insert or verify the applicable legal basis for this anti-spam processing, for example consent under Article 6(1)(a) GDPR or legitimate interests under Article 6(1)(f) GDPR, depending on your website implementation.]', 'anti-spam-for-wordpress' );
+		return '';
 	}
 
 	private static function core_processing_text( array $flags ) {

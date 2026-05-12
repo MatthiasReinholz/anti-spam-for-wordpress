@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 final class WpPluginBasePrivacyPolicyTextTest extends AsfwPluginTestCase
 {
-	public function test_default_text_describes_local_only_processing_and_review_required_basis(): void
+	public function test_default_text_is_empty_until_legal_basis_is_selected(): void
 	{
 		$payload = ASFW_Privacy_Policy_Text::payload();
 
@@ -12,8 +12,8 @@ final class WpPluginBasePrivacyPolicyTextTest extends AsfwPluginTestCase
 		$this->assertArrayHasKey('summary', $payload);
 		$this->assertArrayHasKey('relevant_options', $payload);
 		$this->assertArrayHasKey('flags', $payload);
-		$this->assertStringContainsString('replaces external CAPTCHA or Cloudflare Turnstile-style verification', $payload['text']);
-		$this->assertStringContainsString('[Review required:', $payload['text']);
+		$this->assertSame('', $payload['text']);
+		$this->assertStringNotContainsString('[Review required:', $payload['text']);
 		$this->assertStringContainsString('local/self-hosted anti-spam processing only', $payload['summary']);
 		$this->assertContains(AntiSpamForWordPressPlugin::$option_privacy_legal_basis, $payload['relevant_options']);
 	}
@@ -34,6 +34,7 @@ final class WpPluginBasePrivacyPolicyTextTest extends AsfwPluginTestCase
 
 	public function test_ip_only_and_ip_user_agent_binding_are_reflected(): void
 	{
+		update_option(AntiSpamForWordPressPlugin::$option_privacy_legal_basis, ASFW_Privacy_Policy_Text::LEGAL_BASIS_CONSENT);
 		update_option(AntiSpamForWordPressPlugin::$option_visitor_binding, 'ip');
 		$this->assertStringContainsString('visitor IP address to create', ASFW_Privacy_Policy_Text::payload()['text']);
 
@@ -45,6 +46,7 @@ final class WpPluginBasePrivacyPolicyTextTest extends AsfwPluginTestCase
 
 	public function test_event_logging_retention_is_reflected(): void
 	{
+		update_option(AntiSpamForWordPressPlugin::$option_privacy_legal_basis, ASFW_Privacy_Policy_Text::LEGAL_BASIS_CONSENT);
 		update_option('asfw_feature_event_logging_enabled', 1);
 		update_option('asfw_feature_event_logging_mode', 'log');
 		update_option('asfw_event_logging_retention_days', '90');
@@ -58,6 +60,7 @@ final class WpPluginBasePrivacyPolicyTextTest extends AsfwPluginTestCase
 
 	public function test_optional_local_features_are_reflected(): void
 	{
+		update_option(AntiSpamForWordPressPlugin::$option_privacy_legal_basis, ASFW_Privacy_Policy_Text::LEGAL_BASIS_CONSENT);
 		update_option('asfw_feature_disposable_email_enabled', 1);
 		update_option('asfw_feature_disposable_email_mode', 'block');
 		update_option('asfw_feature_disposable_email_background_enabled', 1);
@@ -80,6 +83,7 @@ final class WpPluginBasePrivacyPolicyTextTest extends AsfwPluginTestCase
 
 	public function test_bunny_external_sync_only_when_runtime_can_send_ips(): void
 	{
+		update_option(AntiSpamForWordPressPlugin::$option_privacy_legal_basis, ASFW_Privacy_Policy_Text::LEGAL_BASIS_CONSENT);
 		update_option('asfw_feature_bunny_shield_enabled', 1);
 		update_option('asfw_feature_bunny_shield_mode', 'block');
 		update_option('asfw_feature_bunny_shield_background_enabled', 1);
@@ -103,10 +107,19 @@ final class WpPluginBasePrivacyPolicyTextTest extends AsfwPluginTestCase
 
 	public function test_wordpress_privacy_policy_guide_content_is_registered(): void
 	{
+		update_option(AntiSpamForWordPressPlugin::$option_privacy_legal_basis, ASFW_Privacy_Policy_Text::LEGAL_BASIS_CONSENT);
+
 		asfw_register_privacy_policy_content();
 
 		$this->assertCount(1, $GLOBALS['asfw_test_privacy_policy_content']);
 		$this->assertSame('Anti Spam for WordPress', $GLOBALS['asfw_test_privacy_policy_content'][0]['plugin_name']);
 		$this->assertStringContainsString('<h2>Use of Anti Spam for WordPress</h2>', $GLOBALS['asfw_test_privacy_policy_content'][0]['policy_text']);
+	}
+
+	public function test_wordpress_privacy_policy_guide_content_is_not_registered_without_legal_basis(): void
+	{
+		asfw_register_privacy_policy_content();
+
+		$this->assertSame(array(), $GLOBALS['asfw_test_privacy_policy_content']);
 	}
 }

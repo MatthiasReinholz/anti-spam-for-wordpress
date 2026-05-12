@@ -38,6 +38,7 @@ const SETTINGS_READ_OPERATION = 'settings.read';
 const SETTINGS_UPDATE_OPERATION = 'settings.update';
 const EVENTS_LIST_OPERATION = 'events.list';
 const ANALYTICS_READ_OPERATION = 'analytics.read';
+const PRIVACY_LEGAL_BASIS_OPTION = 'asfw_privacy_legal_basis';
 
 function getInitialTab() {
 	const params = new URLSearchParams( window.location.search || '' );
@@ -193,13 +194,39 @@ function ShortcodeBlock() {
 	);
 }
 
-function PrivacyPolicyTextCard( { payload } ) {
+function findFieldByOption( sections, optionName ) {
+	for ( const section of sections ) {
+		const fields = Array.isArray( section?.fields ) ? section.fields : [];
+		const field = fields.find( ( item ) => item?.option === optionName );
+		if ( field ) {
+			return field;
+		}
+	}
+
+	return null;
+}
+
+function removeFieldByOption( sections, optionName ) {
+	return sections.map( ( section ) => ( {
+		...section,
+		fields: ( Array.isArray( section?.fields )
+			? section.fields
+			: []
+		).filter( ( field ) => field?.option !== optionName ),
+	} ) );
+}
+
+function PrivacyPolicyTextCard( {
+	payload,
+	legalBasisField,
+	legalBasisValue,
+	values,
+	onChange,
+	isSaving,
+} ) {
 	const [ copied, setCopied ] = useState( false );
 	const text = String( payload?.text || '' );
-
-	if ( text === '' ) {
-		return null;
-	}
+	const hasGeneratedText = text !== '';
 
 	const copyText = async () => {
 		if ( window.navigator?.clipboard?.writeText ) {
@@ -224,48 +251,88 @@ function PrivacyPolicyTextCard( { payload } ) {
 		createElement(
 			CardBody,
 			null,
+			legalBasisField
+				? createElement( SettingsField, {
+						field: legalBasisField,
+						value: legalBasisValue,
+						values,
+						onChange,
+				  } )
+				: null,
 			createElement(
 				'p',
-				null,
+				{ className: 'asfw-privacy-policy-note' },
 				__(
-					'Suggested replacement copy for your privacy policy. This is not legal consultation; consult your lawyer before using it because each site can have different legal requirements.',
+					'Suggested copy for your privacy policy. This is not legal consultation; consult your lawyer before using it because each site can have different legal requirements.',
 					'anti-spam-for-wordpress'
 				)
 			),
-			payload?.summary
+			hasGeneratedText && payload?.summary
 				? createElement(
 						'p',
 						{ className: 'asfw-admin-ui-muted' },
 						String( payload.summary )
 				  )
 				: null,
-			createElement( TextareaControl, {
-				label: __( 'Suggested text', 'anti-spam-for-wordpress' ),
-				value: text,
-				readOnly: true,
-				rows: 14,
-				className: 'asfw-privacy-policy-textarea',
-				onChange: () => {},
-			} ),
-			createElement(
-				Flex,
-				{ justify: 'flex-start', gap: 3, align: 'center' },
-				createElement(
-					Button,
-					{ variant: 'secondary', onClick: copyText },
-					copied
-						? __( 'Copied', 'anti-spam-for-wordpress' )
-						: __( 'Copy text', 'anti-spam-for-wordpress' )
-				),
-				createElement(
-					'span',
-					{ className: 'asfw-admin-ui-muted' },
-					__(
-						'This suggested text updates when you change relevant plugin settings. Review it before updating your privacy policy page.',
-						'anti-spam-for-wordpress'
-					)
-				)
-			)
+			! hasGeneratedText
+				? createElement(
+						'p',
+						{ className: 'asfw-admin-ui-muted' },
+						__(
+							'Use the privacy text legal basis setting above and save your settings so the suggested privacy policy text can be generated.',
+							'anti-spam-for-wordpress'
+						)
+				  )
+				: null,
+			! hasGeneratedText
+				? createElement(
+						Flex,
+						{ justify: 'flex-start', gap: 3 },
+						createElement(
+							Button,
+							{
+								variant: 'primary',
+								type: 'submit',
+								isBusy: isSaving,
+							},
+							__( 'Save Settings', 'anti-spam-for-wordpress' )
+						)
+				  )
+				: null,
+			hasGeneratedText
+				? createElement( TextareaControl, {
+						label: __(
+							'Suggested text',
+							'anti-spam-for-wordpress'
+						),
+						value: text,
+						readOnly: true,
+						rows: 14,
+						className: 'asfw-privacy-policy-textarea',
+						onChange: () => {},
+				  } )
+				: null,
+			hasGeneratedText
+				? createElement(
+						Flex,
+						{ justify: 'flex-start', gap: 3, align: 'center' },
+						createElement(
+							Button,
+							{ variant: 'secondary', onClick: copyText },
+							copied
+								? __( 'Copied', 'anti-spam-for-wordpress' )
+								: __( 'Copy text', 'anti-spam-for-wordpress' )
+						),
+						createElement(
+							'span',
+							{ className: 'asfw-admin-ui-muted' },
+							__(
+								'This suggested text updates when you change relevant plugin settings. Review it before updating your privacy policy page.',
+								'anti-spam-for-wordpress'
+							)
+						)
+				  )
+				: null
 		)
 	);
 }
@@ -287,6 +354,14 @@ function SettingsTab( {
 		? payload.summary.rows
 		: [];
 	const killSwitch = payload?.summary?.kill_switch === 'active';
+	const privacyLegalBasisField = findFieldByOption(
+		sections,
+		PRIVACY_LEGAL_BASIS_OPTION
+	);
+	const editableSections = removeFieldByOption(
+		sections,
+		PRIVACY_LEGAL_BASIS_OPTION
+	);
 
 	return createElement(
 		Flex,
@@ -400,9 +475,6 @@ function SettingsTab( {
 				)
 			)
 		),
-		createElement( PrivacyPolicyTextCard, {
-			payload: payload?.privacy_policy_text,
-		} ),
 		createElement(
 			'form',
 			{
@@ -411,7 +483,16 @@ function SettingsTab( {
 					onSave();
 				},
 			},
-			sections.map( ( section ) =>
+			createElement( PrivacyPolicyTextCard, {
+				payload: payload?.privacy_policy_text,
+				legalBasisField: privacyLegalBasisField,
+				legalBasisValue: values[ PRIVACY_LEGAL_BASIS_OPTION ],
+				values,
+				onChange: ( next ) =>
+					onChange( PRIVACY_LEGAL_BASIS_OPTION, next ),
+				isSaving,
+			} ),
+			editableSections.map( ( section ) =>
 				createElement(
 					Card,
 					{ key: section.id },
