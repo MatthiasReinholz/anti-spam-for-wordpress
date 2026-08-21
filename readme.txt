@@ -206,9 +206,10 @@ Native browser comment forms are protected by default, including logged-in submi
 == Changelog ==
 
 = 0.8.2 =
-* Update - chore: update wp-plugin-base to v1.8.2 (#78).
-* Update - Harden comment context resolution (#77).
-
+* Security - Require a valid signed context for logged-in comment submissions and prevent stale wpDiscuz contexts from weakening the active policy.
+* Reliability - Scope native comment verification markers to the target post so repeated or nested comment operations cannot affect one another.
+* Documentation - Explain native WordPress comment and programmatic comment API behavior.
+* Development - Update the shared tooling foundation and its Node.js 22-compatible Markdown toolchain.
 
 = 0.8.1 =
 * Fix - Scope native comment verification to browser and anonymous remote submissions while preserving trusted programmatic comment creation.
