@@ -191,6 +191,10 @@ The Bunny Shield integration is disabled by default. When enabled, it runs in dr
 
 Instead of asking the user to solve a visual puzzle, the widget asks the browser to perform a small computational task (hashing). This runs automatically and is invisible to the user.
 
+= Does comment protection affect integrations that create comments through code? =
+
+Native browser comment forms are protected by default, including logged-in submissions. Direct `wp_new_comment()` calls and authenticated REST, XML-RPC, or AJAX clients are not forced through a browser challenge. Anonymous remote comment submissions remain protected. You can disable the native Comments placement from the plugin settings if needed.
+
 == Screenshots ==
 
 1. Settings tab

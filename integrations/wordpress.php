@@ -214,35 +214,87 @@ add_action(
  * challenge to submissions that passed through wp_handle_comment_submission()
  * avoids breaking those trusted creation paths.
  */
-function asfw_mark_native_comment_submission() {
-	$GLOBALS['asfw_native_comment_submission_pending'] = isset( $GLOBALS['asfw_native_comment_submission_pending'] )
-		? (int) $GLOBALS['asfw_native_comment_submission_pending'] + 1
+function asfw_mark_native_comment_submission( $comment_post_id ) {
+	if ( ! isset( $GLOBALS['asfw_native_comment_submission_posts'] ) || ! is_array( $GLOBALS['asfw_native_comment_submission_posts'] ) ) {
+		$GLOBALS['asfw_native_comment_submission_posts'] = array();
+	}
+
+	$comment_post_id = (int) $comment_post_id;
+	$GLOBALS['asfw_native_comment_submission_posts'][ $comment_post_id ] = isset( $GLOBALS['asfw_native_comment_submission_posts'][ $comment_post_id ] )
+		? (int) $GLOBALS['asfw_native_comment_submission_posts'][ $comment_post_id ] + 1
 		: 1;
 }
 
 /**
  * Consume one native comment submission marker.
  *
+ * @param int $comment_post_id Comment post ID passed to preprocess_comment.
  * @return bool Whether the current comment came from the native form handler.
  */
-function asfw_consume_native_comment_submission_marker() {
-	$pending = isset( $GLOBALS['asfw_native_comment_submission_pending'] )
-		? (int) $GLOBALS['asfw_native_comment_submission_pending']
-		: 0;
-	if ( $pending < 1 ) {
+function asfw_consume_native_comment_submission_marker( $comment_post_id ) {
+	$pending_posts   = isset( $GLOBALS['asfw_native_comment_submission_posts'] ) && is_array( $GLOBALS['asfw_native_comment_submission_posts'] )
+		? $GLOBALS['asfw_native_comment_submission_posts']
+		: array();
+	$comment_post_id = (int) $comment_post_id;
+	$pending_count   = isset( $pending_posts[ $comment_post_id ] ) ? (int) $pending_posts[ $comment_post_id ] : 0;
+	if ( $pending_count < 1 ) {
 		return false;
 	}
 
-	$GLOBALS['asfw_native_comment_submission_pending'] = $pending - 1;
+	if ( 1 === $pending_count ) {
+		unset( $pending_posts[ $comment_post_id ] );
+	} else {
+		$pending_posts[ $comment_post_id ] = $pending_count - 1;
+	}
+	$GLOBALS['asfw_native_comment_submission_posts'] = $pending_posts;
 	return true;
 }
 
-add_action( 'pre_comment_on_post', 'asfw_mark_native_comment_submission', 10, 0 );
+/**
+ * Resolve a signed comment-form context against the currently enabled policy.
+ *
+ * Context signatures identify the renderer that produced a submission; they
+ * are not authorization tokens. Rechecking the active policy prevents stale
+ * form markup from selecting a disabled integration policy.
+ *
+ * @param AntiSpamForWordPressPlugin $plugin Plugin instance.
+ * @return string Normalized context, or an empty string when unrecognized.
+ */
+function asfw_resolve_signed_comment_context( $plugin ) {
+	$posted_context   = asfw_get_posted_value( 'asfw_context' );
+	$posted_signature = asfw_get_posted_value( 'asfw_context_sig' );
+	if ( '' === $posted_context || '' === $posted_signature ) {
+		return '';
+	}
+
+	$context = ASFW_Feature_Registry::normalize_context( $posted_context );
+	if ( ! in_array( $context, array( 'wordpress:comments', 'wpdiscuz:comments' ), true ) ) {
+		return '';
+	}
+	if ( ! hash_equals( $plugin->sign_widget_context( $context, 'asfw' ), $posted_signature ) ) {
+		return '';
+	}
+
+	if ( 'wpdiscuz:comments' === $context ) {
+		$wpdiscuz_policy_enabled = asfw_plugin_active( 'wpdiscuz' )
+			&& (
+				'' !== $plugin->get_integration_wpdiscuz()
+				|| ASFW_Feature_Registry::is_enabled( 'math_challenge', 'wpdiscuz:comments' )
+				|| ASFW_Feature_Registry::is_enabled( 'submit_delay', 'wpdiscuz:comments' )
+			);
+		return $wpdiscuz_policy_enabled ? $context : 'wordpress:comments'; // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- Context identifiers are normalized lowercase values.
+	}
+
+	return $context;
+}
+
+add_action( 'pre_comment_on_post', 'asfw_mark_native_comment_submission', 10, 1 );
 
 add_filter(
 	'preprocess_comment',
 	function ( $comment ) {
-		$native_request = asfw_consume_native_comment_submission_marker();
+		$comment_post_id = isset( $comment['comment_post_ID'] ) ? (int) $comment['comment_post_ID'] : 0;
+		$native_request  = asfw_consume_native_comment_submission_marker( $comment_post_id );
 		if ( isset( $comment['comment_type'] ) && '' !== $comment['comment_type'] && 'comment' !== $comment['comment_type'] ) {
 			return $comment;
 		}
@@ -250,21 +302,10 @@ add_filter(
 			return $comment;
 		}
 
-		$plugin           = asfw_plugin_instance();
-		$wpdiscuz_mode    = $plugin instanceof AntiSpamForWordPressPlugin && asfw_plugin_active( 'wpdiscuz' ) ? $plugin->get_integration_wpdiscuz() : '';
-		$wordpress_mode   = $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_wordpress_comments() : '';
-		$posted_context   = asfw_get_posted_value( 'asfw_context' );
-		$posted_signature = asfw_get_posted_value( 'asfw_context_sig' );
-		$wpdiscuz_request = false;
-		if ( $plugin instanceof AntiSpamForWordPressPlugin && '' !== $posted_context && '' !== $posted_signature ) {
-			$normalized_posted_context = ASFW_Feature_Registry::normalize_context( $posted_context );
-			if ( 'wpdiscuz:comments' === $normalized_posted_context ) {
-				$expected_signature = $plugin->sign_widget_context( 'wpdiscuz:comments', 'asfw' );
-				$wpdiscuz_request   = hash_equals( $expected_signature, $posted_signature );
-			}
-		}
+		$plugin         = asfw_plugin_instance();
+		$signed_context = $plugin instanceof AntiSpamForWordPressPlugin ? asfw_resolve_signed_comment_context( $plugin ) : '';
 
-		if ( ! $native_request && ! $wpdiscuz_request ) {
+		if ( ! $native_request && '' === $signed_context ) {
 			$remote_request = ( defined( 'REST_REQUEST' ) && REST_REQUEST )
 				|| ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST )
 				|| wp_doing_ajax();
@@ -274,8 +315,10 @@ add_filter(
 				return $comment;
 			}
 		}
-		$mode          = $wpdiscuz_request ? $wpdiscuz_mode : $wordpress_mode;
-		$guard_context = $wpdiscuz_request ? 'wpdiscuz:comments' : 'WordPress:comments';
+		$guard_context = 'wpdiscuz:comments' === $signed_context ? 'wpdiscuz:comments' : 'WordPress:comments';
+		$mode          = $plugin instanceof AntiSpamForWordPressPlugin && 'wpdiscuz:comments' === $guard_context
+			? $plugin->get_integration_wpdiscuz()
+			: ( $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_wordpress_comments() : '' );
 		$guard_result  = asfw_validate_context_guards( $guard_context );
 		if ( $guard_result instanceof WP_Error ) {
 			wp_die( '<strong>' . esc_html__( 'Error', 'anti-spam-for-wordpress' ) . '</strong> : ' . esc_html__( 'Could not verify you are not a robot.', 'anti-spam-for-wordpress' ) );
