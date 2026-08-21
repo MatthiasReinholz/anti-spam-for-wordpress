@@ -28,6 +28,7 @@ https://github.com/altcha-org/wordpress-plugin
 * No external API required for core protection
 * Privacy-friendly proof-of-work widget
 * Protection for core WordPress screens and popular form plugins
+* Proof-of-work protection for native WordPress comments, enabled by default
 * Optional Bunny Shield access-list escalation
 * Custom shortcode support via `[anti_spam_widget]`
 

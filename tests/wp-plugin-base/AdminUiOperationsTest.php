@@ -76,6 +76,7 @@ final class WpPluginBaseAdminUiOperationsTest extends AsfwPluginTestCase
 
     public function test_settings_payload_orders_sections_and_groups_wordpress_placements_first(): void
     {
+		delete_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments);
         $payload = asfw_rest_build_settings_payload();
 
         $this->assertSame(
@@ -101,6 +102,10 @@ final class WpPluginBaseAdminUiOperationsTest extends AsfwPluginTestCase
             ),
             array_slice(array_column($placements['fields'], 'id'), 0, 4)
         );
+
+		$commentsField = $placements['fields'][3];
+		$this->assertSame(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments, $commentsField['option']);
+		$this->assertSame('captcha', $commentsField['value']);
     }
 
     public function test_admin_ui_client_does_not_double_namespace_operation_paths(): void

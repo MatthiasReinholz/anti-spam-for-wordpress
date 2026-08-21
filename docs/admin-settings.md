@@ -28,6 +28,8 @@ The Settings tab follows the setup path an operator normally takes:
 5. `Observability and Policy`: kill switch, event logging, retention, disposable-email checks, and content heuristics.
 6. `Bunny Shield`: optional remote access-list escalation.
 
+The native WordPress Comments placement defaults to `Captcha`. It injects the proof-of-work widget into comment forms for both anonymous and logged-in commenters and validates standard comment submissions on the server. Select `Disable` to opt out.
+
 ## Shortcode
 
 Use `[anti_spam_widget]` when automatic placement is not available in custom form markup.

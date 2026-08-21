@@ -571,7 +571,9 @@ final class ASFW_Feature_Registry {
 				'asfw_integrations_settings_section',
 				'wordpress:comments',
 				false,
-				false
+				false,
+				'',
+				'captcha'
 			),
 		);
 
@@ -716,7 +718,7 @@ final class ASFW_Feature_Registry {
 		return $normalized;
 	}
 
-	private static function build_integration_feature( $id, $label, $option, $getter, $field_id, $section, $context, $allow_shortcode = false, $disabled = false, $description = '' ) {
+	private static function build_integration_feature( $id, $label, $option, $getter, $field_id, $section, $context, $allow_shortcode = false, $disabled = false, $description = '', $default = '' ) {
 		if ( '' === $description ) {
 			$description = sprintf(
 				/* translators: %s is a feature label. */
@@ -752,6 +754,7 @@ final class ASFW_Feature_Registry {
 			'disabled'        => (bool) $disabled,
 			'contexts'        => array( $context ),
 			'context'         => $context,
+			'default'         => in_array( $default, array( '', 'captcha', 'shortcode' ), true ) ? $default : '',
 		);
 	}
 

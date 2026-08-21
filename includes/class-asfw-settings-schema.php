@@ -531,6 +531,7 @@ final class ASFW_Settings_Schema {
 			'sanitize_callback' => self::select_sanitize_callback( array_keys( $options ), '' ),
 			'args'              => array(
 				'name'     => $feature['option'],
+				'default'  => isset( $feature['default'] ) ? (string) $feature['default'] : '',
 				'hint'     => $feature['hint'],
 				'disabled' => ! empty( $feature['disabled'] ),
 				'options'  => $options,

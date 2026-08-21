@@ -4,6 +4,10 @@ All notable changes to this project should be documented in this file.
 
 The format follows a simple Keep a Changelog-style layout with one section per released version and concise bullet points for user-visible changes.
 
+## Unreleased
+
+- Enabled proof-of-work protection for native WordPress comment forms by default, with an opt-out under Protection Placements.
+
 ## [0.4.0] - 2026-04-16
 
 - Added optional context-scoped `math_challenge` and `submit_delay` guards with `off|log|block` runtime modes.

@@ -133,6 +133,23 @@ final class WpPluginBaseSettingsRegistryTest extends AsfwPluginTestCase
 		);
 	}
 
+	public function test_native_wordpress_comments_default_to_captcha_without_overriding_opt_out(): void
+	{
+		delete_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments);
+
+		asfw_seed_control_plane_defaults();
+
+		$this->assertSame(
+			'captcha',
+			get_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments)
+		);
+
+		update_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments, '');
+		asfw_seed_control_plane_defaults();
+
+		$this->assertSame('', get_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments));
+	}
+
 	public function test_options_privacy_url_uses_custom_url_when_custom_target_is_selected(): void
 	{
 		update_option(AntiSpamForWordPressPlugin::$option_privacy_page, 'custom');
