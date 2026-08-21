@@ -4,7 +4,7 @@ All notable changes to this project should be documented in this file.
 
 The format follows a simple Keep a Changelog-style layout with one section per released version and concise bullet points for user-visible changes.
 
-## Unreleased
+## [0.8.0] - 2026-08-21
 
 - Enabled proof-of-work protection for native WordPress comment forms by default, with an opt-out under Protection Placements.
 
