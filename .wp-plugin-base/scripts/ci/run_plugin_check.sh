@@ -222,7 +222,8 @@ warning_count="$(printf '%s\n' "$json_payload" | jq '[ .[] | select(.type == "WA
 printf 'Plugin Check: %s errors, %s warnings.\n' "$error_count" "$warning_count"
 
 if [ "$error_count" -gt 0 ]; then
-  echo "Plugin Check reported errors. See dist/plugin-check.json." >&2
+	jq -r '.[] | select(.type == "ERROR") | [.code, .file, (.line // ""), .message] | @tsv' "$REPORT_PATH" >&2
+	echo "Plugin Check reported errors. See dist/plugin-check.json." >&2
   exit 1
 fi
 
