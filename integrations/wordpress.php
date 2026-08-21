@@ -267,7 +267,7 @@ add_filter(
 		if ( ! $native_request && ! $wpdiscuz_request ) {
 			$remote_request = ( defined( 'REST_REQUEST' ) && REST_REQUEST )
 				|| ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST )
-				|| ( defined( 'DOING_AJAX' ) && DOING_AJAX );
+				|| wp_doing_ajax();
 			if ( $remote_request && ! is_user_logged_in() ) {
 				$native_request = true;
 			} else {

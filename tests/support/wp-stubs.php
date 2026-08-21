@@ -33,6 +33,11 @@ if (!defined('DAY_IN_SECONDS')) {
     define('DAY_IN_SECONDS', 86400);
 }
 
+function wp_doing_ajax()
+{
+    return defined('DOING_AJAX') && DOING_AJAX;
+}
+
 function __($text, $domain = null)
 {
     return (string) $text;

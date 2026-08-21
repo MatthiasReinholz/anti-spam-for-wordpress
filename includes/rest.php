@@ -13,7 +13,8 @@ add_action(
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => 'asfw_generate_challenge_endpoint',
-				'permission_callback' => '__return_true',
+				// Public by design: clients need a challenge before they can prove work.
+				'permission_callback' => '__return_true', // nosemgrep: wp-rest-permission-callback-true-string
 				'args'                => array(
 					'context' => array(
 						'required'          => false,
@@ -29,7 +30,8 @@ add_action(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => 'asfw_generate_submit_delay_token_endpoint',
-					'permission_callback' => '__return_true',
+					// Public by design: anonymous forms need a server-signed delay token.
+					'permission_callback' => '__return_true', // nosemgrep: wp-rest-permission-callback-true-string
 					'args'                => array(
 						'context' => array(
 							'required'          => false,
