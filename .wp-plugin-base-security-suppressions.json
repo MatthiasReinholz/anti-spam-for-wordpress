@@ -2,9 +2,15 @@
   "suppressions": [
     {
       "kind": "rest_permission_callback_true",
-      "identifier": "__return_true",
+      "identifier": "anti-spam-for-wordpress/v1:challenge",
       "path": "includes/rest.php",
       "justification": "The public challenge endpoint must stay accessible so the widget can fetch proof-of-work challenges without authentication."
+    },
+    {
+      "kind": "rest_permission_callback_true",
+      "identifier": "anti-spam-for-wordpress/v1:submit-delay-token",
+      "path": "includes/rest.php",
+      "justification": "Anonymous forms need this endpoint to obtain a server-signed submit-delay token before submission."
     },
     {
       "kind": "rest_route_bypass",

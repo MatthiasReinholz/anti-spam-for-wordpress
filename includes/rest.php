@@ -7,14 +7,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action(
 	'rest_api_init',
 	function () {
-		register_rest_route(
+		register_rest_route( // nosemgrep: wp-rest-permission-callback-true-string -- Public proof-of-work challenge.
 			'anti-spam-for-wordpress/v1',
 			'challenge',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => 'asfw_generate_challenge_endpoint',
-				// Public by design: clients need a challenge before they can prove work.
-				'permission_callback' => '__return_true', // nosemgrep: wp-rest-permission-callback-true-string
+				'permission_callback' => '__return_true',
 				'args'                => array(
 					'context' => array(
 						'required'          => false,
@@ -24,14 +23,13 @@ add_action(
 			)
 		);
 
-			register_rest_route(
+			register_rest_route( // nosemgrep: wp-rest-permission-callback-true-string -- Public signed delay token.
 				'anti-spam-for-wordpress/v1',
 				'submit-delay-token',
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => 'asfw_generate_submit_delay_token_endpoint',
-					// Public by design: anonymous forms need a server-signed delay token.
-					'permission_callback' => '__return_true', // nosemgrep: wp-rest-permission-callback-true-string
+					'permission_callback' => '__return_true',
 					'args'                => array(
 						'context' => array(
 							'required'          => false,
