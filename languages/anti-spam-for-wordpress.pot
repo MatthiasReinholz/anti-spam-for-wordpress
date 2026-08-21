@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Anti Spam for WordPress 0.8.1\n"
+"Project-Id-Version: Anti Spam for WordPress 0.8.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/anti-spam-for-wordpress\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-12T15:24:25+00:00\n"
+"POT-Creation-Date: 2026-08-21T16:35:10+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: anti-spam-for-wordpress\n"
@@ -89,17 +89,17 @@ msgstr ""
 msgid "Choose where the widget is injected. Core WordPress placements are listed first, followed by supported form and commerce integrations."
 msgstr ""
 
-#: admin/options.php:144
+#: admin/options.php:145
 #: includes/rest-operations/settings-operations.php:77
 msgid "No link"
 msgstr ""
 
-#: admin/options.php:145
+#: admin/options.php:146
 #: includes/rest-operations/settings-operations.php:81
 msgid "Custom URL"
 msgstr ""
 
-#: anti-spam-for-wordpress.php:138
+#: anti-spam-for-wordpress.php:147
 #: includes/class-asfw-options.php:65
 msgid "Protected by Anti Spam for WordPress"
 msgstr ""
@@ -423,56 +423,56 @@ msgstr ""
 msgid "Comments"
 msgstr ""
 
-#: includes/class-asfw-feature-registry.php:614
+#: includes/class-asfw-feature-registry.php:616
 msgid "Generic widget"
 msgstr ""
 
-#: includes/class-asfw-feature-registry.php:616
+#: includes/class-asfw-feature-registry.php:618
 msgid "Fallback context used when no explicit context is supplied."
 msgstr ""
 
-#: includes/class-asfw-feature-registry.php:620
+#: includes/class-asfw-feature-registry.php:622
 msgid "Form widget"
 msgstr ""
 
-#: includes/class-asfw-feature-registry.php:622
+#: includes/class-asfw-feature-registry.php:624
 msgid "Automatic context used when the widget is rendered in captcha mode without an explicit context."
 msgstr ""
 
-#: includes/class-asfw-feature-registry.php:626
+#: includes/class-asfw-feature-registry.php:628
 msgid "Shortcode widget"
 msgstr ""
 
-#: includes/class-asfw-feature-registry.php:628
+#: includes/class-asfw-feature-registry.php:630
 msgid "Automatic context used when the widget is rendered in shortcode mode without an explicit context."
 msgstr ""
 
-#: includes/class-asfw-feature-registry.php:632
+#: includes/class-asfw-feature-registry.php:634
 msgid "Custom form widget"
 msgstr ""
 
-#: includes/class-asfw-feature-registry.php:634
+#: includes/class-asfw-feature-registry.php:636
 msgid "Automatic context used for custom mode before a named context is applied."
 msgstr ""
 
-#: includes/class-asfw-feature-registry.php:661
+#: includes/class-asfw-feature-registry.php:663
 msgid "Context added by an extension."
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-feature-registry.php:723
+#: includes/class-asfw-feature-registry.php:725
 #, php-format
 msgid "Enable protection for %s."
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-feature-registry.php:731
+#: includes/class-asfw-feature-registry.php:733
 #, php-format
 msgid "Toggle the %s integration between disable, captcha, and shortcode modes."
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-feature-registry.php:736
+#: includes/class-asfw-feature-registry.php:738
 #, php-format
 msgid "Toggle the %s integration between disable and captcha modes."
 msgstr ""
@@ -918,7 +918,7 @@ msgid "Current runtime uses block-style access-list updates only. Challenge rema
 msgstr ""
 
 #: includes/class-asfw-settings-schema.php:290
-#: includes/class-asfw-settings-schema.php:579
+#: includes/class-asfw-settings-schema.php:580
 msgid "Block"
 msgstr ""
 
@@ -1028,41 +1028,41 @@ msgid "Shortcode"
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-settings-schema.php:561
+#: includes/class-asfw-settings-schema.php:562
 #, php-format
 msgid "Enable %s"
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-settings-schema.php:572
+#: includes/class-asfw-settings-schema.php:573
 #, php-format
 msgid "%s mode"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:577
+#: includes/class-asfw-settings-schema.php:578
 msgid "Off"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:578
+#: includes/class-asfw-settings-schema.php:579
 msgid "Log"
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-settings-schema.php:589
+#: includes/class-asfw-settings-schema.php:590
 #, php-format
 msgid "%s scope"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:594
+#: includes/class-asfw-settings-schema.php:595
 msgid "All contexts"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:595
+#: includes/class-asfw-settings-schema.php:596
 msgid "Selected contexts"
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-settings-schema.php:605
+#: includes/class-asfw-settings-schema.php:606
 #, php-format
 msgid "%s selected contexts"
 msgstr ""
@@ -1105,7 +1105,7 @@ msgid "This form requires JavaScript."
 msgstr ""
 
 #. translators: %s: number of seconds remaining before the form can be submitted.
-#: includes/helpers.php:91
+#: includes/helpers.php:95
 #, php-format
 msgid "Please wait %ss..."
 msgstr ""
@@ -1164,8 +1164,8 @@ msgstr ""
 #: integrations/wordpress.php:107
 #: integrations/wordpress.php:158
 #: integrations/wordpress.php:168
-#: integrations/wordpress.php:237
-#: integrations/wordpress.php:242
+#: integrations/wordpress.php:324
+#: integrations/wordpress.php:329
 #: integrations/wpforms.php:28
 msgid "Could not verify you are not a robot."
 msgstr ""
@@ -1180,8 +1180,8 @@ msgstr ""
 #: integrations/wordpress.php:107
 #: integrations/wordpress.php:158
 #: integrations/wordpress.php:168
-#: integrations/wordpress.php:237
-#: integrations/wordpress.php:242
+#: integrations/wordpress.php:324
+#: integrations/wordpress.php:329
 msgid "Error"
 msgstr ""
 
@@ -1231,12 +1231,28 @@ msgstr ""
 msgid "REST operation %1$s capability_callback threw an uncaught %2$s."
 msgstr ""
 
-#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:167
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:178
 msgid "You do not have the required operation scope."
 msgstr ""
 
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:225
+msgid "The REST operation scope filter failed."
+msgstr ""
+
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:233
+msgid "The REST operation scope filter returned invalid data."
+msgstr ""
+
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:315
+msgid "The REST operation scope configuration is invalid."
+msgstr ""
+
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-responses.php:124
+msgid "The REST operation failed."
+msgstr ""
+
 #. translators: %s: operation id.
-#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-rest-adapter.php:92
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-rest-adapter.php:96
 #, php-format
 msgid "Skipped registering REST operation %s because its callback is missing or not callable."
 msgstr ""

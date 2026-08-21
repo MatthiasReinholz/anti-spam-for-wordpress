@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.8.1
-Stable tag: 0.8.1
+Version: 0.8.2
+Stable tag: 0.8.2
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 7.1
@@ -204,6 +204,11 @@ Native browser comment forms are protected by default, including logged-in submi
 5. Floating UI example
 
 == Changelog ==
+
+= 0.8.2 =
+* Update - chore: update wp-plugin-base to v1.8.2 (#78).
+* Update - Harden comment context resolution (#77).
+
 
 = 0.8.1 =
 * Fix - Scope native comment verification to browser and anonymous remote submissions while preserving trusted programmatic comment creation.
