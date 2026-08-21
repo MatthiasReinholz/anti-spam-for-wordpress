@@ -718,7 +718,7 @@ final class ASFW_Feature_Registry {
 		return $normalized;
 	}
 
-	private static function build_integration_feature( $id, $label, $option, $getter, $field_id, $section, $context, $allow_shortcode = false, $disabled = false, $description = '', $default = '' ) {
+	private static function build_integration_feature( $id, $label, $option, $getter, $field_id, $section, $context, $allow_shortcode = false, $disabled = false, $description = '', $default_mode = '' ) {
 		if ( '' === $description ) {
 			$description = sprintf(
 				/* translators: %s is a feature label. */
@@ -754,7 +754,7 @@ final class ASFW_Feature_Registry {
 			'disabled'        => (bool) $disabled,
 			'contexts'        => array( $context ),
 			'context'         => $context,
-			'default'         => in_array( $default, array( '', 'captcha', 'shortcode' ), true ) ? $default : '',
+			'default'         => in_array( $default_mode, array( '', 'captcha', 'shortcode' ), true ) ? $default_mode : '',
 		);
 	}
 

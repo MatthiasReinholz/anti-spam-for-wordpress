@@ -7,6 +7,7 @@ The format follows a simple Keep a Changelog-style layout with one section per r
 ## [0.8.0] - 2026-08-21
 
 - Enabled proof-of-work protection for native WordPress comment forms by default, with an opt-out under Protection Placements.
+- Declared compatibility with WordPress 7.1.
 
 ## [0.4.0] - 2026-04-16
 
