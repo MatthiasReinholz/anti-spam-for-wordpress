@@ -20,6 +20,11 @@
   <exclude-pattern>*/tests/*</exclude-pattern>
   <exclude-pattern>*/vendor/*</exclude-pattern>
 
+  <!-- WordPress build output uses the canonical index.asset.php filename. -->
+  <exclude-pattern>assets/admin-ui/index.asset.php</exclude-pattern>
+  <!-- Retained compatibility loader; the implementation follows WPCS naming. -->
+  <exclude-pattern>integrations/formidable/AntiSpamWidgetFieldType.php</exclude-pattern>
+
   <rule ref="WordPress-Core"/>
   <rule ref="WordPress-Extra"/>
   <rule ref="PHPCompatibilityWP"/>
