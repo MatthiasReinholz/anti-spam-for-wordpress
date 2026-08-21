@@ -25,8 +25,12 @@ define( 'ASFW_WEBSITE', 'https://matthiasreinholz.com' );
 define( 'ASFW_WIDGET_VERSION', '1.0.0' );
 define( 'ASFW_DB_VERSION', 1 );
 
-// Load the plugin API when WordPress has made it available. Runtime smoke tests
-// intentionally provide only the public WordPress bootstrap contract.
+// Do not initialize against an incomplete or non-WordPress bootstrap.
+if ( ! function_exists( 'add_action' ) || ! function_exists( 'register_activation_hook' ) ) {
+	return;
+}
+
+// Load the plugin API when WordPress has made it available.
 $asfw_plugin_api_file = ABSPATH . 'wp-admin/includes/plugin.php';
 if ( ! function_exists( 'is_plugin_active' ) && is_readable( $asfw_plugin_api_file ) ) {
 	require_once $asfw_plugin_api_file;
