@@ -307,7 +307,7 @@ if ( ! class_exists( 'ASFW_Options', false ) ) {
 		}
 
 		public function get_integration_wordpress_comments() {
-			return trim( get_option( AntiSpamForWordPressPlugin::$option_integration_wordpress_comments ) );
+			return trim( get_option( AntiSpamForWordPressPlugin::$option_integration_wordpress_comments, 'captcha' ) );
 		}
 
 		public function get_integration_wpdiscuz() {

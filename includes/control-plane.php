@@ -153,6 +153,17 @@ function asfw_seed_control_plane_defaults() {
 			update_option( $definition['background_option'], $background_enabled );
 		}
 	}
+
+	foreach ( ASFW_Feature_Registry::get_integration_features() as $integration ) {
+		if ( ! is_array( $integration ) || empty( $integration['option'] ) ) {
+			continue;
+		}
+
+		if ( null === get_option( $integration['option'], null ) ) {
+			$default = isset( $integration['default'] ) ? (string) $integration['default'] : '';
+			update_option( $integration['option'], $default );
+		}
+	}
 }
 
 function asfw_initialize_control_plane() {

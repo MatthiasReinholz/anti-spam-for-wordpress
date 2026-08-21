@@ -95,7 +95,8 @@ function asfw_settings_select_callback( array $args ) {
 	$disabled    = ! empty( $args['disabled'] );
 	$description = isset( $args['description'] ) ? $args['description'] : null;
 	$options     = isset( $args['options'] ) ? $args['options'] : array();
-	$setting     = get_option( $name );
+	$default     = isset( $args['default'] ) ? $args['default'] : '';
+	$setting     = get_option( $name, $default );
 	$value       = isset( $setting ) ? esc_attr( $setting ) : '';
 	?>
 	<select name="<?php echo esc_attr( $name ); ?>" id="<?php echo esc_attr( $name ); ?>" <?php echo $disabled ? 'disabled' : ''; ?>>

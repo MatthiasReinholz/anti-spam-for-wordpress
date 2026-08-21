@@ -311,8 +311,9 @@ if ( ! function_exists( 'asfw_rest_build_settings_payload' ) ) {
 				}
 
 				$option_name         = (string) $field['option'];
-				$current             = get_option( $option_name );
 				$field_args          = isset( $field['args'] ) && is_array( $field['args'] ) ? $field['args'] : array();
+				$default             = isset( $field_args['default'] ) ? $field_args['default'] : false;
+				$current             = get_option( $option_name, $default );
 				$normalized_fields[] = array(
 					'id'          => isset( $field['id'] ) ? (string) $field['id'] : $option_name,
 					'option'      => $option_name,

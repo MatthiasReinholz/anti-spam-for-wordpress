@@ -140,7 +140,7 @@ Requires WordPress 6.4 or newer and PHP 8.0 or newer.
 1. Download the `.zip` from the [Releases](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/releases).
 2. Upload the `anti-spam-for-wordpress` folder to `/wp-content/plugins/`.
 3. Activate the plugin through the Plugins menu in WordPress.
-4. Review the settings and enable the integrations you need.
+4. Review the settings and enable the integrations you need. Protection for native WordPress comments is enabled by default and can be disabled under **Protection Placements**.
 
 ## Uninstalling
 

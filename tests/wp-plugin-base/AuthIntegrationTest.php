@@ -3,6 +3,72 @@ declare(strict_types=1);
 
 final class AuthIntegrationTest extends AsfwPluginTestCase
 {
+	public function test_native_comment_widget_is_rendered_for_anonymous_commenters_by_default(): void
+	{
+		delete_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments);
+
+		ob_start();
+		do_action('comment_form_after_fields');
+		$markup = (string) ob_get_clean();
+
+		$this->assertStringContainsString('<asfw-widget', $markup);
+		$this->assertStringContainsString('wordpress:comments', $markup);
+	}
+
+	public function test_native_comment_widget_is_rendered_for_logged_in_commenters_by_default(): void
+	{
+		delete_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments);
+
+		ob_start();
+		do_action('comment_form_logged_in_after');
+		$markup = (string) ob_get_clean();
+
+		$this->assertStringContainsString('<asfw-widget', $markup);
+		$this->assertStringContainsString('wordpress:comments', $markup);
+	}
+
+	public function test_native_comment_submission_requires_proof_of_work_by_default(): void
+	{
+		delete_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments);
+
+		$this->expectException(RuntimeException::class);
+		apply_filters(
+			'preprocess_comment',
+			array(
+				'comment_type' => 'comment',
+				'comment_content' => 'Hello',
+			)
+		);
+	}
+
+	public function test_native_comment_submission_accepts_valid_proof_of_work(): void
+	{
+		delete_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments);
+		$this->seedPostedWidget('wordpress:comments');
+		$comment = array(
+			'comment_type' => 'comment',
+			'comment_content' => 'Hello',
+		);
+
+		$this->assertSame($comment, apply_filters('preprocess_comment', $comment));
+	}
+
+	public function test_native_comment_protection_can_be_disabled(): void
+	{
+		update_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments, '');
+		$comment = array(
+			'comment_type' => 'comment',
+			'comment_content' => 'Hello',
+		);
+
+		ob_start();
+		do_action('comment_form_after_fields');
+		$markup = (string) ob_get_clean();
+
+		$this->assertStringNotContainsString('<asfw-widget', $markup);
+		$this->assertSame($comment, apply_filters('preprocess_comment', $comment));
+	}
+
     public function test_wordpress_login_guard_blocks_when_math_challenge_is_missing(): void
     {
         update_option('asfw_feature_math_challenge_enabled', 1);
