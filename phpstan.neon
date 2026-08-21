@@ -11,3 +11,6 @@ parameters:
   treatPhpDocTypesAsCertain: false
   bootstrapFiles:
     - tests/support/phpstan-bootstrap.php
+  excludePaths:
+    analyse:
+      - lib/wp-plugin-base

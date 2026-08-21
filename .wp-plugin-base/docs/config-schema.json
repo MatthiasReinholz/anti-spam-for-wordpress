@@ -61,7 +61,7 @@
       "pattern": "^(none|github-release|gitlab-release|generic-json)$"
     },
     "PLUGIN_RUNTIME_UPDATE_SOURCE_URL": {
-      "description": "Runtime updater source URL. Host-backed providers must point at trusted GitHub/GitLab hosts or allowlisted self-managed hosts. Do not embed secrets in this URL because it ships in the plugin payload.",
+      "description": "Runtime updater source URL. Host-backed providers must point at trusted GitHub/GitLab hosts or allowlisted self-managed hosts. All runtime update URLs must be public HTTPS URLs without credentials, query strings, fragments, localhost/private-network hosts, or embedded secrets because the URL ships in the plugin payload.",
       "default": "",
       "pattern": "^$|^https://[^[:space:]]+$"
     },
@@ -87,6 +87,7 @@
       "pattern": "^[0-9]+(\\.[0-9]+){0,2}$"
     },
     "NODE_VERSION": {
+      "description": "Node.js version used by managed CI, release, and admin UI tooling. Node.js 22 is the supported default for current WordPress tooling.",
       "required_in_scopes": ["project", "ci", "readiness", "release", "deploy-structure", "deploy"],
       "pattern": "^[0-9]+(\\.[0-9]+){0,2}$"
     },
@@ -101,6 +102,11 @@
     "PHP_RUNTIME_MATRIX_MODE": {
       "default": "smoke",
       "pattern": "^(smoke|strict)$"
+    },
+    "PHPSTAN_MEMORY_LIMIT": {
+      "description": "Optional PHPStan memory limit passed to the managed quality-pack PHPStan run, for example 768M, 1G, or -1.",
+      "default": "",
+      "pattern": "^$|^-1$|^[1-9][0-9]*[KMGkmg]?$"
     },
     "VERSION_CONSTANT_NAME": {
       "pattern": "^[A-Z][A-Z0-9_]*$"

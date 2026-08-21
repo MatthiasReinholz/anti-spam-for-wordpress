@@ -103,14 +103,14 @@ validate_suppression_file() {
     ((.suppressions // []) | type == "array") and
     all((.suppressions // [])[];
       (.kind | type == "string") and
-      (.kind == "wp_ajax_nopriv" or .kind == "admin_post_nopriv" or .kind == "rest_permission_callback_true" or .kind == "rest_public_operation" or .kind == "rest_route_bypass") and
+      (.kind == "wp_ajax_nopriv" or .kind == "admin_post_nopriv" or .kind == "rest_permission_callback_true" or .kind == "rest_permission_callback_missing" or .kind == "rest_public_operation" or .kind == "rest_route_bypass") and
       (.identifier | type == "string") and
       (.path | type == "string") and
       (.justification | type == "string") and
       ((.justification | gsub("^[[:space:]]+|[[:space:]]+$"; "") | length) > 0)
     )
   ' "$SUPPRESSIONS_PATH" >/dev/null; then
-    echo "Invalid suppression file format in $WP_PLUGIN_BASE_SECURITY_SUPPRESSIONS_FILE. Each suppression requires kind in {wp_ajax_nopriv, admin_post_nopriv, rest_permission_callback_true, rest_public_operation, rest_route_bypass}, identifier, path, and non-empty justification." >&2
+    echo "Invalid suppression file format in $WP_PLUGIN_BASE_SECURITY_SUPPRESSIONS_FILE. Each suppression requires kind in {wp_ajax_nopriv, admin_post_nopriv, rest_permission_callback_true, rest_permission_callback_missing, rest_public_operation, rest_route_bypass}, identifier, path, and non-empty justification." >&2
     exit 1
   fi
 }
@@ -235,6 +235,21 @@ if ! jq -e \
     (
       ($operation.ability // null) == null or
       ($operation.ability | type == "object")
+    ) and
+    (
+      ($operation.error_response // null) == null or
+      (
+        ($operation.error_response | type == "object") and
+        ($operation.error_response | keys | all(. as $key | ["mode", "message"] | index($key) != null)) and
+        ($operation.error_response.mode == "envelope") and
+        (
+          ($operation.error_response.message // null) == null or
+          (
+            ($operation.error_response.message | type == "string") and
+            (($operation.error_response.message | gsub("^[[:space:]]+|[[:space:]]+$"; "") | length) > 0)
+          )
+        )
+      )
     )
   )
 ' <<<"$operations_json" >/dev/null; then
@@ -282,7 +297,7 @@ declare -a route_bypass_matches=()
 for file in "${php_files[@]}"; do
   relative_path="${file#"$ROOT_DIR"/}"
   case "$relative_path" in
-    tests/*|vendor/*|lib/*)
+    tests/*|vendor/*|lib/wp-plugin-base/*)
       continue
       ;;
   esac

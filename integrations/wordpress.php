@@ -206,9 +206,43 @@ add_action(
 	0
 );
 
+/**
+ * Mark a comment submitted through WordPress' native comment form handler.
+ *
+ * The preprocess_comment filter is also used by wp_new_comment(), importers,
+ * REST clients, and other programmatic integrations. Limiting the browser
+ * challenge to submissions that passed through wp_handle_comment_submission()
+ * avoids breaking those trusted creation paths.
+ */
+function asfw_mark_native_comment_submission() {
+	$GLOBALS['asfw_native_comment_submission_pending'] = isset( $GLOBALS['asfw_native_comment_submission_pending'] )
+		? (int) $GLOBALS['asfw_native_comment_submission_pending'] + 1
+		: 1;
+}
+
+/**
+ * Consume one native comment submission marker.
+ *
+ * @return bool Whether the current comment came from the native form handler.
+ */
+function asfw_consume_native_comment_submission_marker() {
+	$pending = isset( $GLOBALS['asfw_native_comment_submission_pending'] )
+		? (int) $GLOBALS['asfw_native_comment_submission_pending']
+		: 0;
+	if ( $pending < 1 ) {
+		return false;
+	}
+
+	$GLOBALS['asfw_native_comment_submission_pending'] = $pending - 1;
+	return true;
+}
+
+add_action( 'pre_comment_on_post', 'asfw_mark_native_comment_submission', 10, 0 );
+
 add_filter(
 	'preprocess_comment',
 	function ( $comment ) {
+		$native_request = asfw_consume_native_comment_submission_marker();
 		if ( isset( $comment['comment_type'] ) && '' !== $comment['comment_type'] && 'comment' !== $comment['comment_type'] ) {
 			return $comment;
 		}
@@ -230,6 +264,16 @@ add_filter(
 			}
 		}
 
+		if ( ! $native_request && ! $wpdiscuz_request ) {
+			$remote_request = ( defined( 'REST_REQUEST' ) && REST_REQUEST )
+				|| ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST )
+				|| wp_doing_ajax();
+			if ( $remote_request && ! is_user_logged_in() ) {
+				$native_request = true;
+			} else {
+				return $comment;
+			}
+		}
 		$mode          = $wpdiscuz_request ? $wpdiscuz_mode : $wordpress_mode;
 		$guard_context = $wpdiscuz_request ? 'wpdiscuz:comments' : 'WordPress:comments';
 		$guard_result  = asfw_validate_context_guards( $guard_context );

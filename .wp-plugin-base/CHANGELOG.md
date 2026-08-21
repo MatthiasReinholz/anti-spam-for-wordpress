@@ -1,5 +1,80 @@
 # Changelog
 
+## v1.8.1
+
+* Preserve child-project `parent_slug` settings when registering managed admin UI pages.
+
+## v1.8.0
+
+* Changed the managed foundation, child-project default, fixtures, and admin UI tooling contract from Node.js 20 to Node.js 22.
+* Updated WordPress validation fixtures for WordPress 7.1 compatibility checks.
+* Updated the managed PHP quality pack to security-fixed coding-standard dependencies.
+* Stabilized changelog extraction fixtures by disabling asynchronous Git maintenance in temporary repositories.
+
+## v1.7.15
+
+* docs: record future enhancements
+* docs: record future enhancements
+* Harden tooling dependency and host audit policy (#181)
+* chore(deps): bump github/codeql-action from 4.35.5 to 4.36.0 (#178)
+* chore(deps-dev): bump tmp from 0.2.5 to 0.2.7 in /tools/wordpress-env (#180)
+* chore(deps): bump yamllint in /tools/python-lint-tools (#179)
+
+## v1.7.14
+
+* Add admin UI header end marker (#176)
+
+## v1.7.13
+
+* Resolve remaining dependency alerts
+* chore(deps): bump idna from 3.11 to 3.15 in /tools/python-semgrep (#173)
+* chore(deps-dev): bump @wordpress/element (#166)
+* chore(deps-dev): bump @wordpress/api-fetch (#165)
+* chore(deps-dev): bump @wordpress/data (#161)
+* chore(deps): bump semgrep in /tools/python-semgrep (#159)
+* chore(deps-dev): bump @wordpress/i18n (#158)
+* chore(deps-dev): bump @wordpress/env in /tools/wordpress-env (#157)
+* chore(deps-dev): bump phpstan/phpstan (#156)
+* chore(deps-dev): bump dealerdirect/phpcodesniffer-composer-installer (#152)
+* chore(deps-dev): bump dealerdirect/phpcodesniffer-composer-installer (#150)
+* chore(deps): bump urllib3 from 2.6.3 to 2.7.0 in /tools/python-semgrep (#149)
+* chore(deps-dev): bump @babel/plugin-transform-modules-systemjs (#147)
+* chore(deps-dev): bump fast-uri (#146)
+* chore(deps-dev): bump fast-uri (#145)
+* chore(deps-dev): bump fast-xml-builder in /tools/wordpress-env (#144)
+* Harden release and workflow maintenance checks (#172)
+* chore(deps-dev): bump axios (#143)
+* chore(deps-dev): bump ip-address (#142)
+* chore(deps): bump python-multipart in /tools/python-semgrep (#140)
+* chore(deps-dev): bump axios (#139)
+* chore(deps-dev): bump simple-git in /tools/wordpress-env (#137)
+* chore(deps-dev): bump ip-address (#138)
+* chore(deps-dev): bump phpstan/phpstan (#122)
+* chore(deps-dev): bump @wordpress/env in /tools/wordpress-env (#124)
+* chore(deps-dev): bump @wordpress/data (#126)
+* chore(deps-dev): bump @wordpress/api-fetch (#127)
+* chore(deps-dev): bump @wordpress/element (#129)
+* chore(deps-dev): bump @wordpress/i18n (#133)
+* chore(deps-dev): bump @wordpress/scripts (#134)
+* chore(deps-dev): bump @wordpress/components (#135)
+
+## v1.7.12
+
+* Guard foundation changelog hygiene (#119)
+
+## v1.7.11
+
+* Harden child repository ergonomics (#117)
+
+## v1.7.10
+
+* Harden release verification and agent contracts
+* Add prerelease tag publication for GitHub child plugins.
+* Verify stable GitHub releases after publication and reject lightweight release tags in repair flows.
+* Build deterministic ZIP archives for managed child packages.
+* Harden release repair, runtime updater URL validation, REST endpoint scanning, and optional pack runtime behavior.
+* Refresh Semgrep, ShellCheck, actionlint, Syft, and admin UI PostCSS pins.
+
 ## v1.7.9
 
 * Harden release readiness validation (#113)
@@ -144,10 +219,6 @@
 * ci(audit): allow updated github/codeql-action upload-sarif pin
 * chore(deps-dev): bump @wordpress/env in /tools/wordpress-env
 * chore(deps): bump github/codeql-action from 4.34.1 to 4.35.1
-
-## Unreleased
-
-* No unreleased changes yet.
 
 ## v1.3.0
 

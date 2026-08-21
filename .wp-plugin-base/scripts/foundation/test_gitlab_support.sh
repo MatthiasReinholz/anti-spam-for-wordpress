@@ -30,7 +30,7 @@ MAIN_PLUGIN_FILE=standard-plugin.php
 README_FILE=readme.txt
 ZIP_FILE=standard-plugin.zip
 PHP_VERSION=8.1
-NODE_VERSION=20
+NODE_VERSION=22
 PRODUCTION_ENVIRONMENT=production
 PLUGIN_RUNTIME_UPDATE_PROVIDER=gitlab-release
 PLUGIN_RUNTIME_UPDATE_SOURCE_URL=https://gitlab.com/example-group/standard-plugin
@@ -50,6 +50,10 @@ test ! -e "$fixture_dir/.github/dependabot.yml"
 test -f "$fixture_dir/lib/wp-plugin-base/wp-plugin-base-runtime-updater.php"
 test -f "$fixture_dir/lib/wp-plugin-base/wp-plugin-base-github-updater.php"
 
+grep -Fq 'image: ubuntu:24.04@sha256:' "$fixture_dir/.gitlab-ci.yml"
+grep -Fq 'template: Jobs/SAST.gitlab-ci.yml' "$fixture_dir/.gitlab-ci.yml"
+grep -Fq 'template: Jobs/Secret-Detection.gitlab-ci.yml' "$fixture_dir/.gitlab-ci.yml"
+
 grep -Fq "__PLUGIN_RUNTIME_UPDATE_PROVIDER__" "$fixture_dir/lib/wp-plugin-base/wp-plugin-base-runtime-updater.php" && {
   echo "Runtime updater template placeholders were not rendered." >&2
   exit 1
@@ -68,6 +72,20 @@ WP_PLUGIN_BASE_ROOT="$fixture_dir" bash "$ROOT_DIR/scripts/ci/build_zip.sh" ".wp
 gitlab_identity_regex="$(wp_plugin_base_provider_sigstore_identity_regex gitlab-release https://gitlab.com/api/v4 example-group/wp-plugin-base foundation)"
 if ! printf '%s\n' 'https://gitlab.com/example-group/wp-plugin-base/.gitlab-ci.yml@refs/heads/main' | grep -Eq "$gitlab_identity_regex"; then
   echo "GitLab Sigstore identity regex did not match a canonical GitLab identity." >&2
+  exit 1
+fi
+if printf '%s\n' 'https://gitlab.com/example-group/wp-pluginXbase/.gitlab-ci.yml@refs/heads/main' | grep -Eq "$gitlab_identity_regex"; then
+  echo "GitLab Sigstore identity regex matched a similarly named repository." >&2
+  exit 1
+fi
+
+gitlab_nested_identity_regex="$(wp_plugin_base_provider_sigstore_identity_regex gitlab-release https://gitlab.com/api/v4 example-group/platform/plugin.base foundation)"
+if ! printf '%s\n' 'https://gitlab.com/example-group/platform/plugin.base/.gitlab-ci.yml@refs/heads/main' | grep -Eq "$gitlab_nested_identity_regex"; then
+  echo "GitLab Sigstore identity regex did not match a nested dotted repository path." >&2
+  exit 1
+fi
+if printf '%s\n' 'https://gitlab.com/example-group/platform/pluginXbase/.gitlab-ci.yml@refs/heads/main' | grep -Eq "$gitlab_nested_identity_regex"; then
+  echo "GitLab Sigstore identity regex treated a dotted repository path as a pattern." >&2
   exit 1
 fi
 

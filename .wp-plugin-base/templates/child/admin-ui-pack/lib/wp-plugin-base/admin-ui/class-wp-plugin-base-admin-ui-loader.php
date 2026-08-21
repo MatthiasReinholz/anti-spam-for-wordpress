@@ -36,7 +36,7 @@ if ( ! class_exists( 'WP_Plugin_Base_Admin_UI_Loader' ) ) {
 			add_action(
 				'admin_menu',
 				static function () use ( $config ) {
-					$callback = static function () use ( $config ) {
+					$render_page = static function () use ( $config ) {
 						if ( ! current_user_can( $config['capability'] ) ) {
 							return;
 						}
@@ -44,15 +44,14 @@ if ( ! class_exists( 'WP_Plugin_Base_Admin_UI_Loader' ) ) {
 						self::render_root( $config );
 					};
 
-					$parent_slug = isset( $config['parent_slug'] ) ? (string) $config['parent_slug'] : '';
-					if ( '' !== $parent_slug ) {
+					if ( ! empty( $config['parent_slug'] ) ) {
 						$hook_suffix = add_submenu_page(
-							$parent_slug,
+							$config['parent_slug'],
 							$config['page_title'],
 							$config['menu_title'],
 							$config['capability'],
 							$config['menu_slug'],
-							$callback
+							$render_page
 						);
 					} else {
 						$hook_suffix = add_menu_page(
@@ -60,7 +59,7 @@ if ( ! class_exists( 'WP_Plugin_Base_Admin_UI_Loader' ) ) {
 							$config['menu_title'],
 							$config['capability'],
 							$config['menu_slug'],
-							$callback,
+							$render_page,
 							'dashicons-admin-generic',
 							58
 						);
@@ -94,6 +93,7 @@ if ( ! class_exists( 'WP_Plugin_Base_Admin_UI_Loader' ) ) {
 		 */
 		private static function render_root( array $config ) {
 			echo '<div class="wrap">';
+			echo '<hr class="wp-header-end">';
 			echo '<div id="' . esc_attr( $config['root_id'] ) . '"></div>';
 			echo '</div>';
 		}

@@ -112,7 +112,7 @@ Full local validation and optional flows need additional tools:
 
 The shared scripts now fail fast with explicit missing-tool errors instead of failing deeper into release or update flows.
 
-Foundation-only linting uses `shellcheck`, `actionlint`, `yamllint`, `markdownlint-cli2`, `codespell`, `editorconfig-checker`, and `gitleaks` when they are installed locally. Foundation CI installs and runs them strictly even if they are absent on a contributor machine.
+Foundation-only linting and release-security smoke checks use `shellcheck`, `actionlint`, `yamllint`, `markdownlint-cli2`, `codespell`, `editorconfig-checker`, `gitleaks`, `syft`, and `cosign` when they are installed locally. Foundation CI installs and runs them strictly even if they are absent on a contributor machine.
 
 The repository pre-push hook runs:
 
@@ -121,17 +121,7 @@ The repository pre-push hook runs:
 
 Set `WP_PLUGIN_BASE_SKIP_LOCAL_PUSH_GATE=1` only when you intentionally need to bypass the local gate.
 
-On macOS, install the binary tools locally with:
-
-```bash
-brew install shellcheck actionlint editorconfig-checker gitleaks
-```
-
-Install the local Markdown linting bundle with the committed lockfile:
-
-```bash
-npm ci --prefix tools/markdownlint --ignore-scripts --no-audit --no-fund
-```
+Use `scripts/foundation/bootstrap_strict_local.sh` to install the supported strict-local toolchain into `.wp-plugin-base-tools`. The bootstrap script installs pinned binary, Python, and Node-based tools with checksum, lockfile, or hash validation.
 
 Foundation CI now installs the Node and Python lint toolchains from committed lock files and hash-pinned requirements. `tools/wordpress-env` remains a separate lockfile-backed npm tooling bundle, and shared scripts install it with `npm ci --no-audit --no-fund` from the committed `package-lock.json`.
 
@@ -290,6 +280,8 @@ Required keys in `.wp-plugin-base.env`:
 - `PHP_VERSION`
 - `NODE_VERSION`
 
+New child projects default to Node.js 22. Current admin UI tooling requires Node.js 22.12 or newer; keep `NODE_VERSION=22` unless the project's complete JavaScript dependency graph explicitly supports another runtime.
+
 Legacy compatibility alias: `FOUNDATION_REPOSITORY` remains accepted for GitHub-hosted foundations.
 
 Optional keys:
@@ -304,6 +296,7 @@ Optional keys:
 - `PLUGIN_RUNTIME_UPDATE_SOURCE_URL`
 - `PHP_RUNTIME_MATRIX`
 - `PHP_RUNTIME_MATRIX_MODE`
+- `PHPSTAN_MEMORY_LIMIT`
 - `VERSION_CONSTANT_NAME`
 - `POT_FILE`
 - `POT_PROJECT_NAME`
@@ -382,7 +375,7 @@ Set `CODEOWNERS_REVIEWERS` only if you want the generated project files to inclu
 
 `FOUNDATION_RELEASE_SOURCE_SIGSTORE_ISSUER` is only needed for self-managed GitLab foundation sources. `gitlab.com` uses its standard issuer automatically; self-managed GitLab must set the issuer explicitly.
 
-`WORDPRESS_QUALITY_PACK_ENABLED=true` enables the broader PHP quality pack during WordPress readiness validation. It is a readiness submode and therefore requires `WORDPRESS_READINESS_ENABLED=true`. Full quality-pack mode manages PHPCS/PHPStan/PHPUnit support files.
+`WORDPRESS_QUALITY_PACK_ENABLED=true` enables the broader PHP quality pack during WordPress readiness validation. It is a readiness submode and therefore requires `WORDPRESS_READINESS_ENABLED=true`. Full quality-pack mode manages PHPCS/PHPStan/PHPUnit support files, and seeds a child-owned `phpstan.neon` overlay for project-specific paths, excludes, bootstrap files, and scan files.
 
 `WORDPRESS_SECURITY_PACK_ENABLED=true` enables a narrower security-focused pack during WordPress readiness validation. It is a readiness submode and therefore requires `WORDPRESS_READINESS_ENABLED=true`. That pack runs explicit `WordPress.Security`, `WordPress.DB`, and `WordPress.WP.Capabilities` sniffs, blocks risky public endpoint patterns, and audits root Composer/npm runtime dependencies when lock files are present.
 
@@ -405,11 +398,13 @@ Workflow files use the `.yml` extension. `.yaml` workflow files are rejected by 
 
 `ADMIN_UI_NPM_AUDIT_LEVEL` controls the managed admin UI npm audit threshold when the security pack is enabled. Keep the default `high` for release readiness. `critical` is only allowed outside `RELEASE_READINESS_MODE=security-sensitive` as a temporary compatibility override for non-runtime, upstream-owned admin UI toolchain advisories while you update `@wordpress/*` packages or add narrow npm `overrides`.
 
-`PHP_RUNTIME_MATRIX` enables an additional CI smoke job across the listed interpreter versions, for example `PHP_RUNTIME_MATRIX=8.1,8.2,8.3`. The matrix reruns repository validation and WordPress metadata checks with each configured PHP version. Set `PHP_RUNTIME_MATRIX_MODE=strict` to also run PHPUnit in the matrix when `phpunit.xml.dist` and the managed quality-pack tool bundle are present.
+`PHP_RUNTIME_MATRIX` enables an additional CI smoke job across the listed interpreter versions, for example `PHP_RUNTIME_MATRIX=8.1,8.2,8.3`. The matrix reruns repository validation, WordPress metadata checks, and a direct main-plugin load smoke with each configured PHP version. Set `PHP_RUNTIME_MATRIX_MODE=strict` to also run PHPUnit in the matrix when `phpunit.xml.dist` and the managed quality-pack tool bundle are present.
+
+`PHPSTAN_MEMORY_LIMIT` optionally passes a memory limit to the managed PHPStan command, for example `768M`, `1G`, or `-1`. Keep analysis paths, excludes, bootstrap files, and scan files in the child-owned `phpstan.neon` overlay so sync can update `phpstan.neon.dist` without taking over project-specific analysis scope.
 
 PHP quality-pack and runtime-matrix behavior matrix:
 
-| `WORDPRESS_QUALITY_PACK_ENABLED` | `PHP_RUNTIME_MATRIX` | `PHP_RUNTIME_MATRIX_MODE` | Managed PHPUnit bridge files (`phpunit.xml.dist`, `tests/bootstrap.php`, `.wp-plugin-base-quality-pack/**`) | Full pack-only files (`.phpcs.xml.dist`, `phpstan.neon.dist`, `phpstan.neon`) |
+| `WORDPRESS_QUALITY_PACK_ENABLED` | `PHP_RUNTIME_MATRIX` | `PHP_RUNTIME_MATRIX_MODE` | Managed PHPUnit bridge files (`phpunit.xml.dist`, `tests/bootstrap.php`, `.wp-plugin-base-quality-pack/**`, `tests/wp-plugin-base/*Test.php`) | Full pack-only files (`.phpcs.xml.dist`, `phpstan.neon.dist`) and seeded child-owned files (`phpstan.neon`) |
 | --- | --- | --- | --- | --- |
 | `false` | unset | `smoke` (default) | no | no |
 | `false` | set | `smoke` | no | no |
@@ -418,7 +413,7 @@ PHP quality-pack and runtime-matrix behavior matrix:
 
 Strict runtime matrix mode can therefore manage and execute the PHPUnit bridge even when the full quality pack is disabled. This is expected behavior, not a framework gap.
 
-When the PHPUnit bridge is active, treat `tests/bootstrap.php` as managed and keep child-specific preload/support-class wiring in `tests/wp-plugin-base/bootstrap-child.php`. During migration, move custom preloads there before or immediately after sync to avoid post-sync CI regressions.
+When the PHPUnit bridge is active, treat `tests/bootstrap.php` as managed and keep child-specific preload/support-class wiring in `tests/wp-plugin-base/bootstrap-child.php`. The managed `phpunit.xml.dist` discovers `*Test.php` files under `tests/`, so project tests can live in a child-owned path such as `tests/php`. During migration, move custom preloads there before or immediately after sync to avoid post-sync CI regressions.
 
 `WOOCOMMERCE_QIT_ENABLED=true` syncs an optional manual WooCommerce QIT workflow into the child repository. That workflow is intended for WooCommerce Marketplace/partner use, expects `QIT_USER` and `QIT_APP_PASSWORD` secrets plus a manually provided WooCommerce extension slug, and uses a pinned internal `woocommerce/qit-cli` version.
 
@@ -426,7 +421,7 @@ When the PHPUnit bridge is active, treat `tests/bootstrap.php` as managed and ke
 
 `WOOCOMMERCE_COM_ENDPOINT_TIMEOUT_SECONDS` controls WooCommerce.com API request timeouts for deploy and status checks (default `30` seconds).
 
-`PLUGIN_RUNTIME_UPDATE_PROVIDER=github-release|gitlab-release|generic-json` enables an opt-in runtime pack that ships YahnisElsts Plugin Update Checker in `lib/wp-plugin-base/plugin-update-checker/` and a managed bootstrap in `lib/wp-plugin-base/wp-plugin-base-runtime-updater.php`. Set `PLUGIN_RUNTIME_UPDATE_SOURCE_URL` to the matching repository or JSON metadata URL and add `require_once __DIR__ . '/lib/wp-plugin-base/wp-plugin-base-runtime-updater.php';` to the plugin main file. `github-release` requires `AUTOMATION_PROVIDER=github`. `gitlab-release` requires `AUTOMATION_PROVIDER=gitlab`. `generic-json` is host-agnostic, but it is a runtime updater transport only, not a supported `FOUNDATION_RELEASE_SOURCE_PROVIDER` or native source contract for managed downstream automation. Systems such as `wp-core-base` should keep consuming the authoritative Git host release surface. Do not ship secrets in `PLUGIN_RUNTIME_UPDATE_SOURCE_URL`. `GITHUB_RELEASE_UPDATER_ENABLED` and `GITHUB_RELEASE_UPDATER_REPO_URL` remain accepted as GitHub-only compatibility aliases.
+`PLUGIN_RUNTIME_UPDATE_PROVIDER=github-release|gitlab-release|generic-json` enables an opt-in runtime pack that ships YahnisElsts Plugin Update Checker in `lib/wp-plugin-base/plugin-update-checker/` and a managed bootstrap in `lib/wp-plugin-base/wp-plugin-base-runtime-updater.php`. Set `PLUGIN_RUNTIME_UPDATE_SOURCE_URL` to the matching repository or JSON metadata URL and add `require_once __DIR__ . '/lib/wp-plugin-base/wp-plugin-base-runtime-updater.php';` to the plugin main file. `github-release` requires `AUTOMATION_PROVIDER=github`. `gitlab-release` requires `AUTOMATION_PROVIDER=gitlab`. `generic-json` is host-agnostic, but it is a runtime updater transport only, not a supported `FOUNDATION_RELEASE_SOURCE_PROVIDER` or native source contract for managed downstream automation. Systems such as `wp-core-base` should keep consuming the authoritative Git host release surface. Runtime update URLs must be public HTTPS URLs without credentials, query strings, fragments, localhost/private-network hosts, or token-like material. `GITHUB_RELEASE_UPDATER_ENABLED` and `GITHUB_RELEASE_UPDATER_REPO_URL` remain accepted as GitHub-only compatibility aliases.
 
 `REST_OPERATIONS_PACK_ENABLED=true` enables an opt-in runtime pack that manages a shared REST operation registry and adapters in `lib/wp-plugin-base/rest-operations/` while seeding child-owned examples in `includes/rest-operations/`. Set `REST_API_NAMESPACE=<plugin-slug>/v1` to override the default namespace and add `require_once __DIR__ . '/lib/wp-plugin-base/rest-operations/bootstrap.php';` to the plugin main file.
 
@@ -444,9 +439,9 @@ The admin starter files are child-owned and seeded once. Changing `ADMIN_UI_STAR
 
 Disabling `ADMIN_UI_PACK_ENABLED` is also a manual reconciliation step. Sync removes the managed bootstrap, but you must remove the child-owned `require_once __DIR__ . '/lib/wp-plugin-base/admin-ui/bootstrap.php';` include, clear `BUILD_SCRIPT=.wp-plugin-base-admin-ui/build.sh`, and delete any stale `assets/admin-ui/` build outputs before validation or packaging will pass. Deleting the seeded `.wp-plugin-base-admin-ui/` sources is optional but recommended once the pack is intentionally removed.
 
-`EXTRA_ALLOWED_HOSTS` allows additional outbound URL hosts for workflow/script audit policy (comma-separated hostnames only). Keep this list minimal.
+`EXTRA_ALLOWED_HOSTS` allows additional outbound URL hosts for workflow/script audit policy (comma-separated hostnames only). Localhost, private-network, link-local, single-label, and `*.internal` hosts are rejected; keep this list minimal.
 
-Local `validate.sh` defaults to `fast-local` mode. That mode still proves the release tooling wiring and SBOM generation, but it reports which checks were skipped when local prerequisites are unavailable. Use `--mode strict-local` for CI-like tool enforcement on a contributor machine. GitHub `foundation-ci` runs `validate.sh --mode ci` and is the authoritative strict execution path for Sigstore/OIDC-sensitive checks.
+Local `validate.sh` defaults to `fast-local` mode. That mode proves the release tooling wiring and reports any checks that were skipped when local prerequisites are unavailable. Use `--mode strict-local` after `bootstrap_strict_local.sh` for CI-like tool enforcement on a contributor machine. GitHub `foundation-ci` runs `validate.sh --mode ci` and is the authoritative strict execution path for GitHub Actions OIDC-sensitive Sigstore signing checks.
 
 ## WordPress.org Deploy
 
@@ -466,24 +461,17 @@ WordPress.org can therefore fail after the selected Git host release is already 
 
 Repair runbook after publication:
 
-- GitHub: run the manual `release.yml` workflow for the existing tag, then run `woocommerce-status.yml` when WooCommerce.com is enabled
+- GitHub stable release: run the manual `release.yml` workflow for the existing tag, then run `woocommerce-status.yml` when WooCommerce.com is enabled
+- GitHub prerelease: push or rerun the trusted prerelease tag so `publish-tag-release.yml` creates or repairs the prerelease GitHub Release
 - GitLab: rerun the tagged `release` job from the managed `.gitlab-ci.yml`; there is no separate `woocommerce-status.yml` workflow on GitLab, so inspect Woo vendor/QIT status directly when that channel is enabled
 
 If you are migrating from older internal release ordering where WordPress.org deploy blocked tag publication, treat this as a behavior change and update release runbooks.
 
 For stronger review on production publishing, protect the deployment environment named by `PRODUCTION_ENVIRONMENT` and require at least one reviewer before the workflow can access deploy credentials. GitHub validation checks this automatically. GitLab validation fails closed until you rerun with `WP_PLUGIN_BASE_GITLAB_DEPLOY_ENV_ACKNOWLEDGED=true` after manually reviewing the protected environment rules.
 
-Repair flows skip WordPress.org redeploy by default so an existing `tags/<version>` entry is not mutated during a repair run. On GitHub that behavior lives in the manual `release.yml` workflow. On GitLab it lives in the tagged `release` job from the managed `.gitlab-ci.yml`. Only set the repository or environment variable `WP_PLUGIN_BASE_ALLOW_WPORG_TAG_REDEPLOY=true` for an intentional break-glass redeploy of the latest repository release tag.
+Repair flows skip WordPress.org redeploy by default so an existing `tags/<version>` entry is not mutated during a repair run. On GitHub that behavior lives in the manual `release.yml` workflow for stable tags and the prerelease-only `publish-tag-release.yml` workflow for trusted prerelease tags. On GitLab it lives in the tagged `release` job from the managed `.gitlab-ci.yml`. Only set the repository or environment variable `WP_PLUGIN_BASE_ALLOW_WPORG_TAG_REDEPLOY=true` for an intentional break-glass redeploy of the latest repository release tag.
 
 ## Guides
-
-Start here by intent:
-
-- new plugin repository: [New project setup](docs/new-project.md)
-- existing plugin migration: [Existing project migration](docs/existing-project-migration.md)
-- release and distribution behavior: [Release model](docs/release-model.md)
-- security and workflow policy: [Security model](docs/security-model.md)
-- maintainer/coding-agent change map: [Maintainer and agent map](docs/maintainer-agent-map.md)
 
 - [New project setup](docs/new-project.md)
 - [Existing project migration](docs/existing-project-migration.md)
@@ -494,6 +482,7 @@ Start here by intent:
 - [Security model](docs/security-model.md)
 - [Secure plugin coding contract](docs/secure-plugin-coding-contract.md)
 - [Compatibility and public contract](docs/compatibility.md)
+- [Future enhancements](docs/future-enhancements.md)
 - [Foundation release process](docs/foundation-release-process.md)
 - [Changelog policy](docs/changelog-policy.md)
 - [PR-based changelog notes](docs/pr-changelog.md)

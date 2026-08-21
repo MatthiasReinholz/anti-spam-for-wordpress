@@ -5,6 +5,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 function asfw_plugin_active( $name ) {
+	if ( ! function_exists( 'is_plugin_active' ) ) {
+		return false;
+	}
+
 	switch ( $name ) {
 		case 'coblocks':
 			return is_plugin_active( 'coblocks/class-coblocks.php' );

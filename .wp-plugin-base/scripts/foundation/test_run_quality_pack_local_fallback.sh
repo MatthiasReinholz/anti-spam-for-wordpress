@@ -51,6 +51,7 @@ if (! $configPath || ! file_exists($configPath)) {
 $configContents = (string) file_get_contents($configPath);
 $expectedDist = (string) getenv('WP_PLUGIN_BASE_TEST_EXPECTED_PHPSTAN_DIST');
 $expectedOverlay = (string) getenv('WP_PLUGIN_BASE_TEST_EXPECTED_PHPSTAN_OVERLAY');
+$expectedMemoryLimit = (string) getenv('WP_PLUGIN_BASE_TEST_EXPECTED_PHPSTAN_MEMORY_LIMIT');
 
 if (false === strpos($configContents, $expectedDist)) {
     fwrite(STDERR, "Generated PHPStan config did not include phpstan.neon.dist.\n");
@@ -62,12 +63,37 @@ if (false === strpos($configContents, $expectedOverlay)) {
     exit(1);
 }
 
+if ($expectedMemoryLimit && ! in_array('--memory-limit=' . $expectedMemoryLimit, $argv, true)) {
+    fwrite(STDERR, "PHPStan fallback test did not receive the expected memory limit.\n");
+    exit(1);
+}
+
 file_put_contents((string) getenv('WP_PLUGIN_BASE_TEST_LOG'), "phpstan\n", FILE_APPEND);
 EOF_PHP
 
 cat > "$FIXTURE_DIR/.wp-plugin-base-quality-pack/vendor/bin/phpunit" <<'EOF_PHP'
 <?php
 declare(strict_types=1);
+
+$configPath = null;
+foreach ($argv as $arg) {
+    if (0 === strpos($arg, '--configuration=')) {
+        $configPath = substr($arg, strlen('--configuration='));
+        break;
+    }
+}
+
+if (! $configPath || ! file_exists($configPath)) {
+    fwrite(STDERR, "PHPUnit fallback test did not receive a readable configuration file.\n");
+    exit(1);
+}
+
+$configContents = (string) file_get_contents($configPath);
+if (false === strpos($configContents, '<directory suffix="Test.php">tests</directory>')) {
+    fwrite(STDERR, "PHPUnit config should discover child-owned tests/php/*Test.php files through the tests/ suite.\n");
+    exit(1);
+}
+
 file_put_contents((string) getenv('WP_PLUGIN_BASE_TEST_LOG'), "phpunit\n", FILE_APPEND);
 EOF_PHP
 
@@ -91,6 +117,8 @@ WP_PLUGIN_BASE_ROOT="$FIXTURE_DIR" \
 WP_PLUGIN_BASE_TEST_LOG="$LOG_FILE" \
 WP_PLUGIN_BASE_TEST_EXPECTED_PHPSTAN_DIST="$FIXTURE_DIR/phpstan.neon.dist" \
 WP_PLUGIN_BASE_TEST_EXPECTED_PHPSTAN_OVERLAY="$FIXTURE_DIR/phpstan.neon" \
+WP_PLUGIN_BASE_TEST_EXPECTED_PHPSTAN_MEMORY_LIMIT="768M" \
+PHPSTAN_MEMORY_LIMIT="768M" \
 bash "$ROOT_DIR/scripts/ci/run_quality_pack.sh" >/dev/null
 
 grep -Fq 'composer:--working-dir=' "$LOG_FILE" || {
@@ -99,7 +127,7 @@ grep -Fq 'composer:--working-dir=' "$LOG_FILE" || {
   exit 1
 }
 
-grep -Fq '.wp-plugin-base-quality-pack audit --locked --no-interaction --no-dev' "$LOG_FILE" || {
+grep -Fq '.wp-plugin-base-quality-pack audit --locked --no-interaction' "$LOG_FILE" || {
   echo "Local quality-pack fallback should run composer audit from the installed bundle." >&2
   cat "$LOG_FILE" >&2
   exit 1

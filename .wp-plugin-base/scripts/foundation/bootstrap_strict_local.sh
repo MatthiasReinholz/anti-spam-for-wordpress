@@ -30,6 +30,20 @@ while [ "$#" -gt 0 ]; do
 done
 
 bash "$ROOT_DIR/scripts/ci/install_lint_tools.sh" "$TOOLS_DIR"
+bash "$ROOT_DIR/scripts/release/install_release_security_tools.sh" "$TOOLS_DIR"
+
+missing_tools=()
+for required_tool in shellcheck actionlint editorconfig-checker gitleaks yamllint markdownlint-cli2 codespell syft cosign; do
+  if [ ! -x "$TOOLS_DIR/$required_tool" ]; then
+    missing_tools+=("$required_tool")
+  fi
+done
+
+if [ "${#missing_tools[@]}" -gt 0 ]; then
+  echo "Strict-local bootstrap did not install all required tools:" >&2
+  printf '  %s\n' "${missing_tools[@]}" >&2
+  exit 1
+fi
 
 echo
 printf 'Installed strict-local foundation tools into: %s\n' "$TOOLS_DIR"

@@ -5,6 +5,8 @@ final class WpPluginBaseAdminUiOperationsTest extends AsfwPluginTestCase
 {
     public function test_admin_ui_is_registered_under_settings_menu(): void
     {
+        require_once dirname(__DIR__, 2) . '/lib/wp-plugin-base/admin-ui/class-wp-plugin-base-admin-ui-loader.php';
+
         WP_Plugin_Base_Admin_UI_Loader::register_page(
             array(
                 'page_title' => 'Anti Spam for WordPress',
@@ -108,12 +110,13 @@ final class WpPluginBaseAdminUiOperationsTest extends AsfwPluginTestCase
 		$this->assertSame('captcha', $commentsField['value']);
     }
 
-    public function test_admin_ui_client_does_not_double_namespace_operation_paths(): void
+    public function test_admin_ui_client_namespaces_registered_and_explicit_paths(): void
     {
         $client = (string) file_get_contents(dirname(__DIR__, 2) . '/.wp-plugin-base-admin-ui/shared/api-client.js');
 
-        $this->assertStringContainsString('function isNamespacedPath(path)', $client);
-        $this->assertStringContainsString('return isNamespacedPath(path) ? normalizePath(path) : buildNamespacedPath(path);', $client);
+        $this->assertStringContainsString('path: getOperationPath(operationId)', $client);
+        $this->assertStringContainsString('return buildNamespacedPath(path);', $client);
+        $this->assertStringNotContainsString('function isNamespacedPath(path)', $client);
     }
 
     public function test_settings_update_operation_keeps_legacy_option_mirroring(): void

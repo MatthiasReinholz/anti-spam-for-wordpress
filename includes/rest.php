@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action(
 	'rest_api_init',
 	function () {
-		register_rest_route(
+		register_rest_route( // nosemgrep: wp-rest-permission-callback-true-string -- Public proof-of-work challenge.
 			'anti-spam-for-wordpress/v1',
 			'challenge',
 			array(
@@ -23,7 +23,7 @@ add_action(
 			)
 		);
 
-			register_rest_route(
+			register_rest_route( // nosemgrep: wp-rest-permission-callback-true-string -- Public signed delay token.
 				'anti-spam-for-wordpress/v1',
 				'submit-delay-token',
 				array(

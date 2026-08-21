@@ -5,6 +5,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/require_tools.sh
 . "$SCRIPT_DIR/../lib/require_tools.sh"
+# shellcheck source=../lib/provider.sh
+. "$SCRIPT_DIR/../lib/provider.sh"
 
 wp_plugin_base_require_commands "workflow audit" git ruby perl
 
@@ -29,51 +31,88 @@ declare -a scan_dirs=()
 declare -a workflow_files=()
 declare -a action_files=()
 
-for dir in \
-  "$TARGET_ROOT/.github/workflows" \
-  "$TARGET_ROOT/templates/child/.github/workflows" \
-  "$TARGET_ROOT/.wp-plugin-base/.github/workflows"
-do
-  if [ -d "$dir" ]; then
-    workflow_dirs+=("$dir")
-  fi
-done
+append_workflow_dir() {
+  local dir="$1"
+  local existing
 
-for dir in \
-  "$TARGET_ROOT/.github/actions" \
-  "$TARGET_ROOT/templates/child/.github/actions" \
-  "$TARGET_ROOT/.wp-plugin-base/.github/actions"
-do
-  if [ -d "$dir" ]; then
-    action_dirs+=("$dir")
-  fi
-done
+  [ -d "$dir" ] || return 0
 
-for dir in \
-  "$TARGET_ROOT/.github/workflows" \
-  "$TARGET_ROOT/templates/child/.github/workflows" \
-  "$TARGET_ROOT/scripts" \
-  "$TARGET_ROOT/.github/actions" \
-  "$TARGET_ROOT/templates/child/.github/actions" \
-  "$TARGET_ROOT/.wp-plugin-base/.github/workflows" \
-  "$TARGET_ROOT/.wp-plugin-base/.github/actions" \
-  "$TARGET_ROOT/.wp-plugin-base/scripts"
-do
-  if [ -d "$dir" ]; then
-    scan_dirs+=("$dir")
+  if [ "${workflow_dirs+x}" = x ]; then
+    for existing in "${workflow_dirs[@]}"; do
+      [ "$existing" != "$dir" ] || return 0
+    done
   fi
-done
 
-if [ "${#workflow_dirs[@]}" -eq 0 ]; then
+  workflow_dirs+=("$dir")
+}
+
+append_action_dir() {
+  local dir="$1"
+  local existing
+
+  [ -d "$dir" ] || return 0
+
+  if [ "${action_dirs+x}" = x ]; then
+    for existing in "${action_dirs[@]}"; do
+      [ "$existing" != "$dir" ] || return 0
+    done
+  fi
+
+  action_dirs+=("$dir")
+}
+
+append_scan_dir() {
+  local dir="$1"
+  local existing
+
+  [ -d "$dir" ] || return 0
+
+  if [ "${scan_dirs+x}" = x ]; then
+    for existing in "${scan_dirs[@]}"; do
+      [ "$existing" != "$dir" ] || return 0
+    done
+  fi
+
+  scan_dirs+=("$dir")
+}
+
+append_workflow_dir "$TARGET_ROOT/.github/workflows"
+if [ -d "$TARGET_ROOT/templates/child" ]; then
+  while IFS= read -r dir; do
+    append_workflow_dir "$dir"
+  done < <(find "$TARGET_ROOT/templates/child" -type d -path '*/.github/workflows' | sort)
+fi
+append_workflow_dir "$TARGET_ROOT/.wp-plugin-base/.github/workflows"
+
+append_action_dir "$TARGET_ROOT/.github/actions"
+if [ -d "$TARGET_ROOT/templates/child" ]; then
+  while IFS= read -r dir; do
+    append_action_dir "$dir"
+  done < <(find "$TARGET_ROOT/templates/child" -type d -path '*/.github/actions' | sort)
+fi
+append_action_dir "$TARGET_ROOT/.wp-plugin-base/.github/actions"
+
+if [ "${workflow_dirs+x}" != x ]; then
   echo "No workflow directories found under $TARGET_ROOT" >&2
   exit 1
 fi
+
+for dir in "${workflow_dirs[@]}"; do
+  append_scan_dir "$dir"
+done
+append_scan_dir "$TARGET_ROOT/scripts"
+if [ "${action_dirs+x}" = x ]; then
+  for dir in "${action_dirs[@]}"; do
+    append_scan_dir "$dir"
+  done
+fi
+append_scan_dir "$TARGET_ROOT/.wp-plugin-base/scripts"
 
 while IFS= read -r file; do
   workflow_files+=("$file")
 done < <(find "${workflow_dirs[@]}" -type f \( -name '*.yml' -o -name '*.yaml' \) | sort)
 
-if [ "${#workflow_files[@]}" -eq 0 ]; then
+if [ "${workflow_files+x}" != x ]; then
   echo "No workflow files found under $TARGET_ROOT" >&2
   exit 1
 fi
@@ -84,7 +123,7 @@ while IFS= read -r file; do
   exit 1
 done < <(printf '%s\n' "${workflow_files[@]}" | grep -E '\.yaml$' || true)
 
-if [ "${#action_dirs[@]}" -gt 0 ]; then
+if [ "${action_dirs+x}" = x ]; then
   while IFS= read -r file; do
     action_files+=("$file")
   done < <(find "${action_dirs[@]}" -type f \( -name 'action.yml' -o -name 'action.yaml' \) | sort)
@@ -94,7 +133,7 @@ export WP_PLUGIN_BASE_AUDIT_ROOT="$TARGET_ROOT"
 export WP_PLUGIN_BASE_AUDIT_WORKFLOWS
 WP_PLUGIN_BASE_AUDIT_WORKFLOWS="$(printf '%s\n' "${workflow_files[@]}")"
 export WP_PLUGIN_BASE_AUDIT_ACTIONS
-if [ "${#action_files[@]}" -gt 0 ]; then
+if [ "${action_files+x}" = x ]; then
   WP_PLUGIN_BASE_AUDIT_ACTIONS="$(printf '%s\n' "${action_files[@]}")"
 else
   WP_PLUGIN_BASE_AUDIT_ACTIONS=''
@@ -119,6 +158,7 @@ expected_permissions = {
   "finalize-foundation-release.yml" => { "contents" => "read" },
   "release-foundation.yml" => { "contents" => "read", "pull-requests" => "read" },
   "finalize-release.yml" => { "contents" => "read" },
+  "publish-tag-release.yml" => { "contents" => "read" },
   "release.yml" => { "contents" => "read", "pull-requests" => "read" }
 }
 
@@ -196,6 +236,13 @@ expected_job_permissions = {
     "release" => {
       "contents" => "write",
       "pull-requests" => "read",
+      "attestations" => "write",
+      "id-token" => "write"
+    }
+  },
+  "publish-tag-release.yml" => {
+    "release" => {
+      "contents" => "write",
       "attestations" => "write",
       "id-token" => "write"
     }
@@ -282,6 +329,7 @@ normalize_condition = lambda do |value|
 end
 
 script_interpreter_pattern = "(bash|sh|source|\\.|python(?:[0-9]+(?:\\.[0-9]+){0,2})?|node(?:js)?|perl|ruby|php)"
+line_start_interpreter_pattern = "(?:(?:bash|sh|source|python(?:[0-9]+(?:\\.[0-9]+){0,2})?|node(?:js)?|perl|ruby|php)\\b|\\.\\s+)"
 local_helper_pattern = %r{
   \b(?:bash|sh|source|\.|python(?:[0-9]+(?:\.[0-9]+){0,2})?|node(?:js)?|perl|ruby|php)\b
   [^\n]*
@@ -302,7 +350,7 @@ run_body_executes_remote_code = lambda do |label, body|
   end
 
   has_download = normalized.match?(/\b(curl|wget)\b/i)
-  has_interpreter_exec = normalized.match?(/(^|\n)\s*#{script_interpreter_pattern}\b/i)
+  has_interpreter_exec = normalized.match?(/(^|\n)\s*#{line_start_interpreter_pattern}/i)
   if has_download && has_interpreter_exec
     errors << "#{label}: run body combines remote download commands with interpreter execution"
     return
@@ -488,9 +536,9 @@ declare -a allowed_actions=(
   "actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e"
   "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
   "actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32"
-  "github/codeql-action/upload-sarif@68bde559dea0fdcac2102bfdf6230c5f70eb485e"
+  "github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa"
   "ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a"
-  "shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f"
+  "shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc"
 )
 
 declare -a uses_entries=()
@@ -584,7 +632,7 @@ if perl -0ne '
   BEGIN { $failed = 0; }
   my $normalized = $_;
   $normalized =~ s/(?:'\'''\''|"")//g;
-  if ($normalized =~ m{\b(?:curl|wget)\b[^\n]*(?:\n[^\n]*){0,5}\n[ \t]*(?:bash|sh|zsh|dash|ksh|pwsh|source|\.|python(?:[0-9]+(?:\.[0-9]+){0,2})?|node(?:js)?|perl|ruby|php)\b}is) {
+  if ($normalized =~ m{\b(?:curl|wget)\b[^\n]*(?:\n[^\n]*){0,5}\n[ \t]*(?:(?:bash|sh|zsh|dash|ksh|pwsh|source|python(?:[0-9]+(?:\.[0-9]+){0,2})?|node(?:js)?|perl|ruby|php)\b|\.[ \t]+)}is) {
     print "$ARGV\n";
     $failed = 1;
   }
@@ -594,7 +642,7 @@ if perl -0ne '
   perl -0ne '
     my $normalized = $_;
     $normalized =~ s/(?:'\'''\''|"")//g;
-    if ($normalized =~ m{\b(?:curl|wget)\b[^\n]*(?:\n[^\n]*){0,5}\n[ \t]*(?:bash|sh|zsh|dash|ksh|pwsh|source|\.|python(?:[0-9]+(?:\.[0-9]+){0,2})?|node(?:js)?|perl|ruby|php)\b}is) {
+    if ($normalized =~ m{\b(?:curl|wget)\b[^\n]*(?:\n[^\n]*){0,5}\n[ \t]*(?:(?:bash|sh|zsh|dash|ksh|pwsh|source|python(?:[0-9]+(?:\.[0-9]+){0,2})?|node(?:js)?|perl|ruby|php)\b|\.[ \t]+)}is) {
       print "$ARGV\n";
     }
   ' "${scan_files[@]}" >&2
@@ -621,6 +669,10 @@ if [ -n "${EXTRA_ALLOWED_HOSTS:-}" ]; then
     [ -n "$host" ] || continue
     if [[ ! "$host" =~ ^[A-Za-z0-9.-]+$ ]]; then
       echo "Invalid host in EXTRA_ALLOWED_HOSTS: $host" >&2
+      exit 1
+    fi
+    if wp_plugin_base_host_is_local_or_private "$host"; then
+      echo "EXTRA_ALLOWED_HOSTS host must not use localhost, private-network, link-local, or *.internal hosts: $host" >&2
       exit 1
     fi
     extra_allowed_hosts+=("$host")
@@ -671,7 +723,13 @@ while IFS=: read -r file line url; do
     fi
     exit 1
   fi
-done < <(perl -ne 'while (m{(https?://[^\s"'\''()]+)}g) { print "$ARGV:$.:$1\n"; }' "${scan_files[@]}")
+done < <(perl -ne 'while (m#(https?://[^\s"'\''()\$\{\}]+)#g) { print "$ARGV:$.:$1\n"; }' "${scan_files[@]}")
+
+while IFS=: read -r file line url; do
+  [ -n "$url" ] || continue
+  echo "${file}:${line}: URL authority must be static and allowlisted before expressions are appended: ${url}" >&2
+  exit 1
+done < <(perl -ne 'while (m#(https?://(?:\$\{\{|\$\{|\$[A-Za-z_][A-Za-z0-9_]*))#g) { print "$ARGV:$.:$1\n"; }' "${scan_files[@]}")
 
 while IFS=: read -r file line content; do
   [ -n "$content" ] || continue

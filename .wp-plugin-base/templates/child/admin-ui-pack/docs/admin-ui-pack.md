@@ -39,13 +39,19 @@ The initial pack targets WordPress-native admin apps:
 
 `ADMIN_UI_STARTER=basic|dataviews` selects which child-owned admin starter is seeded when the pack is enabled. `basic` is the normalized default lighter component-only starter when the key is omitted. `dataviews` seeds the DataForm/DataViews starter.
 
+The package build script targets `src/index.js`. That entrypoint is seeded by the shared admin UI seed and imports the selected starter's `src/app.js`, so fresh projects synced through `sync_child_repo.sh` receive both files.
+
 `ADMIN_UI_EXPERIMENTAL_DATAVIEWS=true` remains supported as a backward-compatible alias for `ADMIN_UI_STARTER=dataviews`.
+
+The managed admin page shell emits WordPress' `.wp-header-end` notice marker before the React root so dynamic admin notices are anchored outside the app-rendered header.
 
 The shared API client intentionally separates registry-backed operations from direct REST paths: use `fetchOperation()` for registered operation ids and `fetchPath()` only for explicit raw-path calls.
 
 ## Audit And Update Strategy
 
 When `WORDPRESS_SECURITY_PACK_ENABLED=true`, readiness validation audits `.wp-plugin-base-admin-ui/package-lock.json` with `npm audit --package-lock-only --audit-level=high` by default. Security-sensitive plugins should also set `RELEASE_READINESS_MODE=security-sensitive` so releases fail if the quality pack, security pack, strict Plugin Check, or admin UI audit coverage is weakened.
+
+Readiness validation also reports and enforces raw and gzip admin UI asset budgets for the built `assets/admin-ui/` tree. Override `WP_PLUGIN_BASE_ADMIN_UI_MAX_SCRIPT_BYTES`, `WP_PLUGIN_BASE_ADMIN_UI_MAX_SCRIPT_GZIP_BYTES`, `WP_PLUGIN_BASE_ADMIN_UI_MAX_STYLE_BYTES`, `WP_PLUGIN_BASE_ADMIN_UI_MAX_STYLE_GZIP_BYTES`, `WP_PLUGIN_BASE_ADMIN_UI_MAX_TOTAL_BYTES`, or `WP_PLUGIN_BASE_ADMIN_UI_MAX_TOTAL_GZIP_BYTES` only when the larger runtime payload is intentional and reviewed.
 
 Resolve admin UI audit findings by updating the pinned `@wordpress/*` packages through the generated Dependabot path or by adding the narrowest possible npm `overrides` entry in the child-owned `.wp-plugin-base-admin-ui/package.json`. If a finding is limited to the build-only WordPress toolchain and no patched upstream version exists yet, `ADMIN_UI_NPM_AUDIT_LEVEL=critical` is a temporary compatibility override only outside `RELEASE_READINESS_MODE=security-sensitive`; document why it is safe and remove it after the upstream package is updated.
 
