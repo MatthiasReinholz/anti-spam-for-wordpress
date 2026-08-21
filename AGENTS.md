@@ -21,3 +21,4 @@ bash .wp-plugin-base/scripts/ci/validate_project.sh
 
 For release changes, also run the release preparation workflow or local release checks documented in `CONTRIBUTING.md` before merging.
 <!-- wp-plugin-base:agents-end -->
+
