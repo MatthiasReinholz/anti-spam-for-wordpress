@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.7.1
-Stable tag: 0.7.1
+Version: 0.8.0
+Stable tag: 0.8.0
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 6.9
@@ -200,6 +200,10 @@ Instead of asking the user to solve a visual puzzle, the widget asks the browser
 5. Floating UI example
 
 == Changelog ==
+
+= 0.8.0 =
+* Add - Enable proof-of-work protection for native WordPress comment forms by default, with an administrator opt-out.
+
 
 = 0.7.1 =
 * Update - Gate privacy policy text on legal basis.
