@@ -742,7 +742,7 @@ function wp_get_themes($args = array())
 
 function is_user_logged_in()
 {
-    return false;
+    return ! empty($GLOBALS['asfw_test_user_logged_in']);
 }
 
 function current_user_can($capability, ...$args)
@@ -790,6 +790,8 @@ function asfw_test_reset_state(array $options = array(), ?array $active_plugins 
     $GLOBALS['asfw_test_cron_events'] = array();
     $GLOBALS['asfw_test_rest_routes'] = array();
     $GLOBALS['asfw_test_privacy_policy_content'] = array();
+    $GLOBALS['asfw_test_user_logged_in'] = false;
+    $GLOBALS['asfw_native_comment_submission_posts'] = array();
 
     foreach (array(
         'REMOTE_ADDR',

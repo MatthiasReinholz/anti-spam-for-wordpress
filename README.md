@@ -33,6 +33,12 @@ If you enable Bunny Shield, the module observes repeated abuse locally first, th
 
 If you place the widget manually with `[anti_spam_widget]` while the **Custom HTML** integration is disabled, pass `mode="captcha"` or `mode="shortcode"` explicitly so the shortcode still renders.
 
+### Native comments and comment APIs
+
+Proof-of-work protection for native WordPress comment forms is enabled by default under **Protection Placements -> Comments**. It applies to anonymous and logged-in browser submissions, including wpDiscuz forms when they use the WordPress fallback policy.
+
+Direct programmatic calls to `wp_new_comment()` and authenticated REST, XML-RPC, or AJAX clients are not forced through a browser-only challenge. Anonymous remote comment submissions remain protected. Signed form-context fields identify which currently enabled comment policy applies; they are not authorization credentials, and stale form markup falls back to the current WordPress comments policy.
+
 ## Security matrix
 
 The plugin now ships optional, context-scoped guard features in addition to proof-of-work:

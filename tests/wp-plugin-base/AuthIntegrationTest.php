@@ -36,6 +36,7 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
 		apply_filters(
 			'preprocess_comment',
 			array(
+				'comment_post_ID' => 123,
 				'comment_type' => 'comment',
 				'comment_content' => 'Hello',
 			)
@@ -47,6 +48,7 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
 		delete_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments);
 		$this->seedPostedWidget('wordpress:comments');
 		$comment = array(
+			'comment_post_ID' => 123,
 			'comment_type' => 'comment',
 			'comment_content' => 'Hello',
 		);
@@ -59,6 +61,7 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
 	{
 		delete_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments);
 		$comment = array(
+			'comment_post_ID' => 123,
 			'comment_type' => 'comment',
 			'comment_content' => 'Imported comment',
 		);
@@ -79,6 +82,29 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
 		$this->assertSame($comment, apply_filters('preprocess_comment', $comment));
 		$_POST = array();
 		$this->assertSame($comment, apply_filters('preprocess_comment', $comment));
+	}
+
+	public function test_native_comment_marker_is_scoped_to_its_post(): void
+	{
+		delete_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments);
+		do_action('pre_comment_on_post', 123);
+		$other_comment = array(
+			'comment_post_ID' => 456,
+			'comment_type' => 'comment',
+			'comment_content' => 'Imported comment',
+		);
+
+		$this->assertSame($other_comment, apply_filters('preprocess_comment', $other_comment));
+
+		$this->expectException(RuntimeException::class);
+		apply_filters(
+			'preprocess_comment',
+			array(
+				'comment_post_ID' => 123,
+				'comment_type' => 'comment',
+				'comment_content' => 'Browser comment',
+			)
+		);
 	}
 
 	public function test_native_comment_protection_can_be_disabled(): void
@@ -150,6 +176,7 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
         apply_filters(
             'preprocess_comment',
             array(
+                'comment_post_ID' => 123,
                 'comment_type' => 'comment',
                 'comment_content' => 'Hello',
             )
@@ -171,6 +198,7 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
         apply_filters(
             'preprocess_comment',
             array(
+                'comment_post_ID' => 123,
                 'comment_type' => 'comment',
                 'comment_content' => 'Hello',
             )
@@ -190,11 +218,49 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
         apply_filters(
             'preprocess_comment',
             array(
+                'comment_post_ID' => 123,
                 'comment_type' => 'comment',
                 'comment_content' => 'Hello',
             )
         );
     }
+
+	public function test_logged_in_wpdiscuz_fallback_submission_requires_wordpress_proof(): void
+	{
+		$GLOBALS['asfw_test_user_logged_in'] = true;
+		update_option(AntiSpamForWordPressPlugin::$option_integration_wpdiscuz, '');
+		update_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments, 'captcha');
+		$_POST['asfw_context'] = 'wordpress:comments';
+		$_POST['asfw_context_sig'] = $this->plugin()->sign_widget_context('wordpress:comments', 'asfw');
+
+		$this->expectException(RuntimeException::class);
+		apply_filters(
+			'preprocess_comment',
+			array(
+				'comment_post_ID' => 123,
+				'comment_type' => 'comment',
+				'comment_content' => 'Hello',
+			)
+		);
+	}
+
+	public function test_stale_wpdiscuz_context_cannot_downgrade_wordpress_policy(): void
+	{
+		update_option(AntiSpamForWordPressPlugin::$option_integration_wpdiscuz, '');
+		update_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments, 'captcha');
+		$_POST['asfw_context'] = 'wpdiscuz:comments';
+		$_POST['asfw_context_sig'] = $this->plugin()->sign_widget_context('wpdiscuz:comments', 'asfw');
+
+		$this->expectException(RuntimeException::class);
+		apply_filters(
+			'preprocess_comment',
+			array(
+				'comment_post_ID' => 123,
+				'comment_type' => 'comment',
+				'comment_content' => 'Hello',
+			)
+		);
+	}
 
     public function test_wpdiscuz_renderer_falls_back_to_wordpress_context_when_wpdiscuz_integration_is_disabled(): void
     {
