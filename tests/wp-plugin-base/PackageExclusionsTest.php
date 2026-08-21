@@ -11,13 +11,10 @@ final class PackageExclusionsTest extends AsfwPluginTestCase
         $buildWrapper = file_get_contents($root . '/scripts/ci/build_zip.sh');
 
         $this->assertIsString($distignore);
-        $this->assertStringContainsString('/.wp-plugin-base-admin-ui', $distignore);
         $this->assertStringContainsString('/.wp-plugin-base-quality-pack', $distignore);
         $this->assertStringContainsString('/node_modules', $distignore);
 
         $this->assertIsString($gitattributes);
-        $this->assertStringContainsString('/.wp-plugin-base-admin-ui export-ignore', $gitattributes);
-
         $this->assertIsString($buildWrapper);
         $this->assertStringContainsString('.wp-plugin-base-admin-ui', $buildWrapper);
         $this->assertStringContainsString('node_modules', $buildWrapper);

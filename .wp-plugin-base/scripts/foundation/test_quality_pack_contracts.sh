@@ -49,11 +49,17 @@ assert_regular_file "$full_fixture/phpunit.xml.dist" "Full quality pack should m
 assert_regular_file "$full_fixture/phpstan.neon" "Full quality pack should seed phpstan.neon."
 assert_regular_file "$full_fixture/tests/bootstrap.php" "Full quality pack should manage tests/bootstrap.php."
 assert_regular_file "$full_fixture/tests/wp-plugin-base/bootstrap-child.php" "Full quality pack should seed bootstrap-child.php."
+assert_regular_file "$full_fixture/tests/wp-plugin-base/BootstrapTest.php" "Full quality pack should manage the baseline bootstrap test."
 assert_regular_file "$full_fixture/tests/wp-plugin-base/PluginLoadsTest.php" "Full quality pack should manage the baseline plugin load test."
 assert_regular_file "$full_fixture/.wp-plugin-base-quality-pack/composer.json" "Full quality pack should manage composer.json."
 
 grep -Fq "bootstrap-child.php" "$full_fixture/tests/bootstrap.php" || {
   echo "Managed quality-pack bootstrap should load the child-owned bootstrap overlay." >&2
+  exit 1
+}
+
+grep -Fq '<directory suffix="Test.php">tests</directory>' "$full_fixture/phpunit.xml.dist" || {
+  echo "Managed phpunit.xml.dist should discover foundation and child-owned *Test.php files under tests/." >&2
   exit 1
 }
 
@@ -125,12 +131,18 @@ WP_PLUGIN_BASE_ROOT="$bridge_fixture" bash "$ROOT_DIR/scripts/ci/validate_projec
 assert_regular_file "$bridge_fixture/phpunit.xml.dist" "Strict runtime matrix should manage phpunit.xml.dist."
 assert_regular_file "$bridge_fixture/tests/bootstrap.php" "Strict runtime matrix should manage tests/bootstrap.php."
 assert_regular_file "$bridge_fixture/tests/wp-plugin-base/bootstrap-child.php" "Strict runtime matrix should seed bootstrap-child.php."
+assert_regular_file "$bridge_fixture/tests/wp-plugin-base/BootstrapTest.php" "Strict runtime matrix should manage the baseline bootstrap test."
 assert_regular_file "$bridge_fixture/tests/wp-plugin-base/PluginLoadsTest.php" "Strict runtime matrix should manage the baseline plugin load test."
 assert_regular_file "$bridge_fixture/.wp-plugin-base-quality-pack/composer.json" "Strict runtime matrix should manage composer.json."
 assert_regular_file "$bridge_fixture/.wp-plugin-base-quality-pack/composer.lock" "Strict runtime matrix should manage composer.lock."
 assert_not_present "$bridge_fixture/.phpcs.xml.dist" "Strict runtime matrix should not force PHPCS config without the full quality pack."
 assert_not_present "$bridge_fixture/phpstan.neon.dist" "Strict runtime matrix should not force PHPStan config without the full quality pack."
 assert_not_present "$bridge_fixture/phpstan.neon" "Strict runtime matrix should not seed phpstan.neon without the full quality pack."
+
+grep -Fq '<directory suffix="Test.php">tests</directory>' "$bridge_fixture/phpunit.xml.dist" || {
+  echo "Strict runtime matrix phpunit.xml.dist should discover child-owned tests/php/*Test.php files." >&2
+  exit 1
+}
 
 cat > "$bridge_fixture/tests/bootstrap.php" <<'EOF_CUSTOM_BOOTSTRAP'
 <?php

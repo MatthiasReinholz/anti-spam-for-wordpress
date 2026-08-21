@@ -30,6 +30,7 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
 	public function test_native_comment_submission_requires_proof_of_work_by_default(): void
 	{
 		delete_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments);
+		do_action('pre_comment_on_post', 123);
 
 		$this->expectException(RuntimeException::class);
 		apply_filters(
@@ -49,7 +50,34 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
 			'comment_type' => 'comment',
 			'comment_content' => 'Hello',
 		);
+		do_action('pre_comment_on_post', 123);
 
+		$this->assertSame($comment, apply_filters('preprocess_comment', $comment));
+	}
+
+	public function test_programmatic_comment_creation_does_not_require_browser_proof(): void
+	{
+		delete_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments);
+		$comment = array(
+			'comment_type' => 'comment',
+			'comment_content' => 'Imported comment',
+		);
+
+		$this->assertSame($comment, apply_filters('preprocess_comment', $comment));
+	}
+
+	public function test_native_comment_marker_is_consumed_once(): void
+	{
+		delete_option(AntiSpamForWordPressPlugin::$option_integration_wordpress_comments);
+		$this->seedPostedWidget('wordpress:comments');
+		$comment = array(
+			'comment_type' => 'comment',
+			'comment_content' => 'Hello',
+		);
+		do_action('pre_comment_on_post', 123);
+
+		$this->assertSame($comment, apply_filters('preprocess_comment', $comment));
+		$_POST = array();
 		$this->assertSame($comment, apply_filters('preprocess_comment', $comment));
 	}
 
@@ -116,6 +144,7 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
         update_option('asfw_feature_math_challenge_mode', 'block');
         update_option('asfw_feature_math_challenge_scope_mode', 'selected');
         update_option('asfw_feature_math_challenge_contexts', array('wordpress:comments'));
+        do_action('pre_comment_on_post', 123);
 
         $this->expectException(RuntimeException::class);
         apply_filters(
@@ -155,6 +184,7 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
         update_option('asfw_feature_math_challenge_mode', 'block');
         update_option('asfw_feature_math_challenge_scope_mode', 'selected');
         update_option('asfw_feature_math_challenge_contexts', array('wordpress:comments'));
+        do_action('pre_comment_on_post', 123);
 
         $this->expectException(RuntimeException::class);
         apply_filters(

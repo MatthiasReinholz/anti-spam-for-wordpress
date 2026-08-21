@@ -129,7 +129,12 @@ WP_PLUGIN_BASE_ROOT="$custom_suppressions_fixture" bash "$ROOT_DIR/scripts/updat
 test -f "$custom_suppressions_fixture/.security/custom-security-suppressions.json"
 test ! -e "$custom_suppressions_fixture/.wp-plugin-base-security-suppressions.json"
 managed_paths_output="$(WP_PLUGIN_BASE_ROOT="$custom_suppressions_fixture" bash "$ROOT_DIR/scripts/ci/list_managed_files.sh" ".wp-plugin-base.env")"
-grep -Fxq '.security/custom-security-suppressions.json' <<<"$managed_paths_output"
+stage_paths_output="$(WP_PLUGIN_BASE_ROOT="$custom_suppressions_fixture" bash "$ROOT_DIR/scripts/ci/list_managed_files.sh" --mode stage ".wp-plugin-base.env")"
+grep -Fxq '.security/custom-security-suppressions.json' <<<"$stage_paths_output"
+if grep -Fxq '.security/custom-security-suppressions.json' <<<"$managed_paths_output"; then
+  echo "Custom security suppressions should be staged but not listed as managed." >&2
+  exit 1
+fi
 grep -Fxq '.phpcs.xml.dist' <<<"$managed_paths_output"
 grep -Fxq '.phpcs-security.xml.dist' <<<"$managed_paths_output"
 grep -Fq '/.security/custom-security-suppressions.json' "$custom_suppressions_fixture/.distignore"
@@ -279,8 +284,11 @@ rsync -a --exclude '.git' "$ROOT_DIR/" "$deploy_fixture/.wp-plugin-base/"
 WP_PLUGIN_BASE_ROOT="$deploy_fixture" bash "$ROOT_DIR/scripts/update/sync_child_repo.sh"
 WP_ORG_DEPLOY_ENABLED=true
 export WP_ORG_DEPLOY_ENABLED
-if ! env -u GITHUB_ACTIONS -u GITHUB_REPOSITORY -u GH_TOKEN -u GITHUB_TOKEN \
-  WP_PLUGIN_BASE_ROOT="$deploy_fixture" bash "$ROOT_DIR/scripts/ci/validate_wordpress_readiness.sh" "" "release/1.3.0" >/dev/null 2>&1; then
+if ! deploy_readiness_output="$(
+  env -u GITHUB_ACTIONS -u GITHUB_REPOSITORY -u GH_TOKEN -u GITHUB_TOKEN \
+    WP_PLUGIN_BASE_ROOT="$deploy_fixture" bash "$ROOT_DIR/scripts/ci/validate_wordpress_readiness.sh" "" "release/1.3.0" 2>&1
+)"; then
+  printf '%s\n' "$deploy_readiness_output" >&2
   echo "Readiness unexpectedly failed locally for a deploy-enabled project." >&2
   exit 1
 fi
@@ -335,6 +343,10 @@ rsync -a --exclude '.git' "$ROOT_DIR/" "$runtime_pack_fixture/.wp-plugin-base/"
 WP_PLUGIN_BASE_ROOT="$runtime_pack_fixture" bash "$ROOT_DIR/scripts/update/sync_child_repo.sh"
 grep -Fq 'settings.read' "$runtime_pack_fixture/includes/rest-operations/settings-operations.php"
 test -f "$runtime_pack_fixture/.wp-plugin-base-admin-ui/package-lock.json"
+test -f "$runtime_pack_fixture/.wp-plugin-base-admin-ui/src/index.js"
+test -f "$runtime_pack_fixture/.wp-plugin-base-admin-ui/src/app.js"
+grep -Fq '"build": "wp-scripts build src/index.js --output-path=../assets/admin-ui"' "$runtime_pack_fixture/.wp-plugin-base-admin-ui/package.json"
+grep -Fq 'import App from "./app";' "$runtime_pack_fixture/.wp-plugin-base-admin-ui/src/index.js"
 if grep -Fq '@wordpress/dataviews' "$runtime_pack_fixture/.wp-plugin-base-admin-ui/package.json"; then
   echo "Default admin UI starter unexpectedly included the DataViews dependency surface." >&2
   exit 1
@@ -415,6 +427,7 @@ EOF
 WP_PLUGIN_BASE_ROOT="$runtime_pack_abilities_fixture" bash "$ROOT_DIR/scripts/update/sync_child_repo.sh"
 grep -Fq '@wordpress/dataviews' "$runtime_pack_abilities_fixture/.wp-plugin-base-admin-ui/package.json"
 WP_PLUGIN_BASE_ROOT="$runtime_pack_abilities_fixture" bash "$ROOT_DIR/scripts/ci/validate_project.sh" ""
+bash "$ROOT_DIR/scripts/foundation/test_wordpress_env_retry.sh"
 bash "$ROOT_DIR/scripts/foundation/test_runtime_packs_wordpress.sh"
 
 rm -rf "$runtime_pack_abilities_fixture"
@@ -556,6 +569,48 @@ cat > "$runtime_pack_abilities_fixture/.wp-plugin-base-security-suppressions.jso
       "identifier": "register_rest_route",
       "path": "includes/legacy-rest.php",
       "justification": "Temporary migration bridge while a legacy endpoint moves into the managed operation registry."
+    }
+  ]
+}
+EOF
+WP_PLUGIN_BASE_ROOT="$runtime_pack_abilities_fixture" bash "$ROOT_DIR/scripts/ci/validate_project.sh" ""
+
+rm -rf "$runtime_pack_abilities_fixture"
+runtime_pack_abilities_fixture="$(mktemp -d)"
+cp -R "$ROOT_DIR/tests/fixtures/runtime-pack-ready/." "$runtime_pack_abilities_fixture/"
+mkdir -p "$runtime_pack_abilities_fixture/.wp-plugin-base"
+rsync -a --exclude '.git' "$ROOT_DIR/" "$runtime_pack_abilities_fixture/.wp-plugin-base/"
+mkdir -p "$runtime_pack_abilities_fixture/lib"
+cat > "$runtime_pack_abilities_fixture/lib/custom-rest.php" <<'EOF'
+<?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+  exit;
+}
+
+register_rest_route(
+  'runtime-pack-ready/v1',
+  '/custom-lib',
+  array(
+    'methods'             => 'GET',
+    'callback'            => '__return_null',
+    'permission_callback' => '__return_false',
+  )
+);
+EOF
+WP_PLUGIN_BASE_ROOT="$runtime_pack_abilities_fixture" bash "$ROOT_DIR/scripts/update/sync_child_repo.sh"
+if WP_PLUGIN_BASE_ROOT="$runtime_pack_abilities_fixture" bash "$ROOT_DIR/scripts/ci/validate_project.sh" "" >/dev/null 2>&1; then
+  echo "Runtime pack validation unexpectedly passed with an unsuppressed child lib/register_rest_route call." >&2
+  exit 1
+fi
+cat > "$runtime_pack_abilities_fixture/.wp-plugin-base-security-suppressions.json" <<'EOF'
+{
+  "suppressions": [
+    {
+      "kind": "rest_route_bypass",
+      "identifier": "register_rest_route",
+      "path": "lib/custom-rest.php",
+      "justification": "Temporary migration bridge while a child lib endpoint moves into the managed operation registry."
     }
   ]
 }

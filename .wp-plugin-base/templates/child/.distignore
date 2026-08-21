@@ -5,7 +5,6 @@
 /.github
 /dist
 /node_modules
-/.wp-plugin-base-admin-ui
 /scripts
 /docs
 /__DISTIGNORE_FILE__
@@ -13,6 +12,7 @@
 /.gitattributes
 /.editorconfig
 /CONTRIBUTING.md
+/AGENTS.md
 /README.md
 /bin
 /phpstan.neon.dist

@@ -6,8 +6,26 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PERMISSIONS_CLASS_PATH="$ROOT_DIR/templates/child/rest-operations-pack/lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php"
 ERROR_LOG_PATH="$(mktemp)"
+SCAN_FIXTURE="$(mktemp -d)"
 
-trap 'rm -f "$ERROR_LOG_PATH"' EXIT
+trap 'rm -f "$ERROR_LOG_PATH"; rm -rf "$SCAN_FIXTURE"' EXIT
+
+cp -R "$ROOT_DIR/tests/fixtures/runtime-pack-ready/." "$SCAN_FIXTURE/"
+mkdir -p "$SCAN_FIXTURE/.wp-plugin-base"
+rsync -a --exclude '.git' "$ROOT_DIR/" "$SCAN_FIXTURE/.wp-plugin-base/"
+WP_PLUGIN_BASE_ROOT="$SCAN_FIXTURE" bash "$ROOT_DIR/scripts/update/sync_child_repo.sh" >/dev/null
+perl -0pi -e "s/'output_schema'\\s*=>\\s*array\\(/'error_response' => array( 'mode' => 'envelope', 'message' => __( 'Settings failed.', 'runtime-pack-ready' ) ),\\n\\t\\t'output_schema'   => array(/" "$SCAN_FIXTURE/includes/rest-operations/settings-operations.php"
+WP_PLUGIN_BASE_ROOT="$SCAN_FIXTURE" bash "$ROOT_DIR/scripts/ci/scan_rest_operation_contract.sh" "" >/dev/null
+perl -0pi -e "s/'message' => __\\( 'Settings failed\\.', 'runtime-pack-ready' \\)/'message' => __( 'Settings failed.', 'runtime-pack-ready' ), 'raw_body' => 'nope'/" "$SCAN_FIXTURE/includes/rest-operations/settings-operations.php"
+if WP_PLUGIN_BASE_ROOT="$SCAN_FIXTURE" bash "$ROOT_DIR/scripts/ci/scan_rest_operation_contract.sh" "" >/dev/null 2>&1; then
+  echo "REST operation contract unexpectedly accepted an unknown error_response key." >&2
+  exit 1
+fi
+perl -0pi -e "s/'error_response' => array\\( 'mode' => 'envelope', 'message' => __\\( 'Settings failed\\.', 'runtime-pack-ready' \\), 'raw_body' => 'nope' \\)/'error_response' => array( 'mode' => 'envelope', 'message' => '   ' )/" "$SCAN_FIXTURE/includes/rest-operations/settings-operations.php"
+if WP_PLUGIN_BASE_ROOT="$SCAN_FIXTURE" bash "$ROOT_DIR/scripts/ci/scan_rest_operation_contract.sh" "" >/dev/null 2>&1; then
+  echo "REST operation contract unexpectedly accepted a blank error_response message." >&2
+  exit 1
+fi
 
 PERMISSIONS_CLASS_PATH="$PERMISSIONS_CLASS_PATH" ERROR_LOG_PATH="$ERROR_LOG_PATH" php <<'PHP'
 <?php
@@ -61,6 +79,7 @@ $GLOBALS['wp_plugin_base_test_state'] = array(
   'options'           => array(
     'example_plugin_rest_operation_scopes' => array( 'allow' => array( 'catalog.read' ) ),
   ),
+  'scope_filter_mode' => 'append',
 );
 
 function is_user_logged_in() {
@@ -86,6 +105,12 @@ function get_option( $key, $default = array() ) {
 
 function apply_filters( $hook_name, $value ) {
   if ( 'example-plugin_rest_granted_scopes' === $hook_name ) {
+    if ( 'invalid' === $GLOBALS['wp_plugin_base_test_state']['scope_filter_mode'] ) {
+      return null;
+    }
+    if ( 'throw' === $GLOBALS['wp_plugin_base_test_state']['scope_filter_mode'] ) {
+      throw new RuntimeException( 'Scope filter exploded.' );
+    }
     $value[] = 'items.write';
   }
 
@@ -118,6 +143,40 @@ if ( ! is_wp_error( $result ) || 'wp_plugin_base_rest_scope_forbidden' !== $resu
   fwrite( STDERR, "Expected missing required scope to fail.\n" );
   exit( 1 );
 }
+
+$operation = array(
+  'visibility'      => 'admin',
+  'capability'      => 'edit_posts',
+  'required_scopes' => 'settings.read',
+);
+
+$result = WP_Plugin_Base_REST_Operations_Permissions::check_operation( 'example-plugin', $operation, $request );
+if ( ! is_wp_error( $result ) || 'wp_plugin_base_rest_invalid_scope_configuration' !== $result->code || 500 !== ( $result->data['status'] ?? null ) ) {
+  fwrite( STDERR, "Expected malformed required_scopes to fail closed.\n" );
+  exit( 1 );
+}
+
+$GLOBALS['wp_plugin_base_test_state']['scope_filter_mode'] = 'invalid';
+$operation = array(
+  'visibility'      => 'admin',
+  'capability'      => 'edit_posts',
+  'required_scopes' => array( 'catalog.read' ),
+);
+
+$result = WP_Plugin_Base_REST_Operations_Permissions::check_operation( 'example-plugin', $operation, $request );
+if ( ! is_wp_error( $result ) || 'wp_plugin_base_rest_scope_check_failed' !== $result->code || 500 !== ( $result->data['status'] ?? null ) ) {
+  fwrite( STDERR, "Expected invalid scope filters to fail closed.\n" );
+  exit( 1 );
+}
+
+$GLOBALS['wp_plugin_base_test_state']['scope_filter_mode'] = 'throw';
+$result = WP_Plugin_Base_REST_Operations_Permissions::check_operation( 'example-plugin', $operation, $request );
+if ( ! is_wp_error( $result ) || 'wp_plugin_base_rest_scope_check_failed' !== $result->code || 500 !== ( $result->data['status'] ?? null ) ) {
+  fwrite( STDERR, "Expected thrown scope filters to fail closed.\n" );
+  exit( 1 );
+}
+
+$GLOBALS['wp_plugin_base_test_state']['scope_filter_mode'] = 'append';
 
 $operation = array(
   'visibility'      => 'admin',
