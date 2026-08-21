@@ -4,6 +4,11 @@ All notable changes to this project should be documented in this file.
 
 The format follows a simple Keep a Changelog-style layout with one section per released version and concise bullet points for user-visible changes.
 
+## [0.8.1] - 2026-08-21
+
+- Limited native comment verification to genuine browser and anonymous remote comment submissions, preserving programmatic and authenticated API comment creation.
+- Hardened plugin initialization across supported PHP runtimes and updated the development toolchain to Node.js 22.
+
 ## [0.8.0] - 2026-08-21
 
 - Enabled proof-of-work protection for native WordPress comment forms by default, with an opt-out under Protection Placements.
