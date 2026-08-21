@@ -7,7 +7,7 @@ Version: 0.8.0
 Stable tag: 0.8.0
 Requires at least: 6.4
 Requires PHP: 8.0
-Tested up to: 6.9
+Tested up to: 7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -203,6 +203,7 @@ Instead of asking the user to solve a visual puzzle, the widget asks the browser
 
 = 0.8.0 =
 * Add - Enable proof-of-work protection for native WordPress comment forms by default, with an administrator opt-out.
+* Update - Declare compatibility with WordPress 7.1.
 
 
 = 0.7.1 =
