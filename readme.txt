@@ -98,11 +98,11 @@ The challenge endpoint stays public so the widget can fetch challenges without a
 
 If your site sends Content Security Policy headers, allow the domain serving the plugin scripts in `script-src` and permit the widget styles in `style-src`.
 
-If your site is behind Cloudflare, a load balancer, or another reverse proxy, add the proxy IPs or CIDR ranges to the Trusted proxies setting so the plugin can safely read forwarded client IP headers.
+If your site is behind a CDN, load balancer, or another reverse proxy, add the proxy IPs or CIDR ranges to the Trusted proxies setting so the plugin can safely read forwarded client IP headers.
 
 = Privacy Policy Text =
 
-The Settings tab includes suggested privacy policy text for sites replacing Cloudflare Turnstile or another CAPTCHA-style service with Anti Spam for WordPress. Choose and save the privacy text legal basis before generating the suggested text. The text is generated from the saved plugin settings, including visitor binding, event logging, disposable email checks, content heuristics, guard features, and Bunny Shield sync. The same suggestion is registered with the WordPress Privacy Policy Guide when that WordPress feature is available.
+The Settings tab includes suggested privacy policy text for sites replacing a third-party CAPTCHA-style service with Anti Spam for WordPress. Choose and save the privacy text legal basis before generating the suggested text. The text is generated from the saved plugin settings, including visitor binding, event logging, disposable email checks, content heuristics, guard features, and Bunny Shield sync. The same suggestion is registered with the WordPress Privacy Policy Guide when that WordPress feature is available.
 
 Review the generated text before adding it to a privacy policy. It is operational guidance for site owners, not legal consultation; consult your lawyer before using it because each site can have different legal requirements.
 
