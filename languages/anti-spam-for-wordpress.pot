@@ -494,7 +494,7 @@ msgid "Use of Anti Spam for WordPress"
 msgstr ""
 
 #: includes/class-asfw-privacy-policy-text.php:85
-msgid "We use the Anti Spam for WordPress plugin on this website to protect forms and interactive website areas against spam, automated submissions, and abuse. The plugin replaces external CAPTCHA or Cloudflare Turnstile-style verification with self-hosted anti-spam checks that run in our WordPress installation."
+msgid "We use the Anti Spam for WordPress plugin on this website to protect forms and interactive website areas against spam, automated submissions, and abuse. The plugin replaces external CAPTCHA-style verification with self-hosted anti-spam checks that run in our WordPress installation."
 msgstr ""
 
 #: includes/class-asfw-privacy-policy-text.php:96

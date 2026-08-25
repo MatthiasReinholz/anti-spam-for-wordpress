@@ -82,7 +82,7 @@ final class ASFW_Privacy_Policy_Text {
 
 		$paragraphs = array(
 			__( 'Use of Anti Spam for WordPress', 'anti-spam-for-wordpress' ),
-			__( 'We use the Anti Spam for WordPress plugin on this website to protect forms and interactive website areas against spam, automated submissions, and abuse. The plugin replaces external CAPTCHA or Cloudflare Turnstile-style verification with self-hosted anti-spam checks that run in our WordPress installation.', 'anti-spam-for-wordpress' ),
+			__( 'We use the Anti Spam for WordPress plugin on this website to protect forms and interactive website areas against spam, automated submissions, and abuse. The plugin replaces external CAPTCHA-style verification with self-hosted anti-spam checks that run in our WordPress installation.', 'anti-spam-for-wordpress' ),
 			self::legal_basis_text( $flags['legal_basis'] ),
 			self::core_processing_text( $flags ),
 			self::storage_text( $flags ),
