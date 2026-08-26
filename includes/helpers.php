@@ -97,6 +97,22 @@ function asfw_enqueue_scripts() {
 	);
 }
 
+/**
+ * Request every asset required by a rendered Anti-Spam widget.
+ *
+ * Integrations should call this only when they emit protection markup. Keeping
+ * the request next to the markup prevents ordinary pages from downloading the
+ * widget runtime while preserving late-rendered shortcode and form surfaces.
+ *
+ * @param string $context Normalized protection context for observability.
+ */
+function asfw_enqueue_widget_assets( $context = 'generic' ) {
+	asfw_enqueue_scripts();
+	asfw_enqueue_styles();
+
+	do_action( 'asfw_widget_assets_enqueued', ASFW_Feature_Registry::normalize_context( $context ) );
+}
+
 function asfw_get_posted_value( $key ) {
 	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Integrations call this helper only while performing their own anti-spam verification checks.
 	if ( ! isset( $_POST[ $key ] ) ) {
@@ -196,8 +212,7 @@ function asfw_render_context_guards( $context ) {
 	}
 
 	if ( '' !== $html ) {
-		asfw_enqueue_scripts();
-		asfw_enqueue_styles();
+		asfw_enqueue_widget_assets( $context );
 	}
 
 	return wp_kses( $html, AntiSpamForWordPressPlugin::$html_allowed_tags );

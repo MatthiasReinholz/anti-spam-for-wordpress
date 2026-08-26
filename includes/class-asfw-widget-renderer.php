@@ -154,16 +154,14 @@ if ( ! class_exists( 'ASFW_Widget_Renderer', false ) ) {
 				return '';
 			}
 
-			asfw_enqueue_scripts();
-			asfw_enqueue_styles();
-
 			$field_name = 'asfw';
 			if ( null !== $name && '' !== $name ) {
 				$field_name = sanitize_key( $name );
 			}
 			$normalized_context = $this->context_helper_service()->get_widget_context( $mode, $field_name, $context );
-				$attrs          = $this->get_widget_attrs( $mode, $language, $field_name, $normalized_context, true );
-			$signed_context     = $normalized_context;
+			asfw_enqueue_widget_assets( $normalized_context );
+			$attrs          = $this->get_widget_attrs( $mode, $language, $field_name, $normalized_context, true );
+			$signed_context = $normalized_context;
 			if ( isset( $attrs['data-asfw-context'] ) ) {
 				$signed_context = $this->context_helper_service()->normalize_context( $attrs['data-asfw-context'] );
 			}

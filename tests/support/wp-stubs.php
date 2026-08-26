@@ -485,16 +485,29 @@ function is_admin()
 
 function wp_enqueue_script($handle, $src = '', $deps = array(), $ver = false, $args = false)
 {
+	$GLOBALS['asfw_test_enqueued_scripts'][(string) $handle] = array(
+		'src'  => $src,
+		'deps' => $deps,
+		'ver'  => $ver,
+		'args' => $args,
+	);
     return true;
 }
 
 function wp_enqueue_style($handle, $src = '', $deps = array(), $ver = false, $media = 'all')
 {
+	$GLOBALS['asfw_test_enqueued_styles'][(string) $handle] = array(
+		'src'   => $src,
+		'deps'  => $deps,
+		'ver'   => $ver,
+		'media' => $media,
+	);
     return true;
 }
 
 function wp_localize_script($handle, $object_name, $l10n)
 {
+	$GLOBALS['asfw_test_localized_scripts'][(string) $handle][(string) $object_name] = $l10n;
     return true;
 }
 
@@ -776,6 +789,9 @@ function asfw_test_reset_state(array $options = array(), ?array $active_plugins 
     $GLOBALS['asfw_test_transients'] = array();
     $GLOBALS['asfw_test_http_requests'] = array();
     $GLOBALS['asfw_test_http_responses'] = array();
+	$GLOBALS['asfw_test_enqueued_scripts'] = array();
+	$GLOBALS['asfw_test_enqueued_styles'] = array();
+	$GLOBALS['asfw_test_localized_scripts'] = array();
     $GLOBALS['asfw_test_cli_commands'] = array();
     $GLOBALS['asfw_test_registered_settings'] = array();
     $GLOBALS['asfw_test_settings_sections'] = array();

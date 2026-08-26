@@ -97,6 +97,12 @@ Supported attributes:
 - `name`: form field name. Defaults to `asfw`.
 - `language`: optional widget language override.
 
+The frontend widget JavaScript and stylesheet are requested only when a
+protected integration or `[anti_spam_widget]` actually renders widget markup.
+Enabling the Custom HTML placement does not enqueue assets on pages without a
+widget. Use the shortcode rather than writing a bare `<asfw-widget>` element so
+the complete signed context fields and runtime dependencies are present.
+
 ## WP-CLI
 
 Use these commands for operator workflows:
