@@ -158,6 +158,7 @@ Use `[anti_spam_widget]` when automatic placement is not available in custom for
 Supported attributes are `mode`, `context`, `name`, and `language`. If the Custom HTML placement is disabled, pass `mode="captcha"` or `mode="shortcode"` explicitly.
 
 Widget scripts and styles load only on pages where a protected integration or the shortcode renders the widget. Use the shortcode instead of a bare `<asfw-widget>` element so signed context fields and all runtime dependencies are included.
+Widgets first rendered after the page head still receive the complete runtime; the widget stylesheet is emitted once in the public or login footer when necessary.
 
 = Source Code =
 

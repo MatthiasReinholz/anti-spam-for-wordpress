@@ -113,6 +113,24 @@ function asfw_enqueue_widget_assets( $context = 'generic' ) {
 	do_action( 'asfw_widget_assets_enqueued', ASFW_Feature_Registry::normalize_context( $context ) );
 }
 
+/**
+ * Print widget CSS that was first requested after the document head.
+ *
+ * WordPress prints footer scripts that are enqueued during form rendering, but
+ * it does not automatically revisit the head stylesheet queue. Calling
+ * wp_print_styles() for this exact handle is idempotent: WordPress skips a
+ * handle already printed in the head and emits it only when a late-rendered
+ * protected form requested it.
+ */
+function asfw_print_late_widget_styles() {
+	if ( wp_style_is( 'asfw-widget-styles', 'enqueued' ) && ! wp_style_is( 'asfw-widget-styles', 'done' ) ) {
+		wp_print_styles( 'asfw-widget-styles' );
+	}
+}
+
+add_action( 'wp_footer', 'asfw_print_late_widget_styles', 0 );
+add_action( 'login_footer', 'asfw_print_late_widget_styles', 0 );
+
 function asfw_get_posted_value( $key ) {
 	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Integrations call this helper only while performing their own anti-spam verification checks.
 	if ( ! isset( $_POST[ $key ] ) ) {
