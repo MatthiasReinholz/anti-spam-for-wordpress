@@ -50,4 +50,15 @@ final class ContractClassesTest extends AsfwPluginTestCase
 		$registry = new ASFW_Integration_Registry();
 		$this->assertIsArray($registry->get_bootstrap_paths());
 	}
+
+	public function test_widget_renderer_emits_valid_configured_appearance(): void
+	{
+		$renderer = new ASFW_Widget_Renderer();
+
+		update_option(AntiSpamForWordPressPlugin::$option_widget_appearance, 'dark');
+		$this->assertStringContainsString('appearance="dark"', $renderer->render_widget('captcha', false, null, 'asfw', 'contact-form-7'));
+
+		update_option(AntiSpamForWordPressPlugin::$option_widget_appearance, 'invalid');
+		$this->assertStringContainsString('appearance="light"', $renderer->render_widget('captcha', false, null, 'asfw', 'contact-form-7'));
+	}
 }

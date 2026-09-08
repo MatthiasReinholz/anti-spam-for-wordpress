@@ -27,15 +27,31 @@ asfw-widget {
 .asfw-widget-shell {
   --asfw-border: #a0a0a0;
   --asfw-border-focus: #1d4ed8;
-  --asfw-surface: transparent;
+  --asfw-surface: #ffffff;
   --asfw-surface-elevated: #ffffff;
-  --asfw-text: currentColor;
-  --asfw-muted: rgba(15, 23, 42, 0.72);
+  --asfw-text: #0f172a;
+  --asfw-muted: #475569;
   --asfw-success: #166534;
   --asfw-error: #dc2626;
+  --asfw-spinner-track: #dbe2ea;
   --asfw-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+  color-scheme: light;
   color: var(--asfw-text);
   max-width: 320px;
+}
+
+.asfw-widget-shell[data-appearance="dark"] {
+  --asfw-border: #64748b;
+  --asfw-border-focus: #93c5fd;
+  --asfw-surface: #111827;
+  --asfw-surface-elevated: #111827;
+  --asfw-text: #f8fafc;
+  --asfw-muted: #cbd5e1;
+  --asfw-success: #86efac;
+  --asfw-error: #fca5a5;
+  --asfw-spinner-track: #475569;
+  --asfw-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
 }
 
 .asfw-widget-shell[data-floating]:not([data-floating=""]) {
@@ -122,7 +138,7 @@ asfw-widget {
 
 .asfw-spinner {
   animation: asfw-spin 0.75s linear infinite;
-  border: 2px solid rgba(15, 23, 42, 0.15);
+  border: 2px solid var(--asfw-spinner-track);
   border-top-color: var(--asfw-border-focus);
   border-radius: 999px;
   display: none;

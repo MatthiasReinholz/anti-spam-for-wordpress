@@ -89,6 +89,7 @@ if ( ! class_exists( 'ASFW_Widget_Renderer', false ) ) {
 			$auto    = $this->options_service()->get_auto();
 			$lazy    = $this->options_service()->get_lazy();
 			$attrs   = array(
+				'appearance'                => $this->options_service()->get_widget_appearance(),
 				'data-asfw-context'         => $context,
 				'data-asfw-field'           => $field_name,
 				'data-asfw-lazy'            => $lazy ? '1' : '0',

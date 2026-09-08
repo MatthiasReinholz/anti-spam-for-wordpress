@@ -141,6 +141,10 @@ function asfw_activate() {
 		update_option( AntiSpamForWordPressPlugin::$option_hidelogo, false );
 	}
 
+	if ( get_option( AntiSpamForWordPressPlugin::$option_widget_appearance, null ) === null ) {
+		update_option( AntiSpamForWordPressPlugin::$option_widget_appearance, 'light' );
+	}
+
 	if ( get_option( AntiSpamForWordPressPlugin::$option_footer_text, '' ) === '' ) {
 		update_option(
 			AntiSpamForWordPressPlugin::$option_footer_text,
