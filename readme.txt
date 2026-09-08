@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.8.4
-Stable tag: 0.8.4
+Version: 0.8.5
+Stable tag: 0.8.5
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 7.1
@@ -207,6 +207,10 @@ Native browser comment forms are protected by default, including logged-in submi
 5. Floating UI example
 
 == Changelog ==
+
+= 0.8.5 =
+* Add - Add fixed light and dark widget palettes (#87).
+
 
 = 0.8.4 =
 * Fix - Fix widget contrast on dark forms (#83).
