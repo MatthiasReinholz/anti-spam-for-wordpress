@@ -27,6 +27,15 @@ function asfwBase64Encode(value) {
   return window.btoa(value);
 }
 
+function asfwSetOptionalDataAttribute(element, name, value) {
+  if (value) {
+    element.dataset[name] = value;
+    return;
+  }
+
+  element.removeAttribute(`data-${name}`);
+}
+
 class ASFWWidgetElement extends HTMLElement {
   static get observedAttributes() {
     return ['auto', 'challengeurl', 'data-asfw-challengeurl', 'data-asfw-min-submit-time', 'data-asfw-privacy-new-tab', 'data-asfw-privacy-url', 'delay', 'floating', 'hidefooter', 'hidelogo', 'name', 'strings'];
@@ -160,7 +169,7 @@ class ASFWWidgetElement extends HTMLElement {
     this._footerLink.href = privacyUrl || '#';
     this._footerLink.target = privacyNewTab ? '_blank' : '_self';
     this._valueInput.name = this.getFieldName();
-    this._shell.dataset.floating = this.getAttribute('floating') || '';
+    asfwSetOptionalDataAttribute(this._shell, 'floating', this.getAttribute('floating') || '');
 
     if (this._state === 'idle') {
       this.setState('idle');

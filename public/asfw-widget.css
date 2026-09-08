@@ -38,7 +38,7 @@ asfw-widget {
   max-width: 320px;
 }
 
-.asfw-widget-shell[data-floating] {
+.asfw-widget-shell[data-floating]:not([data-floating=""]) {
   background: var(--asfw-surface-elevated);
   border-radius: 8px;
   box-shadow: var(--asfw-shadow);
