@@ -75,6 +75,22 @@ asfw-widget {
   padding: 0.75rem 0.9rem;
 }
 
+.asfw-intro {
+  color: var(--asfw-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  padding: 0.75rem 0.9rem 0;
+  width: 100%;
+}
+
+.asfw-intro[hidden] {
+  display: none;
+}
+
+.asfw-widget-shell[data-layout="extended"] .asfw-main {
+  padding-top: 0.6rem;
+}
+
 .asfw-control {
   align-items: center;
   appearance: none;

@@ -295,6 +295,17 @@ final class ASFW_Settings_Schema {
 			),
 			'asfw_widget_settings_section'        => array(
 				self::select_field(
+					'asfw_settings_widget_layout_field',
+					AntiSpamForWordPressPlugin::$option_widget_layout,
+					__( 'Widget layout', 'anti-spam-for-wordpress' ),
+					__( 'Extended adds a short privacy-focused explanation above the verification control.', 'anti-spam-for-wordpress' ),
+					array(
+						'compact'  => __( 'Compact', 'anti-spam-for-wordpress' ),
+						'extended' => __( 'Extended', 'anti-spam-for-wordpress' ),
+					),
+					'compact'
+				),
+				self::select_field(
 					'asfw_settings_widget_appearance_field',
 					AntiSpamForWordPressPlugin::$option_widget_appearance,
 					__( 'Widget appearance', 'anti-spam-for-wordpress' ),
@@ -667,6 +678,7 @@ final class ASFW_Settings_Schema {
 			AntiSpamForWordPressPlugin::$option_auto       => 'asfw_widget_settings_section',
 			AntiSpamForWordPressPlugin::$option_floating   => 'asfw_widget_settings_section',
 			AntiSpamForWordPressPlugin::$option_widget_appearance => 'asfw_widget_settings_section',
+			AntiSpamForWordPressPlugin::$option_widget_layout => 'asfw_widget_settings_section',
 			AntiSpamForWordPressPlugin::$option_delay      => 'asfw_widget_settings_section',
 			AntiSpamForWordPressPlugin::$option_hidelogo   => 'asfw_widget_settings_section',
 			AntiSpamForWordPressPlugin::$option_footer_text => 'asfw_widget_settings_section',

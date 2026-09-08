@@ -30,6 +30,15 @@ The Settings tab follows the setup path an operator normally takes:
 
 The native WordPress Comments placement defaults to `Captcha`. It injects the proof-of-work widget into comment forms for both anonymous and logged-in commenters and validates standard comment submissions on the server. Select `Disable` to opt out.
 
+## Widget layout
+
+The **Widget layout** setting offers two consistent layouts:
+
+- **Compact** shows the verification control without introductory copy.
+- **Extended** adds “To protect your data, we’re verifying that you are a human.” as a full-width line above the verification control.
+
+Appearance and layout are independent: either layout can use the Light or Dark palette.
+
 ## Shortcode
 
 Use `[anti_spam_widget]` when automatic placement is not available in custom form markup.

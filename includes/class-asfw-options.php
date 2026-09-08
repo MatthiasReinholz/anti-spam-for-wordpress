@@ -127,6 +127,12 @@ if ( ! class_exists( 'ASFW_Options', false ) ) {
 			return in_array( $appearance, array( 'light', 'dark' ), true ) ? $appearance : 'light';
 		}
 
+		public function get_widget_layout() {
+			$layout = strtolower( trim( (string) get_option( AntiSpamForWordPressPlugin::$option_widget_layout, 'compact' ) ) );
+
+			return in_array( $layout, array( 'compact', 'extended' ), true ) ? $layout : 'compact';
+		}
+
 		public function get_delay() {
 			return trim( get_option( AntiSpamForWordPressPlugin::$option_delay ) );
 		}

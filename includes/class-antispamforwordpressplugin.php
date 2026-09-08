@@ -46,6 +46,8 @@ class AntiSpamForWordPressPlugin {
 
 	public static $option_widget_appearance = 'asfw_widget_appearance';
 
+	public static $option_widget_layout = 'asfw_widget_layout';
+
 	public static $option_delay = 'asfw_delay';
 
 	public static $option_hidefooter = 'asfw_hidefooter';
@@ -159,6 +161,7 @@ class AntiSpamForWordPressPlugin {
 			'auto'                      => array(),
 			'floating'                  => array(),
 			'appearance'                => array(),
+			'layout'                    => array(),
 			'delay'                     => array(),
 			'hidelogo'                  => array(),
 			'hidefooter'                => array(),
