@@ -38,7 +38,7 @@ function asfwSetOptionalDataAttribute(element, name, value) {
 
 class ASFWWidgetElement extends HTMLElement {
   static get observedAttributes() {
-    return ['auto', 'challengeurl', 'data-asfw-challengeurl', 'data-asfw-min-submit-time', 'data-asfw-privacy-new-tab', 'data-asfw-privacy-url', 'delay', 'floating', 'hidefooter', 'hidelogo', 'name', 'strings'];
+    return ['appearance', 'auto', 'challengeurl', 'data-asfw-challengeurl', 'data-asfw-min-submit-time', 'data-asfw-privacy-new-tab', 'data-asfw-privacy-url', 'delay', 'floating', 'hidefooter', 'hidelogo', 'name', 'strings'];
   }
 
   constructor() {
@@ -169,6 +169,7 @@ class ASFWWidgetElement extends HTMLElement {
     this._footerLink.href = privacyUrl || '#';
     this._footerLink.target = privacyNewTab ? '_blank' : '_self';
     this._valueInput.name = this.getFieldName();
+    this._shell.dataset.appearance = this.getAppearance();
     asfwSetOptionalDataAttribute(this._shell, 'floating', this.getAttribute('floating') || '');
 
     if (this._state === 'idle') {
@@ -234,6 +235,10 @@ class ASFWWidgetElement extends HTMLElement {
     }
 
     return { ...ASFW_DEFAULT_STRINGS };
+  }
+
+  getAppearance() {
+    return this.getAttribute('appearance') === 'dark' ? 'dark' : 'light';
   }
 
   getFieldName() {

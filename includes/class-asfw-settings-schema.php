@@ -295,6 +295,17 @@ final class ASFW_Settings_Schema {
 			),
 			'asfw_widget_settings_section'        => array(
 				self::select_field(
+					'asfw_settings_widget_appearance_field',
+					AntiSpamForWordPressPlugin::$option_widget_appearance,
+					__( 'Widget appearance', 'anti-spam-for-wordpress' ),
+					__( 'Use a fixed light or dark widget palette. Page and theme colors do not affect the widget.', 'anti-spam-for-wordpress' ),
+					array(
+						'light' => __( 'Light', 'anti-spam-for-wordpress' ),
+						'dark'  => __( 'Dark', 'anti-spam-for-wordpress' ),
+					),
+					'light'
+				),
+				self::select_field(
 					'asfw_settings_auto_field',
 					AntiSpamForWordPressPlugin::$option_auto,
 					__( 'Auto verification', 'anti-spam-for-wordpress' ),
@@ -655,6 +666,7 @@ final class ASFW_Settings_Schema {
 			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_action => 'asfw_bunny_settings_section',
 			AntiSpamForWordPressPlugin::$option_auto       => 'asfw_widget_settings_section',
 			AntiSpamForWordPressPlugin::$option_floating   => 'asfw_widget_settings_section',
+			AntiSpamForWordPressPlugin::$option_widget_appearance => 'asfw_widget_settings_section',
 			AntiSpamForWordPressPlugin::$option_delay      => 'asfw_widget_settings_section',
 			AntiSpamForWordPressPlugin::$option_hidelogo   => 'asfw_widget_settings_section',
 			AntiSpamForWordPressPlugin::$option_footer_text => 'asfw_widget_settings_section',

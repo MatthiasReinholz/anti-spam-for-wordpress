@@ -26,4 +26,22 @@ final class WidgetFloatingContrastTest extends TestCase
             $styles
         );
     }
+
+    public function testWidgetUsesCompleteExplicitLightAndDarkPalettes(): void
+    {
+        $script = file_get_contents(dirname(__DIR__, 2) . '/public/asfw-widget.js');
+        $styles = file_get_contents(dirname(__DIR__, 2) . '/public/asfw-widget.css');
+
+        self::assertIsString($script);
+        self::assertIsString($styles);
+        self::assertStringContainsString("this._shell.dataset.appearance = this.getAppearance();", $script);
+        self::assertStringContainsString("return this.getAttribute('appearance') === 'dark' ? 'dark' : 'light';", $script);
+        self::assertStringContainsString('--asfw-surface: #ffffff;', $styles);
+        self::assertStringContainsString('--asfw-text: #0f172a;', $styles);
+        self::assertStringContainsString('.asfw-widget-shell[data-appearance="dark"]', $styles);
+        self::assertStringContainsString('--asfw-surface: #111827;', $styles);
+        self::assertStringContainsString('--asfw-text: #f8fafc;', $styles);
+        self::assertStringNotContainsString('--asfw-text: currentColor;', $styles);
+        self::assertStringNotContainsString('--asfw-surface: transparent;', $styles);
+    }
 }
