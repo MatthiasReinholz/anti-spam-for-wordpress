@@ -34,6 +34,7 @@ final class WpPluginBaseSettingsRegistryTest extends AsfwPluginTestCase
 		$this->assertFieldRegistered('asfw_settings_feature_submit_delay_ms_field');
 		$this->assertFieldRegistered('asfw_settings_privacy_legal_basis_field');
 		$this->assertFieldRegistered('asfw_settings_widget_appearance_field');
+		$this->assertFieldRegistered('asfw_settings_widget_layout_field');
 		$this->assertFieldRegistered('asfw_settings_contact_form_7_integration_field');
 		$this->assertFieldRegistered('asfw_settings_wordpress_login_integration_field');
 
@@ -56,6 +57,10 @@ final class WpPluginBaseSettingsRegistryTest extends AsfwPluginTestCase
 		$widget_appearance = $this->findRegisteredSetting(AntiSpamForWordPressPlugin::$option_widget_appearance);
 		$this->assertTrue(is_callable($widget_appearance['args']['sanitize_callback']));
 		$this->assertSame('light', (new ASFW_Options())->get_widget_appearance());
+
+		$widget_layout = $this->findRegisteredSetting(AntiSpamForWordPressPlugin::$option_widget_layout);
+		$this->assertTrue(is_callable($widget_layout['args']['sanitize_callback']));
+		$this->assertSame('compact', (new ASFW_Options())->get_widget_layout());
 
 		$contact_form_7 = $this->findField('asfw_settings_contact_form_7_integration_field');
 		$this->assertTrue((bool) $contact_form_7['args']['disabled']);

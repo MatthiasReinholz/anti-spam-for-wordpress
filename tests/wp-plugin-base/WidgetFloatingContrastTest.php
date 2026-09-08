@@ -44,4 +44,18 @@ final class WidgetFloatingContrastTest extends TestCase
         self::assertStringNotContainsString('--asfw-text: currentColor;', $styles);
         self::assertStringNotContainsString('--asfw-surface: transparent;', $styles);
     }
+
+    public function testExtendedLayoutPlacesFullWidthIntroBeforeControl(): void
+    {
+        $script = file_get_contents(dirname(__DIR__, 2) . '/public/asfw-widget.js');
+        $styles = file_get_contents(dirname(__DIR__, 2) . '/public/asfw-widget.css');
+
+        self::assertIsString($script);
+        self::assertIsString($styles);
+        self::assertMatchesRegularExpression('/<div class="asfw-widget">\\s*<div class="asfw-intro" hidden><\\/div>\\s*<div class="asfw-main">/', $script);
+        self::assertStringContainsString("this._intro.hidden = this.getLayout() !== 'extended';", $script);
+        self::assertStringContainsString("return this.getAttribute('layout') === 'extended' ? 'extended' : 'compact';", $script);
+        self::assertStringContainsString('.asfw-intro {', $styles);
+        self::assertStringContainsString('width: 100%;', $styles);
+    }
 }
