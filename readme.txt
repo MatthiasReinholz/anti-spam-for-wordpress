@@ -210,6 +210,7 @@ Native browser comment forms are protected by default, including logged-in submi
 
 = 0.8.4 =
 * Fix - Fix widget contrast on dark forms (#83).
+* Security - Refresh the admin UI build lock to patched high-severity dependency versions (#85).
 
 
 = 0.8.3 =
