@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Anti Spam for WordPress 0.8.7\n"
+"Project-Id-Version: Anti Spam for WordPress 0.8.8\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/anti-spam-for-wordpress\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-21T16:35:10+00:00\n"
+"POT-Creation-Date: 2026-09-09T13:52:42+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: anti-spam-for-wordpress\n"
@@ -43,7 +43,7 @@ msgstr ""
 #: includes/class-asfw-settings-schema.php:141
 #: includes/class-asfw-settings-schema.php:155
 #: includes/class-asfw-settings-schema.php:175
-#: includes/class-asfw-settings-schema.php:303
+#: includes/class-asfw-settings-schema.php:325
 msgid "Disabled"
 msgstr ""
 
@@ -99,7 +99,7 @@ msgstr ""
 msgid "Custom URL"
 msgstr ""
 
-#: anti-spam-for-wordpress.php:147
+#: anti-spam-for-wordpress.php:161
 #: includes/class-asfw-options.php:65
 msgid "Protected by Anti Spam for WordPress"
 msgstr ""
@@ -918,151 +918,183 @@ msgid "Current runtime uses block-style access-list updates only. Challenge rema
 msgstr ""
 
 #: includes/class-asfw-settings-schema.php:290
-#: includes/class-asfw-settings-schema.php:580
+#: includes/class-asfw-settings-schema.php:603
 msgid "Block"
 msgstr ""
 
 #: includes/class-asfw-settings-schema.php:300
-msgid "Auto verification"
+msgid "Widget layout"
 msgstr ""
 
 #: includes/class-asfw-settings-schema.php:301
-msgid "Choose when the widget should start verification."
+msgid "Extended adds a short privacy-focused explanation above the verification control."
+msgstr ""
+
+#: includes/class-asfw-settings-schema.php:303
+msgid "Compact"
 msgstr ""
 
 #: includes/class-asfw-settings-schema.php:304
-msgid "On page load"
+msgid "Extended"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:305
-msgid "On form focus"
+#: includes/class-asfw-settings-schema.php:311
+msgid "Widget appearance"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:306
-msgid "On form submit"
-msgstr ""
-
-#: includes/class-asfw-settings-schema.php:313
-msgid "Floating UI"
+#: includes/class-asfw-settings-schema.php:312
+msgid "Use a fixed light or dark widget palette. Page and theme colors do not affect the widget."
 msgstr ""
 
 #: includes/class-asfw-settings-schema.php:314
-msgid "Enable the widget floating UI."
+msgid "Light"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:319
-msgid "Delay"
+#: includes/class-asfw-settings-schema.php:315
+msgid "Dark"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:320
-msgid "Add a 1.5 second delay before verification completes."
+#: includes/class-asfw-settings-schema.php:322
+msgid "Auto verification"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:325
-msgid "Hide logo"
+#: includes/class-asfw-settings-schema.php:323
+msgid "Choose when the widget should start verification."
 msgstr ""
 
 #: includes/class-asfw-settings-schema.php:326
+msgid "On page load"
+msgstr ""
+
+#: includes/class-asfw-settings-schema.php:327
+msgid "On form focus"
+msgstr ""
+
+#: includes/class-asfw-settings-schema.php:328
+msgid "On form submit"
+msgstr ""
+
+#: includes/class-asfw-settings-schema.php:335
+msgid "Floating UI"
+msgstr ""
+
+#: includes/class-asfw-settings-schema.php:336
+msgid "Enable the widget floating UI."
+msgstr ""
+
+#: includes/class-asfw-settings-schema.php:341
+msgid "Delay"
+msgstr ""
+
+#: includes/class-asfw-settings-schema.php:342
+msgid "Add a 1.5 second delay before verification completes."
+msgstr ""
+
+#: includes/class-asfw-settings-schema.php:347
+msgid "Hide logo"
+msgstr ""
+
+#: includes/class-asfw-settings-schema.php:348
 msgid "Hide the logo in the widget footer."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:331
+#: includes/class-asfw-settings-schema.php:353
 msgid "Footer text"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:332
+#: includes/class-asfw-settings-schema.php:354
 msgid "Shown in the widget footer when the footer is visible."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:338
+#: includes/class-asfw-settings-schema.php:360
 msgid "Privacy link"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:339
+#: includes/class-asfw-settings-schema.php:361
 msgid "Choose a page or switch to a custom URL for the footer privacy link."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:344
+#: includes/class-asfw-settings-schema.php:366
 msgid "Privacy URL"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:345
+#: includes/class-asfw-settings-schema.php:367
 msgid "Used when Custom URL is selected."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:351
+#: includes/class-asfw-settings-schema.php:373
 msgid "Open privacy link in new tab"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:352
+#: includes/class-asfw-settings-schema.php:374
 msgid "Open the privacy link in a new browser tab."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:357
+#: includes/class-asfw-settings-schema.php:379
 msgid "Privacy text legal basis"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:358
+#: includes/class-asfw-settings-schema.php:380
 msgid "Choose the legal-basis sentence used in the suggested privacy policy text. Review this with your legal or privacy advisor."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:366
+#: includes/class-asfw-settings-schema.php:388
 msgid "Hide footer"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:367
+#: includes/class-asfw-settings-schema.php:389
 msgid "Hide the widget footer entirely."
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:517
+#: includes/class-asfw-settings-schema.php:540
 msgid "Disable"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:518
+#: includes/class-asfw-settings-schema.php:541
 msgid "Captcha"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:522
+#: includes/class-asfw-settings-schema.php:545
 #: assets/admin-ui/index.js:1
 msgid "Shortcode"
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-settings-schema.php:562
+#: includes/class-asfw-settings-schema.php:585
 #, php-format
 msgid "Enable %s"
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-settings-schema.php:573
+#: includes/class-asfw-settings-schema.php:596
 #, php-format
 msgid "%s mode"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:578
+#: includes/class-asfw-settings-schema.php:601
 msgid "Off"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:579
+#: includes/class-asfw-settings-schema.php:602
 msgid "Log"
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-settings-schema.php:590
+#: includes/class-asfw-settings-schema.php:613
 #, php-format
 msgid "%s scope"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:595
+#: includes/class-asfw-settings-schema.php:618
 msgid "All contexts"
 msgstr ""
 
-#: includes/class-asfw-settings-schema.php:596
+#: includes/class-asfw-settings-schema.php:619
 msgid "Selected contexts"
 msgstr ""
 
 #. translators: %s is a feature label.
-#: includes/class-asfw-settings-schema.php:606
+#: includes/class-asfw-settings-schema.php:629
 #, php-format
 msgid "%s selected contexts"
 msgstr ""
@@ -1077,35 +1109,43 @@ msgid "Verification failed. Try again later."
 msgstr ""
 
 #: includes/class-asfw-widget-renderer.php:48
-msgid "I'm not a robot"
+msgid "To protect your data, we’re verifying that you are a human."
 msgstr ""
 
 #: includes/class-asfw-widget-renderer.php:49
-msgid "Privacy"
+msgid "I'm not a robot"
 msgstr ""
 
 #: includes/class-asfw-widget-renderer.php:50
-msgid "Please verify before submitting."
+msgid "Privacy"
 msgstr ""
 
 #: includes/class-asfw-widget-renderer.php:51
-msgid "Verified"
+msgid "Try again"
 msgstr ""
 
 #: includes/class-asfw-widget-renderer.php:52
-msgid "Verifying..."
+msgid "Please verify before submitting."
 msgstr ""
 
 #: includes/class-asfw-widget-renderer.php:53
+msgid "Verified"
+msgstr ""
+
+#: includes/class-asfw-widget-renderer.php:54
+msgid "Verifying..."
+msgstr ""
+
+#: includes/class-asfw-widget-renderer.php:55
 msgid "Verifying... please wait."
 msgstr ""
 
-#: includes/class-asfw-widget-renderer.php:188
+#: includes/class-asfw-widget-renderer.php:210
 msgid "This form requires JavaScript."
 msgstr ""
 
 #. translators: %s: number of seconds remaining before the form can be submitted.
-#: includes/helpers.php:95
+#: includes/helpers.php:102
 #, php-format
 msgid "Please wait %ss..."
 msgstr ""
@@ -1262,7 +1302,7 @@ msgid "Use [anti_spam_widget] in custom form templates when automatic placement 
 msgstr ""
 
 #: assets/admin-ui/index.js:1
-msgid "Supported attributes: mode, context, name, and language. If Custom HTML is disabled, pass mode=\"captcha\" or mode=\"shortcode\" explicitly."
+msgid "Supported attributes: mode, context, name, language, layout (compact or extended), and appearance (light, bright, or dark). Bright is an alias for light. Omit layout or appearance to inherit the site settings. If Custom HTML is disabled, pass mode=\"captcha\" or mode=\"shortcode\" explicitly."
 msgstr ""
 
 #: assets/admin-ui/index.js:1
@@ -1495,8 +1535,4 @@ msgstr ""
 
 #: assets/admin-ui/index.js:1
 msgid "Failed to load analytics."
-msgstr ""
-
-#: includes/class-asfw-widget-renderer.php
-msgid "Try again"
 msgstr ""
