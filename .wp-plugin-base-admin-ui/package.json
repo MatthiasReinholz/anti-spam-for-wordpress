@@ -19,8 +19,13 @@
   },
   "overrides": {
     "basic-ftp": "6.0.1",
+    "colord": "2.10.0",
+    "js-yaml": "4.3.2",
+    "markdown-it": "15.0.0",
     "minimatch": "3.1.5",
+    "qs": "6.16.0",
     "serialize-javascript": "7.0.5",
+    "svgo": "4.1.0",
     "uuid": "14.0.0",
     "@puppeteer/browsers": "3.2.1",
     "adm-zip": "0.6.0",
