@@ -82,10 +82,12 @@ add_shortcode(
 	function ( $attrs ) {
 		$plugin     = asfw_plugin_instance();
 		$defaults   = array(
-			'context'  => null,
-			'language' => null,
-			'mode'     => $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_custom() : '',
-			'name'     => 'asfw',
+			'appearance' => null,
+			'context'    => null,
+			'language'   => null,
+			'layout'     => null,
+			'mode'       => $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_custom() : '',
+			'name'       => 'asfw',
 		);
 		$attributes = shortcode_atts( $defaults, $attrs );
 		if ( ! in_array( $attributes['mode'], array( 'captcha', 'shortcode' ), true ) ) {
@@ -97,7 +99,11 @@ add_shortcode(
 			$attributes['context'],
 			$attributes['name'],
 			true,
-			$attributes['language']
+			$attributes['language'],
+			array(
+				'appearance' => $attributes['appearance'],
+				'layout'     => $attributes['layout'],
+			)
 		);
 	}
 );

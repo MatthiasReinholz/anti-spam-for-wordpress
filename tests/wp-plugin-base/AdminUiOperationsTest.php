@@ -110,6 +110,23 @@ final class WpPluginBaseAdminUiOperationsTest extends AsfwPluginTestCase
 		$this->assertSame('captcha', $commentsField['value']);
     }
 
+    public function test_settings_payload_uses_declared_widget_defaults_when_options_are_absent(): void
+    {
+        delete_option(AntiSpamForWordPressPlugin::$option_widget_appearance);
+        delete_option(AntiSpamForWordPressPlugin::$option_widget_layout);
+
+        $payload = asfw_rest_build_settings_payload();
+        $values = array();
+        foreach ($payload['sections'] as $section) {
+            foreach ($section['fields'] as $field) {
+                $values[$field['option']] = $field['value'];
+            }
+        }
+
+        $this->assertSame('light', $values[AntiSpamForWordPressPlugin::$option_widget_appearance]);
+        $this->assertSame('compact', $values[AntiSpamForWordPressPlugin::$option_widget_layout]);
+    }
+
     public function test_admin_ui_client_namespaces_registered_and_explicit_paths(): void
     {
         $client = (string) file_get_contents(dirname(__DIR__, 2) . '/.wp-plugin-base-admin-ui/shared/api-client.js');

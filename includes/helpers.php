@@ -162,14 +162,14 @@ function asfw_get_posted_payload( $key ) {
 	return trim( (string) wp_unslash( $_POST[ $key ] ) );
 }
 
-function asfw_render_widget_markup( $mode, $context = null, $name = null, $wrap = true, $language = null ) {
+function asfw_render_widget_markup( $mode, $context = null, $name = null, $wrap = true, $language = null, $presentation_overrides = array() ) {
 	$plugin = asfw_plugin_instance();
 	if ( ! $plugin instanceof AntiSpamForWordPressPlugin ) {
 		return '';
 	}
 
 	return wp_kses(
-		$plugin->render_widget( $mode, $wrap, $language, $name, $context ),
+		$plugin->render_widget( $mode, $wrap, $language, $name, $context, $presentation_overrides ),
 		AntiSpamForWordPressPlugin::$html_allowed_tags
 	);
 }

@@ -866,10 +866,11 @@ class AntiSpamForWordPressPlugin {
 	 * @param string|null $language Locale override for widget strings.
 	 * @param string|null $name     Custom field name prefix.
 	 * @param string|null $context  Custom context identifier.
+	 * @param array       $presentation_overrides Optional per-widget appearance and layout overrides.
 	 * @return string Sanitized HTML markup.
 	 */
-	public function render_widget( $mode, $wrap = false, $language = null, $name = null, $context = null ) {
-		return $this->widget_renderer_service()->render_widget( $mode, $wrap, $language, $name, $context );
+	public function render_widget( $mode, $wrap = false, $language = null, $name = null, $context = null, $presentation_overrides = array() ) {
+		return $this->widget_renderer_service()->render_widget( $mode, $wrap, $language, $name, $context, $presentation_overrides );
 	}
 }
 

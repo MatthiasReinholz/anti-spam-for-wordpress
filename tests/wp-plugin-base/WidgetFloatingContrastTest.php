@@ -56,6 +56,7 @@ final class WidgetFloatingContrastTest extends TestCase
         self::assertStringContainsString("this._intro.hidden = this.getLayout() !== 'extended';", $script);
         self::assertStringContainsString("return this.getAttribute('layout') === 'extended' ? 'extended' : 'compact';", $script);
         self::assertStringContainsString('.asfw-intro {', $styles);
+        self::assertStringContainsString('box-sizing: border-box;', $styles);
         self::assertStringContainsString('width: 100%;', $styles);
     }
 }

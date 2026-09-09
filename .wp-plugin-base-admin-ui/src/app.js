@@ -180,13 +180,13 @@ function ShortcodeBlock() {
 			createElement(
 				'code',
 				{ className: 'asfw-admin-ui-code-block' },
-				'[anti_spam_widget mode="captcha" context="custom:contact" name="asfw"]'
+				'[anti_spam_widget mode="captcha" context="custom:contact" name="asfw" layout="extended" appearance="light"]'
 			),
 			createElement(
 				'p',
 				{ className: 'asfw-admin-ui-muted' },
 				__(
-					'Supported attributes: mode, context, name, and language. If Custom HTML is disabled, pass mode="captcha" or mode="shortcode" explicitly.',
+					'Supported attributes: mode, context, name, language, layout (compact or extended), and appearance (light, bright, or dark). Bright is an alias for light. Omit layout or appearance to inherit the site settings. If Custom HTML is disabled, pass mode="captcha" or mode="shortcode" explicitly.',
 					'anti-spam-for-wordpress'
 				)
 			)
