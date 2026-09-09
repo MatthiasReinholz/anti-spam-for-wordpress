@@ -87,7 +87,7 @@ Review the generated text before adding it to a privacy policy. It is operationa
 Use `[anti_spam_widget]` when automatic placement is not available in custom form markup.
 
 ```text
-[anti_spam_widget mode="captcha" context="custom:contact" name="asfw"]
+[anti_spam_widget mode="captcha" context="custom:contact" name="asfw" layout="extended" appearance="light"]
 ```
 
 Supported attributes:
@@ -96,6 +96,8 @@ Supported attributes:
 - `context`: optional normalized context used for logging, scoping, and verification.
 - `name`: form field name. Defaults to `asfw`.
 - `language`: optional widget language override.
+- `layout`: optional `compact` or `extended` override. Omit it to inherit the site setting.
+- `appearance`: optional `light`, `bright`, or `dark` override. `bright` is an alias for `light`; omit it to inherit the site setting.
 
 The frontend widget JavaScript and stylesheet are requested only when a
 protected integration or `[anti_spam_widget]` actually renders widget markup.

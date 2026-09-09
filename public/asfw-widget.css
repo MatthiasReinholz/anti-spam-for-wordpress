@@ -76,6 +76,7 @@ asfw-widget {
 }
 
 .asfw-intro {
+  box-sizing: border-box;
   color: var(--asfw-muted);
   font-size: 0.78rem;
   line-height: 1.4;

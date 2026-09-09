@@ -95,9 +95,9 @@ class FacadeDelegationRendererSpy extends ASFW_Widget_Renderer
 {
 	public array $calls = array();
 
-	public function render_widget($mode, $wrap = false, $language = null, $name = null, $context = null)
+	public function render_widget($mode, $wrap = false, $language = null, $name = null, $context = null, $presentation_overrides = array())
 	{
-		$this->calls[] = array(__FUNCTION__, $mode, $wrap, $language, $name, $context);
+		$this->calls[] = array(__FUNCTION__, $mode, $wrap, $language, $name, $context, $presentation_overrides);
 		return '<asfw-widget data-mode="' . esc_attr((string) $mode) . '"></asfw-widget>';
 	}
 }
@@ -156,7 +156,7 @@ final class FacadeDelegationTest extends AsfwPluginTestCase
 				$challenge->calls
 			);
 			$this->assertSame(array(array('verify', 'payload', null, 'contact-form-7', 'custom')), $verifier->calls);
-			$this->assertSame(array(array('render_widget', 'captcha', false, null, 'asfw', 'contact-form-7')), $renderer->calls);
+			$this->assertSame(array(array('render_widget', 'captcha', false, null, 'asfw', 'contact-form-7', array())), $renderer->calls);
 		} finally {
 			$this->restoreServices($plugin, $original);
 		}

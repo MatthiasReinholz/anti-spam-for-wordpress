@@ -528,6 +528,7 @@ final class ASFW_Settings_Schema {
 			'sanitize_callback' => self::select_sanitize_callback( $allowed_values, $default_value ),
 			'args'              => array(
 				'name'    => $option,
+				'default' => $default_value,
 				'hint'    => $hint,
 				'options' => $options,
 			),

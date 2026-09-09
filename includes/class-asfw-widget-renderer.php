@@ -76,7 +76,7 @@ if ( ! class_exists( 'ASFW_Widget_Renderer', false ) ) {
 			return apply_filters( 'asfw_challenge_url', $challenge_url, $context );
 		}
 
-		public function get_widget_attrs( $mode, $language = null, $name = null, $context = null, $context_resolved = false ) {
+		public function get_widget_attrs( $mode, $language = null, $name = null, $context = null, $context_resolved = false, $presentation_overrides = array() ) {
 			$floating   = $this->options_service()->get_floating();
 			$delay      = $this->options_service()->get_delay();
 			$field_name = 'asfw';
@@ -86,12 +86,32 @@ if ( ! class_exists( 'ASFW_Widget_Renderer', false ) ) {
 			if ( ! $context_resolved ) {
 				$context = $this->context_helper_service()->get_widget_context( $mode, $field_name, $context );
 			}
-			$strings = wp_json_encode( $this->get_translations( $language ) );
-			$auto    = $this->options_service()->get_auto();
-			$lazy    = $this->options_service()->get_lazy();
-			$attrs   = array(
-				'appearance'                => $this->options_service()->get_widget_appearance(),
-				'layout'                    => $this->options_service()->get_widget_layout(),
+			$strings    = wp_json_encode( $this->get_translations( $language ) );
+			$auto       = $this->options_service()->get_auto();
+			$lazy       = $this->options_service()->get_lazy();
+			$appearance = $this->options_service()->get_widget_appearance();
+			$layout     = $this->options_service()->get_widget_layout();
+			if ( is_array( $presentation_overrides ) ) {
+				$appearance_override = isset( $presentation_overrides['appearance'] ) && is_scalar( $presentation_overrides['appearance'] )
+					? strtolower( trim( (string) $presentation_overrides['appearance'] ) )
+					: '';
+				if ( 'bright' === $appearance_override ) {
+					$appearance_override = 'light';
+				}
+				if ( in_array( $appearance_override, array( 'light', 'dark' ), true ) ) {
+					$appearance = $appearance_override;
+				}
+
+				$layout_override = isset( $presentation_overrides['layout'] ) && is_scalar( $presentation_overrides['layout'] )
+					? strtolower( trim( (string) $presentation_overrides['layout'] ) )
+					: '';
+				if ( in_array( $layout_override, array( 'compact', 'extended' ), true ) ) {
+					$layout = $layout_override;
+				}
+			}
+			$attrs = array(
+				'appearance'                => $appearance,
+				'layout'                    => $layout,
 				'data-asfw-context'         => $context,
 				'data-asfw-field'           => $field_name,
 				'data-asfw-lazy'            => $lazy ? '1' : '0',
@@ -152,7 +172,7 @@ if ( ! class_exists( 'ASFW_Widget_Renderer', false ) ) {
 			return $html;
 		}
 
-		public function render_widget( $mode, $wrap = false, $language = null, $name = null, $context = null ) {
+		public function render_widget( $mode, $wrap = false, $language = null, $name = null, $context = null, $presentation_overrides = array() ) {
 			if ( $this->options_service()->is_kill_switch_enabled() ) {
 				return '';
 			}
@@ -163,7 +183,7 @@ if ( ! class_exists( 'ASFW_Widget_Renderer', false ) ) {
 			}
 			$normalized_context = $this->context_helper_service()->get_widget_context( $mode, $field_name, $context );
 			asfw_enqueue_widget_assets( $normalized_context );
-			$attrs          = $this->get_widget_attrs( $mode, $language, $field_name, $normalized_context, true );
+			$attrs          = $this->get_widget_attrs( $mode, $language, $field_name, $normalized_context, true, $presentation_overrides );
 			$signed_context = $normalized_context;
 			if ( isset( $attrs['data-asfw-context'] ) ) {
 				$signed_context = $this->context_helper_service()->normalize_context( $attrs['data-asfw-context'] );
