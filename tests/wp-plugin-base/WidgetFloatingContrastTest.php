@@ -9,7 +9,7 @@ final class WidgetFloatingContrastTest extends TestCase
     public function testEmptyFloatingStateDoesNotActivateElevatedSurface(): void
     {
         $script = file_get_contents(dirname(__DIR__, 2) . '/public/asfw-widget.js');
-        $styles = file_get_contents(dirname(__DIR__, 2) . '/public/asfw-widget.css');
+        $styles = file_get_contents(dirname(__DIR__, 2) . '/public/asfw-widget-internal.css');
 
         self::assertIsString($script);
         self::assertIsString($styles);
@@ -30,7 +30,7 @@ final class WidgetFloatingContrastTest extends TestCase
     public function testWidgetUsesCompleteExplicitLightAndDarkPalettes(): void
     {
         $script = file_get_contents(dirname(__DIR__, 2) . '/public/asfw-widget.js');
-        $styles = file_get_contents(dirname(__DIR__, 2) . '/public/asfw-widget.css');
+        $styles = file_get_contents(dirname(__DIR__, 2) . '/public/asfw-widget-internal.css');
 
         self::assertIsString($script);
         self::assertIsString($styles);
@@ -48,7 +48,7 @@ final class WidgetFloatingContrastTest extends TestCase
     public function testExtendedLayoutPlacesFullWidthIntroBeforeControl(): void
     {
         $script = file_get_contents(dirname(__DIR__, 2) . '/public/asfw-widget.js');
-        $styles = file_get_contents(dirname(__DIR__, 2) . '/public/asfw-widget.css');
+        $styles = file_get_contents(dirname(__DIR__, 2) . '/public/asfw-widget-internal.css');
 
         self::assertIsString($script);
         self::assertIsString($styles);

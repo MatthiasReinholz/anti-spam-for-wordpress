@@ -1496,3 +1496,7 @@ msgstr ""
 #: assets/admin-ui/index.js:1
 msgid "Failed to load analytics."
 msgstr ""
+
+#: includes/class-asfw-widget-renderer.php
+msgid "Try again"
+msgstr ""
