@@ -176,3 +176,69 @@ test('stylesheet failure leaves an accessible error and blocks automatic verific
   assert.equal(await page.locator('asfw-widget [role=alert]').isVisible(), true);
   assert.equal(await page.evaluate(() => new FormData(document.querySelector('form')).get('proof')), '');
 });
+
+test('stalled stylesheet exposes a bounded failure and can recover through retry', async t => {
+  const page = await browser.newPage();
+  t.after(() => page.close());
+  await page.clock.install();
+  let firstRequest;
+  let notifyRequest;
+  const requestStarted = new Promise(resolve => { notifyRequest = resolve; });
+  let requests = 0;
+  await page.route('**/asfw-widget-internal.css*', async route => {
+    requests += 1;
+    if (requests === 1) {
+      firstRequest = route;
+      notifyRequest();
+      return;
+    }
+    await route.continue();
+  });
+  await page.goto(origin, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => !!document.querySelector('asfw-widget')?.shadowRoot);
+  await requestStarted;
+  await page.clock.fastForward(10001);
+  const retry = page.getByRole('button', { name: 'Try again' });
+  assert.equal(await page.getByRole('alert').isVisible(), true);
+  assert.equal(await retry.isEnabled(), true);
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.startVerification()), false);
+  await firstRequest.abort();
+  await retry.click();
+  await page.locator('asfw-widget .asfw-control').waitFor({ state: 'visible' });
+  assert.equal(await page.getByRole('alert').isVisible(), false);
+  await page.locator('asfw-widget .asfw-control').click();
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
+  assert.equal(await page.evaluate(() => !!new FormData(document.querySelector('form')).get('proof')), true);
+});
+
+for (const operation of ['reset', 'challenge change']) {
+  test(`${operation} invalidates pending verification without overwriting a newer result`, async t => {
+    const page = await pageFor(t);
+    let releaseRequest;
+    const requestSeen = new Promise(resolve => { releaseRequest = resolve; });
+    await page.route('**/challenge', route => { releaseRequest(route); });
+    await page.evaluate(() => {
+      window.oldVerification = document.querySelector('asfw-widget').startVerification();
+    });
+    const oldRequest = await requestSeen;
+    await page.locator('asfw-widget').evaluate((el, operation) => {
+      if (operation === 'reset') el.reset();
+      else el.configure({ challengeurl: '/challenge?new=1' });
+    }, operation);
+    await page.unroute('**/challenge');
+    assert.equal(await page.locator('asfw-widget').evaluate(el => el.startVerification()), true);
+    const currentProof = await page.evaluate(() => new FormData(document.querySelector('form')).get('proof'));
+    if (operation === 'reset') {
+      const salt = `stale?expires=${Math.floor(Date.now() / 1000) + 60}`;
+      await oldRequest.fulfill({ contentType: 'application/json', body: JSON.stringify({
+        algorithm: 'SHA-256', salt, maxnumber: 10,
+        challenge: createHash('sha256').update(salt + '2').digest('hex'), signature: 'stale'
+      }) });
+    } else {
+      await oldRequest.fulfill({ status: 503, body: '' });
+    }
+    assert.equal(await page.evaluate(() => window.oldVerification), false);
+    assert.equal(await page.locator('asfw-widget').evaluate(el => el.getState()), 'verified');
+    assert.equal(await page.evaluate(() => new FormData(document.querySelector('form')).get('proof')), currentProof);
+  });
+}

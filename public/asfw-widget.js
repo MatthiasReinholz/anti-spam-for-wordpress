@@ -7,6 +7,7 @@ const ASFW_DEFAULT_STRINGS = {
   intro: 'To protect your data, we’re verifying that you are a human.',
   label: "I'm not a robot",
   required: 'Please verify before submitting.',
+  retry: 'Try again',
   verified: 'Verified',
   verifying: 'Verifying...',
   waitAlert: 'Verifying... please wait.',
@@ -52,6 +53,7 @@ class ASFWWidgetElement extends HTMLElement {
     this._challengeUrl = '';
     this._form = null;
     this._verifyPromise = null;
+    this._verificationGeneration = 0;
     this._allowNextSubmit = false;
     this._autoStarted = false;
     this._state = 'idle';
@@ -111,23 +113,6 @@ class ASFWWidgetElement extends HTMLElement {
 
   render() {
     const root = this.attachShadow({ mode: 'open' });
-    const stylesheet = document.createElement('link');
-    stylesheet.rel = 'stylesheet';
-    stylesheet.href = ASFW_WIDGET_STYLE_URL.href;
-    this._stylesReady = new Promise(resolve => {
-      stylesheet.addEventListener('load', () => {
-        this._shell.hidden = false;
-        resolve(true);
-      }, { once: true });
-      stylesheet.addEventListener('error', () => {
-        const fallback = document.createElement('p');
-        fallback.setAttribute('role', 'alert');
-        fallback.textContent = this.getStrings().error;
-        root.appendChild(fallback);
-        resolve(false);
-      }, { once: true });
-    });
-    root.appendChild(stylesheet);
     const content = document.createElement('template');
     content.innerHTML = `
       <div class="asfw-widget-shell" data-state="idle" hidden>
@@ -178,6 +163,48 @@ class ASFWWidgetElement extends HTMLElement {
     this.appendChild(this._valueInput);
 
     this._button.addEventListener('click', this._boundClick);
+    this._styleFallback = document.createElement('div');
+    this._styleFallback.hidden = true;
+    this._styleError = document.createElement('p');
+    this._styleError.setAttribute('role', 'alert');
+    this._styleRetry = document.createElement('button');
+    this._styleRetry.type = 'button';
+    this._styleRetry.addEventListener('click', () => {
+      this.clearVerification(true);
+      this._autoStarted = false;
+      this.loadStyles();
+      this.refresh();
+    });
+    this._styleFallback.append(this._styleError, this._styleRetry);
+    root.appendChild(this._styleFallback);
+    this.loadStyles();
+  }
+
+  loadStyles() {
+    this._stylesheet?.remove();
+    const stylesheet = document.createElement('link');
+    stylesheet.rel = 'stylesheet';
+    stylesheet.href = ASFW_WIDGET_STYLE_URL.href;
+    this._stylesheet = stylesheet;
+    this._styleRetry.disabled = true;
+    this._stylesReady = new Promise(resolve => {
+      const finish = loaded => {
+        window.clearTimeout(timeout);
+        stylesheet.removeEventListener('load', onLoad);
+        stylesheet.removeEventListener('error', onError);
+        this._shell.hidden = !loaded;
+        this._styleFallback.hidden = loaded;
+        this._styleRetry.disabled = false;
+        if (!loaded) stylesheet.remove();
+        resolve(loaded);
+      };
+      const onLoad = () => finish(true);
+      const onError = () => finish(false);
+      const timeout = window.setTimeout(onError, 10000);
+      stylesheet.addEventListener('load', onLoad);
+      stylesheet.addEventListener('error', onError);
+      this.shadowRoot.prepend(stylesheet);
+    });
   }
 
   refresh() {
@@ -188,6 +215,8 @@ class ASFWWidgetElement extends HTMLElement {
     }
 
     const strings = this.getStrings();
+    this._styleError.textContent = strings.error;
+    this._styleRetry.textContent = strings.retry;
     const privacyUrl = this.getPrivacyUrl();
     const privacyNewTab = this.opensPrivacyInNewTab();
     this._label.textContent = strings.label;
@@ -331,6 +360,8 @@ class ASFWWidgetElement extends HTMLElement {
   }
 
   clearVerification(clearChallenge = false) {
+    this._verificationGeneration += 1;
+    this._verifyPromise = null;
     this._valueInput.value = '';
     if (clearChallenge) {
       this._challenge = null;
@@ -487,18 +518,21 @@ class ASFWWidgetElement extends HTMLElement {
     };
   }
 
-  async ensureChallenge() {
+  async ensureChallenge(generation) {
     if (this._challenge && !this.isChallengeExpired()) {
       return this._challenge;
     }
 
-    this._challenge = await this.fetchChallenge();
+    const challenge = await this.fetchChallenge();
+    if (generation !== this._verificationGeneration) return null;
+    this._challenge = challenge;
     this._challengeIssuedAt = Date.now();
     return this._challenge;
   }
 
-  async solveChallenge(challenge) {
+  async solveChallenge(challenge, generation) {
     for (let number = 0; number <= challenge.maxnumber; number += 1) {
+      if (generation !== this._verificationGeneration) return null;
       if (await asfwSha256Hex(`${challenge.salt}${number}`) === challenge.challenge) {
         return String(number);
       }
@@ -521,6 +555,7 @@ class ASFWWidgetElement extends HTMLElement {
       return false;
     }
 
+    const generation = this._verificationGeneration;
     this._verifyPromise = (async () => {
       try {
         this.setState('verifying');
@@ -529,8 +564,11 @@ class ASFWWidgetElement extends HTMLElement {
           throw new Error('Widget stylesheet could not be loaded.');
         }
 
-        const challenge = await this.ensureChallenge();
-        const number = await this.solveChallenge(challenge);
+        if (generation !== this._verificationGeneration) return false;
+        const challenge = await this.ensureChallenge(generation);
+        if (generation !== this._verificationGeneration) return false;
+        const number = await this.solveChallenge(challenge, generation);
+        if (generation !== this._verificationGeneration) return false;
         if (number === null) {
           throw new Error('Challenge could not be solved.');
         }
@@ -547,6 +585,7 @@ class ASFWWidgetElement extends HTMLElement {
           }
         }
 
+        if (generation !== this._verificationGeneration) return false;
         this._valueInput.value = asfwBase64Encode(JSON.stringify({
           algorithm: challenge.algorithm,
           challenge: challenge.challenge,
@@ -558,13 +597,14 @@ class ASFWWidgetElement extends HTMLElement {
         this.setState('verified');
         return true;
       } catch (error) {
+        if (generation !== this._verificationGeneration) return false;
         console.error('ASFW widget verification failed.', error);
         this._valueInput.value = '';
         this._challenge = null;
         this.setState('error', this.getStrings().error);
         return false;
       } finally {
-        this._verifyPromise = null;
+        if (generation === this._verificationGeneration) this._verifyPromise = null;
       }
     })();
 
