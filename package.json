@@ -1,0 +1,6 @@
+{
+  "name": "anti-spam-for-wordpress-browser-tests",
+  "private": true,
+  "scripts": { "test:browser": "node --test tests/browser/widget.test.cjs" },
+  "devDependencies": { "playwright": "1.59.1" }
+}

@@ -1,3 +1,6 @@
+const ASFW_WIDGET_STYLE_URL = new URL('./asfw-widget-internal.css', import.meta.url);
+ASFW_WIDGET_STYLE_URL.search = new URL(import.meta.url).search;
+
 const ASFW_DEFAULT_STRINGS = {
   error: 'Verification failed. Try again later.',
   footer: 'Protected by Anti Spam for WordPress',
@@ -107,8 +110,27 @@ class ASFWWidgetElement extends HTMLElement {
   }
 
   render() {
-    this.innerHTML = `
-      <div class="asfw-widget-shell" data-state="idle">
+    const root = this.attachShadow({ mode: 'open' });
+    const stylesheet = document.createElement('link');
+    stylesheet.rel = 'stylesheet';
+    stylesheet.href = ASFW_WIDGET_STYLE_URL.href;
+    this._stylesReady = new Promise(resolve => {
+      stylesheet.addEventListener('load', () => {
+        this._shell.hidden = false;
+        resolve(true);
+      }, { once: true });
+      stylesheet.addEventListener('error', () => {
+        const fallback = document.createElement('p');
+        fallback.setAttribute('role', 'alert');
+        fallback.textContent = this.getStrings().error;
+        root.appendChild(fallback);
+        resolve(false);
+      }, { once: true });
+    });
+    root.appendChild(stylesheet);
+    const content = document.createElement('template');
+    content.innerHTML = `
+      <div class="asfw-widget-shell" data-state="idle" hidden>
         <div class="asfw-widget">
           <div class="asfw-intro" hidden></div>
           <div class="asfw-main">
@@ -134,21 +156,26 @@ class ASFWWidgetElement extends HTMLElement {
             <a class="asfw-footer-link" rel="noopener noreferrer"></a>
           </div>
         </div>
-        <input type="hidden" class="asfw-hidden-value">
       </div>
     `;
 
-    this._shell = this.querySelector('.asfw-widget-shell');
-    this._button = this.querySelector('.asfw-control');
-    this._intro = this.querySelector('.asfw-intro');
-    this._label = this.querySelector('.asfw-label');
-    this._status = this.querySelector('.asfw-status');
-    this._error = this.querySelector('.asfw-error');
-    this._footer = this.querySelector('.asfw-footer');
-    this._footerIcon = this.querySelector('.asfw-footer-icon');
-    this._footerLink = this.querySelector('.asfw-footer-link');
-    this._footerText = this.querySelector('.asfw-footer-text');
-    this._valueInput = this.querySelector('.asfw-hidden-value');
+    root.appendChild(content.content);
+
+    this._shell = root.querySelector('.asfw-widget-shell');
+    this._button = root.querySelector('.asfw-control');
+    this._intro = root.querySelector('.asfw-intro');
+    this._label = root.querySelector('.asfw-label');
+    this._status = root.querySelector('.asfw-status');
+    this._error = root.querySelector('.asfw-error');
+    this._footer = root.querySelector('.asfw-footer');
+    this._footerIcon = root.querySelector('.asfw-footer-icon');
+    this._footerLink = root.querySelector('.asfw-footer-link');
+    this._footerText = root.querySelector('.asfw-footer-text');
+    // Keep native submission, FormData and integration serializers working.
+    this._valueInput = document.createElement('input');
+    this._valueInput.type = 'hidden';
+    this._valueInput.className = 'asfw-hidden-value';
+    this.appendChild(this._valueInput);
 
     this._button.addEventListener('click', this._boundClick);
   }
@@ -168,7 +195,7 @@ class ASFWWidgetElement extends HTMLElement {
     this._intro.hidden = this.getLayout() !== 'extended';
     this._footerText.textContent = strings.footer;
     this._footer.hidden = this.hasAttribute('hidefooter');
-    this._footerIcon.hidden = this.hasAttribute('hidelogo');
+    this._footerIcon.toggleAttribute('hidden', this.hasAttribute('hidelogo'));
     this._footerLink.hidden = privacyUrl === '';
     this._footerLink.textContent = strings.privacy || 'Privacy';
     this._footerLink.href = privacyUrl || '#';
@@ -497,6 +524,10 @@ class ASFWWidgetElement extends HTMLElement {
     this._verifyPromise = (async () => {
       try {
         this.setState('verifying');
+
+        if (!await this._stylesReady) {
+          throw new Error('Widget stylesheet could not be loaded.');
+        }
 
         const challenge = await this.ensureChallenge();
         const number = await this.solveChallenge(challenge);

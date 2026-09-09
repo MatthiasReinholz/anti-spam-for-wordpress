@@ -176,7 +176,7 @@ Each challenge must be unique. Add a cache bypass rule for `/wp-json/anti-spam-f
 
 = The widget is blocked by Content Security Policy (CSP) headers =
 
-If your site sends strict CSP headers, ensure that `script-src` allows the domain serving the plugin scripts and that `style-src` permits inline styles used by the widget.
+If your site sends strict CSP headers, ensure that `script-src` allows the domain serving the plugin scripts and that `style-src` allows the domain serving the plugin styles.
 
 = Users behind a shared IP or proxy are being blocked =
 

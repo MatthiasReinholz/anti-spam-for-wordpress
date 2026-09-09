@@ -324,3 +324,32 @@ do_action('asfw_settings_integrations')
 ## License
 
 GPLv2 or later
+
+## Widget styling contract
+
+The proof-of-work widget renders its visible UI in an open Shadow DOM. Its local
+`public/asfw-widget-internal.css` owns the font, sizing, light/dark palette, states,
+icons and privacy link. Page selectors cannot style these internals. The external
+`public/asfw-widget.css` owns placement wrappers and the separate math-challenge
+and submit-delay surfaces. Those optional server-rendered surfaces remain in the
+page DOM; they are not covered by the verification card's isolation boundary.
+
+The host remains responsive to the available width. Internal sizes use a fixed
+CSS-pixel baseline independent of the theme's root font size; browser zoom still
+scales the widget. Language and direction inherit intentionally. Appearance and
+layout are configured through the existing shortcode attributes/settings, not
+page CSS. Ancestor clipping, opacity and host placement remain page concerns.
+
+The named verification input remains in light DOM so native submission, FormData
+and form-plugin serializers continue to work. Existing configure(), getState()
+and reset() methods remain on the host. No additional form-associated custom
+element API is required. The internal stylesheet resolves relative to the module
+URL and shares its cache version; changing either file updates that version.
+Permit the plugin asset origin in CSP style-src; inline style permission is not
+needed for the verification card. Render-only enqueue and late-footer loading
+remain unchanged.
+
+Run browser regressions with `npm ci`, `npx playwright install chromium`, and
+`npm run test:browser`. These exercise real computed styles under conflicting
+page rules, form serialization, reset/reconnection, automatic submission,
+translations, narrow containers and accessibility presentation modes.
