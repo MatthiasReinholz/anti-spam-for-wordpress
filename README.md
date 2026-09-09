@@ -349,7 +349,13 @@ Permit the plugin asset origin in CSP style-src; inline style permission is not
 needed for the verification card. Render-only enqueue and late-footer loading
 remain unchanged.
 
+Stylesheet loading has a ten-second deadline and an accessible retry control.
+Reset and challenge changes invalidate pending verification so a stale request
+cannot restore an old proof. Asset versions include the plugin release and
+both module and internal stylesheet timestamps.
+
 Run browser regressions with `npm ci`, `npx playwright install chromium`, and
 `npm run test:browser`. These exercise real computed styles under conflicting
 page rules, form serialization, reset/reconnection, automatic submission,
-translations, narrow containers and accessibility presentation modes.
+translations, narrow containers and accessibility presentation modes. CI runs Chromium, Firefox and WebKit;
+set `ASFW_BROWSER=firefox` or `ASFW_BROWSER=webkit` to select a local engine.

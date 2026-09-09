@@ -1,6 +1,8 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { chromium } = require('playwright');
+const { chromium, firefox, webkit } = require('playwright');
+const browserType = { chromium, firefox, webkit }[process.env.ASFW_BROWSER || 'chromium'];
+assert.ok(browserType, 'ASFW_BROWSER must be chromium, firefox, or webkit');
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -32,7 +34,7 @@ before(async () => {
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   origin = `http://127.0.0.1:${server.address().port}`;
-  browser = await chromium.launch();
+  browser = await browserType.launch();
 });
 after(async () => {
   await browser?.close();
@@ -216,7 +218,12 @@ for (const operation of ['reset', 'challenge change']) {
     const page = await pageFor(t);
     let releaseRequest;
     const requestSeen = new Promise(resolve => { releaseRequest = resolve; });
-    await page.route('**/challenge', route => { releaseRequest(route); });
+    let held = false;
+    await page.route('**/challenge', route => {
+      if (held) return route.continue();
+      held = true;
+      releaseRequest(route);
+    });
     await page.evaluate(() => {
       window.oldVerification = document.querySelector('asfw-widget').startVerification();
     });
@@ -225,7 +232,6 @@ for (const operation of ['reset', 'challenge change']) {
       if (operation === 'reset') el.reset();
       else el.configure({ challengeurl: '/challenge?new=1' });
     }, operation);
-    await page.unroute('**/challenge');
     assert.equal(await page.locator('asfw-widget').evaluate(el => el.startVerification()), true);
     const currentProof = await page.evaluate(() => new FormData(document.querySelector('form')).get('proof'));
     if (operation === 'reset') {

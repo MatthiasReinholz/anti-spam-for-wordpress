@@ -1,25 +1,28 @@
-/* The visual tree is private; page CSS only controls the host's placement. */
-:host { display: block; }
+/* Page CSS controls host placement; the shadow tree owns its appearance. */
+:host {
+  display: block;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+button, a {
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 .asfw-widget-shell {
   all: initial;
   display: block;
   font: 400 16px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   direction: inherit;
   text-align: start;
-  color-scheme: light;
-  -webkit-text-size-adjust: 100%;
-}
-*, *::before, *::after { box-sizing: border-box; }
-[hidden] { display: none !important; }
-button, a { font: inherit; letter-spacing: normal; text-transform: none; }
-button { border-radius: 0; box-shadow: none; background-image: none; }
-.asfw-control { min-height: 44px; }
-.asfw-control:disabled { cursor: wait; opacity: 1; }
-.asfw-footer { flex-wrap: wrap; line-height: 1.4; }
-.asfw-footer-text { overflow-wrap: anywhere; }
-.asfw-labels { overflow-wrap: anywhere; }
-.asfw-footer-link:focus-visible { outline: 2px solid var(--asfw-border-focus); outline-offset: 2px; }
-.asfw-widget-shell {
   --asfw-border: #a0a0a0;
   --asfw-border-focus: #1d4ed8;
   --asfw-surface: #ffffff;
@@ -89,6 +92,10 @@ button { border-radius: 0; box-shadow: none; background-image: none; }
 }
 
 .asfw-control {
+  background-image: none;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 44px;
   align-items: center;
   appearance: none;
   background: transparent;
@@ -102,6 +109,11 @@ button { border-radius: 0; box-shadow: none; background-image: none; }
   padding: 0;
   text-align: start;
   width: 100%;
+}
+
+.asfw-control:disabled {
+  cursor: wait;
+  opacity: 1;
 }
 
 .asfw-control:focus-visible {
@@ -170,6 +182,7 @@ button { border-radius: 0; box-shadow: none; background-image: none; }
 }
 
 .asfw-labels {
+  overflow-wrap: anywhere;
   min-width: 0;
 }
 
@@ -201,6 +214,8 @@ button { border-radius: 0; box-shadow: none; background-image: none; }
 }
 
 .asfw-footer {
+  flex-wrap: wrap;
+  line-height: 1.4;
   align-items: center;
   border-top: 1px solid color-mix(in srgb, var(--asfw-border) 55%, var(--asfw-surface));
   color: var(--asfw-muted);
@@ -224,6 +239,7 @@ button { border-radius: 0; box-shadow: none; background-image: none; }
 }
 
 .asfw-footer-text {
+  overflow-wrap: anywhere;
   white-space: normal;
 }
 
@@ -235,6 +251,11 @@ button { border-radius: 0; box-shadow: none; background-image: none; }
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 0.12em;
+}
+
+.asfw-footer-link:focus-visible {
+  outline: 2px solid var(--asfw-border-focus);
+  outline-offset: 2px;
 }
 
 .asfw-footer-link:hover {

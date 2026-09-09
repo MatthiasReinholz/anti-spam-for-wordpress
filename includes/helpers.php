@@ -36,21 +36,22 @@ function asfw_plugin_active( $name ) {
 }
 
 function asfw_asset_version( $relative_path ) {
-	$path = plugin_dir_path( ASFW_FILE ) . ltrim( $relative_path, '/' );
-	if ( file_exists( $path ) ) {
-		$mtime = filemtime( $path );
-		if ( 'public/asfw-widget.js' === $relative_path ) {
-			$internal_style = plugin_dir_path( ASFW_FILE ) . 'public/asfw-widget-internal.css';
-			if ( file_exists( $internal_style ) ) {
-				$mtime = max( $mtime, filemtime( $internal_style ) );
+	$files   = array( ltrim( $relative_path, '/' ) );
+	$version = array( ASFW_VERSION );
+	if ( 'public/asfw-widget.js' === $files[0] ) {
+		$files[] = 'public/asfw-widget-internal.css';
+	}
+	foreach ( $files as $relative_file ) {
+		$path = plugin_dir_path( ASFW_FILE ) . $relative_file;
+		if ( is_file( $path ) ) {
+			$mtime = filemtime( $path );
+			if ( false !== $mtime ) {
+				$version[] = (string) $mtime;
 			}
-		}
-		if ( false !== $mtime ) {
-			return (string) $mtime;
 		}
 	}
 
-	return ASFW_VERSION;
+	return implode( '.', $version );
 }
 
 function asfw_plugin_instance() {

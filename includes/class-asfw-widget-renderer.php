@@ -48,6 +48,7 @@ if ( ! class_exists( 'ASFW_Widget_Renderer', false ) ) {
 				'intro'     => __( 'To protect your data, we’re verifying that you are a human.', 'anti-spam-for-wordpress' ),
 				'label'     => __( 'I\'m not a robot', 'anti-spam-for-wordpress' ),
 				'privacy'   => __( 'Privacy', 'anti-spam-for-wordpress' ),
+				'retry'     => __( 'Try again', 'anti-spam-for-wordpress' ),
 				'required'  => __( 'Please verify before submitting.', 'anti-spam-for-wordpress' ),
 				'verified'  => __( 'Verified', 'anti-spam-for-wordpress' ),
 				'verifying' => __( 'Verifying...', 'anti-spam-for-wordpress' ),
