@@ -351,7 +351,7 @@ final class ASFW_Settings_Schema {
 					'asfw_settings_footer_text_field',
 					AntiSpamForWordPressPlugin::$option_footer_text,
 					__( 'Footer text', 'anti-spam-for-wordpress' ),
-					__( 'Shown in the widget footer when the footer is visible.', 'anti-spam-for-wordpress' ),
+					__( 'Shown in the widget footer when the footer is visible. Leave blank to use the automatically translated default.', 'anti-spam-for-wordpress' ),
 					'asfw_sanitize_footer_text_option'
 				),
 				self::privacy_target_field(

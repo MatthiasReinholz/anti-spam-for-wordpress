@@ -4,8 +4,9 @@ ASFW_WIDGET_STYLE_URL.search = new URL(import.meta.url).search;
 const ASFW_DEFAULT_STRINGS = {
   error: 'Verification failed. Try again later.',
   footer: 'Protected by Anti Spam for WordPress',
-  intro: 'To protect your data, we’re verifying that you are a human.',
+  intro: 'This check helps prevent spam.',
   label: "I'm not a robot",
+  privacy: 'Privacy',
   required: 'Please verify before submitting.',
   retry: 'Try again',
   verified: 'Verified',
@@ -226,7 +227,7 @@ class ASFWWidgetElement extends HTMLElement {
     this._footer.hidden = this.hasAttribute('hidefooter');
     this._footerIcon.toggleAttribute('hidden', this.hasAttribute('hidelogo'));
     this._footerLink.hidden = privacyUrl === '';
-    this._footerLink.textContent = strings.privacy || 'Privacy';
+    this._footerLink.textContent = strings.privacy;
     this._footerLink.href = privacyUrl || '#';
     this._footerLink.target = privacyNewTab ? '_blank' : '_self';
     this._valueInput.name = this.getFieldName();
@@ -289,8 +290,14 @@ class ASFWWidgetElement extends HTMLElement {
 
     try {
       const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') {
-        return { ...ASFW_DEFAULT_STRINGS, ...parsed };
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        const strings = { ...ASFW_DEFAULT_STRINGS };
+        for (const key of Object.keys(strings)) {
+          if (Object.hasOwn(parsed, key) && typeof parsed[key] === 'string' && parsed[key].trim() !== '') {
+            strings[key] = parsed[key];
+          }
+        }
+        return strings;
       }
     } catch (error) {
       console.warn('ASFW widget strings could not be parsed.', error);

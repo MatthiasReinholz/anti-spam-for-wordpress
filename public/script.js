@@ -6,7 +6,7 @@
   const defaultFieldName = runtime.defaultFieldName || 'asfw';
   const submitDelayMessageTemplate = typeof runtime.submitDelayMessage === 'string' && runtime.submitDelayMessage.includes('%s')
     ? runtime.submitDelayMessage
-    : 'Please wait %ss...';
+    : 'Please wait %s s...';
   const submitButtonStates = new WeakMap();
 
   function getFieldName(el) {

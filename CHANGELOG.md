@@ -4,6 +4,13 @@ All notable changes to this project should be documented in this file.
 
 The format follows a simple Keep a Changelog-style layout with one section per released version and concise bullet points for user-visible changes.
 
+## [Unreleased]
+
+- Added bundled widget translations for 15 languages, including regional variants, Brazilian Portuguese, and both Norwegian written forms.
+- Use short, informal widget wording and keep English fallbacks for malformed translation values.
+- Load bundled catalogs through WordPress and translate the default footer at render time; preserve custom footer text.
+- Restore the previous locale correctly after widget language overrides, including when translation filters throw.
+
 ## [0.8.1] - 2026-08-21
 
 - Limited native comment verification to genuine browser and anonymous remote comment submissions, preserving programmatic and authenticated API comment creation.

@@ -1,0 +1,53 @@
+# Widget translations for Anti Spam for WordPress.
+# Distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Anti Spam for WordPress\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/anti-spam-for-wordpress\n"
+"PO-Revision-Date: 2026-09-12 00:00+0000\n"
+"Last-Translator: Anti Spam for WordPress contributors\n"
+"Language-Team: es_ES\n"
+"Language: es_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Domain: anti-spam-for-wordpress\n"
+
+msgid "Verification failed. Try again later."
+msgstr "La verificación ha fallado. Inténtalo de nuevo más tarde."
+
+msgid "Protected by Anti Spam for WordPress"
+msgstr "Protegido por Anti Spam for WordPress"
+
+msgid "This check helps prevent spam."
+msgstr "Esta verificación ayuda a evitar el spam."
+
+msgid "I'm not a robot"
+msgstr "No soy un robot"
+
+msgid "Privacy"
+msgstr "Privacidad"
+
+msgid "Try again"
+msgstr "Intentar de nuevo"
+
+msgid "Please verify before submitting."
+msgstr "Confirma que no eres un robot antes de enviar el formulario."
+
+msgid "Verified"
+msgstr "Verificado"
+
+msgid "Verifying..."
+msgstr "Verificando..."
+
+msgid "Verifying... please wait."
+msgstr "Verificando... espera un momento."
+
+msgid "This form requires JavaScript."
+msgstr "Este formulario necesita JavaScript."
+
+#. translators: %s: number of seconds remaining before the form can be submitted.
+#, php-format
+msgid "Please wait %s s..."
+msgstr "Espera %s s..."

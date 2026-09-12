@@ -99,7 +99,7 @@ function asfw_enqueue_scripts() {
 			'honeypotEnabled'    => $plugin ? (bool) $plugin->get_honeypot() : false,
 			'lazy'               => $plugin ? (bool) $plugin->get_lazy() : false,
 			/* translators: %s: number of seconds remaining before the form can be submitted. */
-			'submitDelayMessage' => __( 'Please wait %ss...', 'anti-spam-for-wordpress' ),
+			'submitDelayMessage' => __( 'Please wait %s s...', 'anti-spam-for-wordpress' ),
 		)
 	);
 }

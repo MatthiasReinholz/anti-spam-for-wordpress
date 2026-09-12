@@ -35,33 +35,28 @@ if ( ! class_exists( 'ASFW_Widget_Renderer', false ) ) {
 		}
 
 		public function get_translations( $language = null ) {
-			$original_language = null;
+			$switched = null !== $language && switch_to_locale( $language );
 
-			if ( null !== $language ) {
-				$original_language = get_locale();
-				switch_to_locale( $language );
+			try {
+				$translations = array(
+					'error'     => __( 'Verification failed. Try again later.', 'anti-spam-for-wordpress' ),
+					'footer'    => $this->options_service()->get_footer_text(),
+					'intro'     => __( 'This check helps prevent spam.', 'anti-spam-for-wordpress' ),
+					'label'     => __( 'I\'m not a robot', 'anti-spam-for-wordpress' ),
+					'privacy'   => __( 'Privacy', 'anti-spam-for-wordpress' ),
+					'retry'     => __( 'Try again', 'anti-spam-for-wordpress' ),
+					'required'  => __( 'Please verify before submitting.', 'anti-spam-for-wordpress' ),
+					'verified'  => __( 'Verified', 'anti-spam-for-wordpress' ),
+					'verifying' => __( 'Verifying...', 'anti-spam-for-wordpress' ),
+					'waitAlert' => __( 'Verifying... please wait.', 'anti-spam-for-wordpress' ),
+				);
+
+				return apply_filters( 'asfw_translations', $translations, $language );
+			} finally {
+				if ( $switched ) {
+					restore_previous_locale();
+				}
 			}
-
-			$translations = array(
-				'error'     => __( 'Verification failed. Try again later.', 'anti-spam-for-wordpress' ),
-				'footer'    => $this->options_service()->get_footer_text(),
-				'intro'     => __( 'To protect your data, we’re verifying that you are a human.', 'anti-spam-for-wordpress' ),
-				'label'     => __( 'I\'m not a robot', 'anti-spam-for-wordpress' ),
-				'privacy'   => __( 'Privacy', 'anti-spam-for-wordpress' ),
-				'retry'     => __( 'Try again', 'anti-spam-for-wordpress' ),
-				'required'  => __( 'Please verify before submitting.', 'anti-spam-for-wordpress' ),
-				'verified'  => __( 'Verified', 'anti-spam-for-wordpress' ),
-				'verifying' => __( 'Verifying...', 'anti-spam-for-wordpress' ),
-				'waitAlert' => __( 'Verifying... please wait.', 'anti-spam-for-wordpress' ),
-			);
-
-			$translations = apply_filters( 'asfw_translations', $translations, $language );
-
-			if ( null !== $original_language ) {
-				switch_to_locale( $original_language );
-			}
-
-			return $translations;
 		}
 
 		public function get_challenge_url( $context = null ) {

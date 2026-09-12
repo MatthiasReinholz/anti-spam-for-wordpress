@@ -359,3 +359,10 @@ Run browser regressions with `npm ci`, `npx playwright install chromium`, and
 page rules, form serialization, reset/reconnection, automatic submission,
 translations, narrow containers and accessibility presentation modes. CI runs Chromium, Firefox and WebKit;
 set `ASFW_BROWSER=firefox` or `ASFW_BROWSER=webkit` to select a local engine.
+
+## Widget translations
+
+The widget follows the current WordPress site language. Bundled PO/MO catalogs
+cover German, French, Italian, Spanish, Bulgarian, Portuguese, Polish, Hungarian,
+Swedish, Danish, Dutch, Norwegian (Bokmål and Nynorsk), Finnish, Czech and Greek,
+including regional variants. See [translation maintenance and locale behavior](docs/translations.md).
