@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.8.8
-Stable tag: 0.8.8
+Version: 0.9.0
+Stable tag: 0.9.0
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 7.1
@@ -207,6 +207,10 @@ Native browser comment forms are protected by default, including logged-in submi
 5. Floating UI example
 
 == Changelog ==
+
+= 0.9.0 =
+* Update - Localize the widget with informal site-language translations (#95).
+
 
 = 0.8.8 =
 * Fix - Isolate the verification card from theme and form-plugin CSS using Shadow DOM while preserving native form serialization.
