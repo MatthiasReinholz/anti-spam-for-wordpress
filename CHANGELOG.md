@@ -4,7 +4,7 @@ All notable changes to this project should be documented in this file.
 
 The format follows a simple Keep a Changelog-style layout with one section per released version and concise bullet points for user-visible changes.
 
-## [Unreleased]
+## [0.9.0] - 2026-09-12
 
 - Added bundled widget translations for 15 languages, including regional variants, Brazilian Portuguese, and both Norwegian written forms.
 - Use short, informal widget wording and keep English fallbacks for malformed translation values.

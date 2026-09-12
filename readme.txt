@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.8.8
-Stable tag: 0.8.8
+Version: 0.9.0
+Stable tag: 0.9.0
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 7.1
@@ -166,6 +166,16 @@ Widgets first rendered after the page head still receive the complete runtime; t
 
 == Frequently Asked Questions ==
 
+= Which languages does the widget support? =
+
+The widget follows your WordPress Site Language. Bundled translations cover German, French, Italian, Spanish, Bulgarian, Portuguese, Polish, Hungarian, Swedish, Danish, Dutch, Norwegian, Finnish, Czech and Greek. Regional variants include Brazilian Portuguese and both Norwegian written forms. The wording is short and informal. Missing translations use English.
+
+Widget labels, verification messages, retry and privacy links, the default footer, the no-JavaScript notice and submit-delay text are translated. This release does not translate the complete admin interface.
+
+Leave Footer text blank to use the translated default. Custom footer text stays unchanged. On multilingual sites, keep page caches separated by language. Clear cached pages after updating if they still show old wording.
+
+The shortcode's `language="fr_FR"` attribute overrides the widget text when that locale is available to WordPress. Install the corresponding WordPress language pack first. If the locale cannot be selected, the widget keeps the current site language.
+
 = The widget shows an error or never loads =
 
 The plugin requires the WordPress REST API. Make sure no security plugin is blocking the `/wp-json/anti-spam-for-wordpress/v1/challenge` endpoint. Check the browser console for network errors.
@@ -207,6 +217,12 @@ Native browser comment forms are protected by default, including logged-in submi
 5. Floating UI example
 
 == Changelog ==
+
+= 0.9.0 =
+* New - Add bundled widget translations for 15 languages and 38 regional locales, selected automatically from the site language.
+* Improve - Use short, informal wording for widget labels, verification messages, errors and retry controls.
+* Fix - Translate the default footer when the widget is rendered while preserving custom footer text.
+* Fix - Restore language overrides safely and keep English fallbacks for missing or malformed translation values.
 
 = 0.8.8 =
 * Fix - Isolate the verification card from theme and form-plugin CSS using Shadow DOM while preserving native form serialization.
