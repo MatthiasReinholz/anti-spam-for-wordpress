@@ -40,7 +40,7 @@ function wp_doing_ajax()
 
 function __($text, $domain = null)
 {
-    return (string) $text;
+    return apply_filters('gettext', (string) $text, (string) $text, $domain);
 }
 
 function esc_html__($text, $domain = null)
@@ -142,9 +142,22 @@ function get_locale()
 
 function switch_to_locale($locale)
 {
+    if ($locale === get_locale() || !in_array($locale, array('en_US', 'de_DE', 'fr_FR'), true)) {
+        return false;
+    }
+    $GLOBALS['asfw_test_locale_stack'][] = get_locale();
     $GLOBALS['asfw_test_locale'] = (string) $locale;
 
     return true;
+}
+
+function restore_previous_locale()
+{
+    if (empty($GLOBALS['asfw_test_locale_stack'])) {
+        return false;
+    }
+    $GLOBALS['asfw_test_locale'] = array_pop($GLOBALS['asfw_test_locale_stack']);
+    return $GLOBALS['asfw_test_locale'];
 }
 
 function load_plugin_textdomain($domain, $deprecated = false, $plugin_rel_path = false)
@@ -808,6 +821,8 @@ function asfw_test_reset_state(array $options = array(), ?array $active_plugins 
 {
     $_POST = array();
     $_GET = array();
+    $GLOBALS['asfw_test_locale'] = 'en_US';
+    $GLOBALS['asfw_test_locale_stack'] = array();
 
     $GLOBALS['asfw_test_options'] = array();
     $GLOBALS['asfw_test_transients'] = array();

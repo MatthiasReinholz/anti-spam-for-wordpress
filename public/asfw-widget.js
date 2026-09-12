@@ -6,6 +6,7 @@ const ASFW_DEFAULT_STRINGS = {
   footer: 'Protected by Anti Spam for WordPress',
   intro: 'To protect your data, we’re verifying that you are a human.',
   label: "I'm not a robot",
+  privacy: 'Privacy',
   required: 'Please verify before submitting.',
   retry: 'Try again',
   verified: 'Verified',
@@ -226,7 +227,7 @@ class ASFWWidgetElement extends HTMLElement {
     this._footer.hidden = this.hasAttribute('hidefooter');
     this._footerIcon.toggleAttribute('hidden', this.hasAttribute('hidelogo'));
     this._footerLink.hidden = privacyUrl === '';
-    this._footerLink.textContent = strings.privacy || 'Privacy';
+    this._footerLink.textContent = strings.privacy;
     this._footerLink.href = privacyUrl || '#';
     this._footerLink.target = privacyNewTab ? '_blank' : '_self';
     this._valueInput.name = this.getFieldName();

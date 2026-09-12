@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-09T13:52:42+00:00\n"
+"POT-Creation-Date: 2026-09-12T09:02:58+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: anti-spam-for-wordpress\n"
@@ -97,11 +97,6 @@ msgstr ""
 #: admin/options.php:146
 #: includes/rest-operations/settings-operations.php:81
 msgid "Custom URL"
-msgstr ""
-
-#: anti-spam-for-wordpress.php:161
-#: includes/class-asfw-options.php:65
-msgid "Protected by Anti Spam for WordPress"
 msgstr ""
 
 #: includes/admin.php:29
@@ -475,6 +470,10 @@ msgstr ""
 #: includes/class-asfw-feature-registry.php:738
 #, php-format
 msgid "Toggle the %s integration between disable and captcha modes."
+msgstr ""
+
+#: includes/class-asfw-options.php:65
+msgid "Protected by Anti Spam for WordPress"
 msgstr ""
 
 #: includes/class-asfw-privacy-policy-text.php:15
@@ -1003,7 +1002,7 @@ msgid "Footer text"
 msgstr ""
 
 #: includes/class-asfw-settings-schema.php:354
-msgid "Shown in the widget footer when the footer is visible."
+msgid "Shown in the widget footer when the footer is visible. Leave blank to use the automatically translated default."
 msgstr ""
 
 #: includes/class-asfw-settings-schema.php:360
@@ -1103,44 +1102,44 @@ msgstr ""
 msgid "Verification expired."
 msgstr ""
 
-#: includes/class-asfw-widget-renderer.php:46
+#: includes/class-asfw-widget-renderer.php:42
 #: integrations/enfold-theme.php:53
 msgid "Verification failed. Try again later."
 msgstr ""
 
-#: includes/class-asfw-widget-renderer.php:48
+#: includes/class-asfw-widget-renderer.php:44
 msgid "To protect your data, we’re verifying that you are a human."
 msgstr ""
 
-#: includes/class-asfw-widget-renderer.php:49
+#: includes/class-asfw-widget-renderer.php:45
 msgid "I'm not a robot"
 msgstr ""
 
-#: includes/class-asfw-widget-renderer.php:50
+#: includes/class-asfw-widget-renderer.php:46
 msgid "Privacy"
 msgstr ""
 
-#: includes/class-asfw-widget-renderer.php:51
+#: includes/class-asfw-widget-renderer.php:47
 msgid "Try again"
 msgstr ""
 
-#: includes/class-asfw-widget-renderer.php:52
+#: includes/class-asfw-widget-renderer.php:48
 msgid "Please verify before submitting."
 msgstr ""
 
-#: includes/class-asfw-widget-renderer.php:53
+#: includes/class-asfw-widget-renderer.php:49
 msgid "Verified"
 msgstr ""
 
-#: includes/class-asfw-widget-renderer.php:54
+#: includes/class-asfw-widget-renderer.php:50
 msgid "Verifying..."
 msgstr ""
 
-#: includes/class-asfw-widget-renderer.php:55
+#: includes/class-asfw-widget-renderer.php:51
 msgid "Verifying... please wait."
 msgstr ""
 
-#: includes/class-asfw-widget-renderer.php:210
+#: includes/class-asfw-widget-renderer.php:205
 msgid "This form requires JavaScript."
 msgstr ""
 

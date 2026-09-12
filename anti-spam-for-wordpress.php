@@ -109,6 +109,7 @@ add_shortcode(
 );
 
 function asfw_init() {
+	load_plugin_textdomain( 'anti-spam-for-wordpress', false, dirname( plugin_basename( ASFW_FILE ) ) . '/languages' );
 	if ( function_exists( 'asfw_seed_control_plane_defaults' ) ) {
 		asfw_seed_control_plane_defaults();
 	}
@@ -153,13 +154,6 @@ function asfw_activate() {
 
 	if ( get_option( AntiSpamForWordPressPlugin::$option_widget_layout, null ) === null ) {
 		update_option( AntiSpamForWordPressPlugin::$option_widget_layout, 'compact' );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_footer_text, '' ) === '' ) {
-		update_option(
-			AntiSpamForWordPressPlugin::$option_footer_text,
-			__( 'Protected by Anti Spam for WordPress', 'anti-spam-for-wordpress' )
-		);
 	}
 
 	if ( get_option( AntiSpamForWordPressPlugin::$option_privacy_new_tab, null ) === null ) {

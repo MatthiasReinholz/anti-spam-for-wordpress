@@ -248,3 +248,46 @@ for (const operation of ['reset', 'challenge change']) {
     assert.equal(await page.evaluate(() => new FormData(document.querySelector('form')).get('proof')), currentProof);
   });
 }
+
+test('shipped catalogs render localized widget states without changing form protection', async t => {
+  const { execFileSync } = require('node:child_process');
+  const catalogs = JSON.parse(execFileSync('python3', ['-c', `
+import gettext, json, pathlib, sys
+keys = {'error': 'Verification failed. Try again later.', 'footer': 'Protected by Anti Spam for WordPress',
+'intro': 'To protect your data, we’re verifying that you are a human.', 'label': "I'm not a robot",
+'privacy': 'Privacy', 'retry': 'Try again', 'required': 'Please verify before submitting.',
+'verified': 'Verified', 'verifying': 'Verifying...', 'waitAlert': 'Verifying... please wait.'}
+catalogs = {}
+for path in pathlib.Path(sys.argv[1]).glob('*.mo'):
+    with path.open('rb') as stream:
+        catalog = gettext.GNUTranslations(stream)
+    catalogs[path.stem] = {key: catalog.gettext(value) for key, value in keys.items()}
+print(json.dumps(catalogs))
+`, path.join(__dirname, '../../languages')], { encoding: 'utf8' }));
+  assert.ok(Object.keys(catalogs).length >= 17);
+  const page = await pageFor(t);
+  for (const [locale, strings] of Object.entries(catalogs)) {
+    await page.locator('asfw-widget').evaluate((widget, strings) => {
+      widget.reset();
+      widget.configure({ strings });
+    }, strings);
+    const widget = page.locator('asfw-widget');
+    assert.equal(await widget.locator('.asfw-label').textContent(), strings.label, locale);
+    assert.equal(await widget.locator('.asfw-intro').textContent(), strings.intro, locale);
+    assert.equal(await widget.locator('.asfw-footer-text').textContent(), strings.footer, locale);
+    assert.equal(await widget.locator('.asfw-footer-link').textContent(), strings.privacy, locale);
+    await page.locator('button[type="submit"]').click();
+    assert.equal(await widget.locator('.asfw-error').textContent(), strings.required, locale);
+    await widget.evaluate(widget => widget.setState('verifying'));
+    assert.equal(await widget.locator('.asfw-status').textContent(), strings.verifying, locale);
+    await page.locator('button[type="submit"]').click();
+    assert.equal(await widget.locator('.asfw-error').textContent(), strings.waitAlert, locale);
+    await widget.locator('.asfw-control').click();
+    await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
+    assert.equal(await widget.locator('.asfw-status').textContent(), strings.verified, locale);
+    assert.notEqual(await widget.locator('input[name="proof"]').inputValue(), '', locale);
+    await widget.evaluate(widget => widget.setState('error'));
+    assert.equal(await widget.locator('.asfw-error').textContent(), strings.error, locale);
+    assert.equal(await widget.locator('.asfw-widget-shell').evaluate(el => el.scrollWidth <= el.clientWidth), true, locale);
+  }
+});

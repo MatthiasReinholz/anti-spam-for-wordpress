@@ -65,7 +65,8 @@ if ( ! class_exists( 'ASFW_Options', false ) ) {
 			$default_text = __( 'Protected by Anti Spam for WordPress', 'anti-spam-for-wordpress' );
 			$footer_text  = trim( wp_strip_all_tags( (string) get_option( AntiSpamForWordPressPlugin::$option_footer_text, '' ) ) );
 
-			if ( '' === $footer_text ) {
+			// Older installations persisted the English default during activation.
+			if ( '' === $footer_text || 'Protected by Anti Spam for WordPress' === $footer_text ) {
 				return $default_text;
 			}
 
