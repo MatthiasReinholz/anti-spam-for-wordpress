@@ -20,8 +20,8 @@ msgstr "La verificación ha fallado. Inténtalo de nuevo más tarde."
 msgid "Protected by Anti Spam for WordPress"
 msgstr "Protegido por Anti Spam for WordPress"
 
-msgid "To protect your data, we’re verifying that you are a human."
-msgstr "Para proteger tus datos, estamos verificando que eres una persona."
+msgid "This check helps prevent spam."
+msgstr "Esta verificación ayuda a evitar el spam."
 
 msgid "I'm not a robot"
 msgstr "No soy un robot"
@@ -33,7 +33,7 @@ msgid "Try again"
 msgstr "Intentar de nuevo"
 
 msgid "Please verify before submitting."
-msgstr "Completa la verificación antes de enviar el formulario."
+msgstr "Confirma que no eres un robot antes de enviar el formulario."
 
 msgid "Verified"
 msgstr "Verificado"
@@ -42,12 +42,12 @@ msgid "Verifying..."
 msgstr "Verificando..."
 
 msgid "Verifying... please wait."
-msgstr "Verificando... espera, por favor."
+msgstr "Verificando... espera un momento."
 
 msgid "This form requires JavaScript."
-msgstr "Este formulario requiere JavaScript."
+msgstr "Este formulario necesita JavaScript."
 
 #. translators: %s: number of seconds remaining before the form can be submitted.
 #, php-format
-msgid "Please wait %ss..."
-msgstr "Espera %s segundos..."
+msgid "Please wait %s s..."
+msgstr "Espera %s s..."

@@ -20,8 +20,8 @@ msgstr "Vahvistus epäonnistui. Yritä myöhemmin uudelleen."
 msgid "Protected by Anti Spam for WordPress"
 msgstr "Suojauksen tarjoaa Anti Spam for WordPress"
 
-msgid "To protect your data, we’re verifying that you are a human."
-msgstr "Tietojesi suojaamiseksi tarkistamme, että olet ihminen."
+msgid "This check helps prevent spam."
+msgstr "Tämä tarkistus auttaa estämään roskapostia."
 
 msgid "I'm not a robot"
 msgstr "En ole robotti"
@@ -33,21 +33,21 @@ msgid "Try again"
 msgstr "Yritä uudelleen"
 
 msgid "Please verify before submitting."
-msgstr "Suorita vahvistus ennen lomakkeen lähettämistä."
+msgstr "Vahvista, ettet ole robotti, ennen kuin lähetät lomakkeen."
 
 msgid "Verified"
 msgstr "Vahvistettu"
 
 msgid "Verifying..."
-msgstr "Vahvistetaan..."
+msgstr "Tarkistetaan..."
 
 msgid "Verifying... please wait."
-msgstr "Vahvistetaan... odota hetki."
+msgstr "Tarkistetaan... odota hetki."
 
 msgid "This form requires JavaScript."
-msgstr "Tämä lomake vaatii JavaScriptin."
+msgstr "Tämä lomake tarvitsee JavaScriptin."
 
 #. translators: %s: number of seconds remaining before the form can be submitted.
 #, php-format
-msgid "Please wait %ss..."
-msgstr "Odota %s sekuntia..."
+msgid "Please wait %s s..."
+msgstr "Odota %s s..."

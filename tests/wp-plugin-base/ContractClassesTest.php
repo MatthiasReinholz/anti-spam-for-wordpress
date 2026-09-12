@@ -69,7 +69,7 @@ final class ContractClassesTest extends AsfwPluginTestCase
 		update_option(AntiSpamForWordPressPlugin::$option_widget_layout, 'extended');
 		$markup = $renderer->render_widget('captcha', false, null, 'asfw', 'contact-form-7');
 		$this->assertStringContainsString('layout="extended"', $markup);
-		$this->assertStringContainsString('To protect your data, we\\u2019re verifying that you are a human.', html_entity_decode($markup, ENT_QUOTES));
+		$this->assertStringContainsString('This check helps prevent spam.', html_entity_decode($markup, ENT_QUOTES));
 
 		update_option(AntiSpamForWordPressPlugin::$option_widget_layout, 'invalid');
 		$this->assertStringContainsString('layout="compact"', $renderer->render_widget('captcha', false, null, 'asfw', 'contact-form-7'));

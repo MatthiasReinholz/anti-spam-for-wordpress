@@ -15,13 +15,13 @@ msgstr ""
 "X-Domain: anti-spam-for-wordpress\n"
 
 msgid "Verification failed. Try again later."
-msgstr "Az ellenőrzés sikertelen. Próbálja újra később."
+msgstr "Az ellenőrzés nem sikerült. Próbáld újra később."
 
 msgid "Protected by Anti Spam for WordPress"
-msgstr "Az Anti Spam for WordPress védi"
+msgstr "Spamvédelem: Anti Spam for WordPress"
 
-msgid "To protect your data, we’re verifying that you are a human."
-msgstr "Adatai védelme érdekében ellenőrizzük, hogy Ön ember-e."
+msgid "This check helps prevent spam."
+msgstr "Ez az ellenőrzés segít megelőzni a spamet."
 
 msgid "I'm not a robot"
 msgstr "Nem vagyok robot"
@@ -30,10 +30,10 @@ msgid "Privacy"
 msgstr "Adatvédelem"
 
 msgid "Try again"
-msgstr "Újrapróbálkozás"
+msgstr "Próbáld újra"
 
 msgid "Please verify before submitting."
-msgstr "Kérjük, a beküldés előtt végezze el az ellenőrzést."
+msgstr "Küldés előtt erősítsd meg, hogy nem vagy robot."
 
 msgid "Verified"
 msgstr "Ellenőrizve"
@@ -42,12 +42,12 @@ msgid "Verifying..."
 msgstr "Ellenőrzés..."
 
 msgid "Verifying... please wait."
-msgstr "Ellenőrzés... kérjük, várjon."
+msgstr "Ellenőrzés... várj egy kicsit."
 
 msgid "This form requires JavaScript."
-msgstr "Ez az űrlap JavaScript használatát igényli."
+msgstr "Ehhez az űrlaphoz JavaScript szükséges."
 
 #. translators: %s: number of seconds remaining before the form can be submitted.
 #, php-format
-msgid "Please wait %ss..."
-msgstr "Kérjük, várjon %s másodpercet..."
+msgid "Please wait %s s..."
+msgstr "Várj %s mp-et..."

@@ -15,13 +15,13 @@ msgstr ""
 "X-Domain: anti-spam-for-wordpress\n"
 
 msgid "Verification failed. Try again later."
-msgstr "Проверката е неуспешна. Опитайте отново по-късно."
+msgstr "Проверката е неуспешна. Опитай пак по-късно."
 
 msgid "Protected by Anti Spam for WordPress"
 msgstr "Защитено от Anti Spam for WordPress"
 
-msgid "To protect your data, we’re verifying that you are a human."
-msgstr "За да защитим данните ви, проверяваме дали сте човек."
+msgid "This check helps prevent spam."
+msgstr "Тази проверка помага за спиране на спама."
 
 msgid "I'm not a robot"
 msgstr "Не съм робот"
@@ -30,10 +30,10 @@ msgid "Privacy"
 msgstr "Поверителност"
 
 msgid "Try again"
-msgstr "Опитайте отново"
+msgstr "Опитай пак"
 
 msgid "Please verify before submitting."
-msgstr "Моля, преминете проверката, преди да изпратите формуляра."
+msgstr "Потвърди, че не си робот, преди да изпратиш формуляра."
 
 msgid "Verified"
 msgstr "Потвърдено"
@@ -42,12 +42,12 @@ msgid "Verifying..."
 msgstr "Проверка..."
 
 msgid "Verifying... please wait."
-msgstr "Проверка... моля, изчакайте."
+msgstr "Проверка... изчакай малко."
 
 msgid "This form requires JavaScript."
 msgstr "Този формуляр изисква JavaScript."
 
 #. translators: %s: number of seconds remaining before the form can be submitted.
 #, php-format
-msgid "Please wait %ss..."
-msgstr "Моля, изчакайте %s секунди..."
+msgid "Please wait %s s..."
+msgstr "Изчакай %s сек..."

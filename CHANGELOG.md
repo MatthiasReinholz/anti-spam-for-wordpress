@@ -7,6 +7,7 @@ The format follows a simple Keep a Changelog-style layout with one section per r
 ## [Unreleased]
 
 - Added bundled widget translations for 15 languages, including regional variants, Brazilian Portuguese, and both Norwegian written forms.
+- Use short, informal widget wording and keep English fallbacks for malformed translation values.
 - Load bundled catalogs through WordPress and translate the default footer at render time; preserve custom footer text.
 - Restore the previous locale correctly after widget language overrides, including when translation filters throw.
 

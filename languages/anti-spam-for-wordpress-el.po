@@ -15,13 +15,13 @@ msgstr ""
 "X-Domain: anti-spam-for-wordpress\n"
 
 msgid "Verification failed. Try again later."
-msgstr "Η επαλήθευση απέτυχε. Δοκιμάστε ξανά αργότερα."
+msgstr "Η επαλήθευση απέτυχε. Δοκίμασε ξανά αργότερα."
 
 msgid "Protected by Anti Spam for WordPress"
 msgstr "Προστασία από το Anti Spam for WordPress"
 
-msgid "To protect your data, we’re verifying that you are a human."
-msgstr "Για να προστατεύσουμε τα δεδομένα σας, επαληθεύουμε ότι είστε άνθρωπος."
+msgid "This check helps prevent spam."
+msgstr "Αυτός ο έλεγχος βοηθά στην αποτροπή ανεπιθύμητων μηνυμάτων."
 
 msgid "I'm not a robot"
 msgstr "Δεν είμαι ρομπότ"
@@ -30,24 +30,24 @@ msgid "Privacy"
 msgstr "Απόρρητο"
 
 msgid "Try again"
-msgstr "Δοκιμάστε ξανά"
+msgstr "Δοκίμασε ξανά"
 
 msgid "Please verify before submitting."
-msgstr "Ολοκληρώστε την επαλήθευση πριν υποβάλετε τη φόρμα."
+msgstr "Επιβεβαίωσε ότι δεν είσαι ρομπότ πριν στείλεις τη φόρμα."
 
 msgid "Verified"
-msgstr "Επαληθεύτηκε"
+msgstr "Επιβεβαιώθηκε"
 
 msgid "Verifying..."
-msgstr "Επαλήθευση..."
+msgstr "Έλεγχος..."
 
 msgid "Verifying... please wait."
-msgstr "Επαλήθευση... παρακαλώ περιμένετε."
+msgstr "Έλεγχος... περίμενε λίγο."
 
 msgid "This form requires JavaScript."
-msgstr "Αυτή η φόρμα απαιτεί JavaScript."
+msgstr "Αυτή η φόρμα χρειάζεται JavaScript."
 
 #. translators: %s: number of seconds remaining before the form can be submitted.
 #, php-format
-msgid "Please wait %ss..."
-msgstr "Περιμένετε %s δευτερόλεπτα..."
+msgid "Please wait %s s..."
+msgstr "Περίμενε %s δευτ..."

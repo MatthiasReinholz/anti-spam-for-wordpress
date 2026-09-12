@@ -41,7 +41,7 @@ if ( ! class_exists( 'ASFW_Widget_Renderer', false ) ) {
 				$translations = array(
 					'error'     => __( 'Verification failed. Try again later.', 'anti-spam-for-wordpress' ),
 					'footer'    => $this->options_service()->get_footer_text(),
-					'intro'     => __( 'To protect your data, we’re verifying that you are a human.', 'anti-spam-for-wordpress' ),
+					'intro'     => __( 'This check helps prevent spam.', 'anti-spam-for-wordpress' ),
 					'label'     => __( 'I\'m not a robot', 'anti-spam-for-wordpress' ),
 					'privacy'   => __( 'Privacy', 'anti-spam-for-wordpress' ),
 					'retry'     => __( 'Try again', 'anti-spam-for-wordpress' ),

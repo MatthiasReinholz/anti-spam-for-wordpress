@@ -254,7 +254,7 @@ test('shipped catalogs render localized widget states without changing form prot
   const catalogs = JSON.parse(execFileSync('python3', ['-c', `
 import gettext, json, pathlib, sys
 keys = {'error': 'Verification failed. Try again later.', 'footer': 'Protected by Anti Spam for WordPress',
-'intro': 'To protect your data, we’re verifying that you are a human.', 'label': "I'm not a robot",
+'intro': 'This check helps prevent spam.', 'label': "I'm not a robot",
 'privacy': 'Privacy', 'retry': 'Try again', 'required': 'Please verify before submitting.',
 'verified': 'Verified', 'verifying': 'Verifying...', 'waitAlert': 'Verifying... please wait.'}
 catalogs = {}
@@ -276,6 +276,7 @@ print(json.dumps(catalogs))
     assert.equal(await widget.locator('.asfw-intro').textContent(), strings.intro, locale);
     assert.equal(await widget.locator('.asfw-footer-text').textContent(), strings.footer, locale);
     assert.equal(await widget.locator('.asfw-footer-link').textContent(), strings.privacy, locale);
+    assert.equal(await widget.locator('button').last().textContent(), strings.retry, locale);
     await page.locator('button[type="submit"]').click();
     assert.equal(await widget.locator('.asfw-error').textContent(), strings.required, locale);
     await widget.evaluate(widget => widget.setState('verifying'));
@@ -289,5 +290,32 @@ print(json.dumps(catalogs))
     await widget.evaluate(widget => widget.setState('error'));
     assert.equal(await widget.locator('.asfw-error').textContent(), strings.error, locale);
     assert.equal(await widget.locator('.asfw-widget-shell').evaluate(el => el.scrollWidth <= el.clientWidth), true, locale);
+  }
+});
+
+
+test('translation values stay text and malformed values retain English fallbacks', async t => {
+  const page = await pageFor(t);
+  const widget = page.locator('asfw-widget');
+  const literal = '<img src=x onerror="window.asfwInjected = true">';
+  await widget.evaluate((widget, literal) => widget.configure({ strings: {
+    label: literal, intro: null, privacy: '', footer: ['bad'], retry: 42,
+    required: { text: 'bad' }, verified: false, verifying: '   ', waitAlert: 'Bitte warte kurz.',
+  } }), literal);
+  assert.equal(await widget.locator('.asfw-label').textContent(), literal);
+  assert.equal(await widget.locator('img').count(), 0);
+  assert.equal(await page.evaluate(() => window.asfwInjected), undefined);
+  const strings = await widget.evaluate(widget => widget.getStrings());
+  assert.equal(strings.intro, 'This check helps prevent spam.');
+  assert.equal(strings.privacy, 'Privacy');
+  assert.equal(strings.footer, 'Protected by Anti Spam for WordPress');
+  assert.equal(strings.retry, 'Try again');
+  assert.equal(strings.required, 'Please verify before submitting.');
+  assert.equal(strings.verified, 'Verified');
+  assert.equal(strings.verifying, 'Verifying...');
+  assert.equal(strings.waitAlert, 'Bitte warte kurz.');
+  for (const invalid of ['{broken', 'null', '[]', '42', '"text"']) {
+    await widget.evaluate((widget, invalid) => widget.setAttribute('strings', invalid), invalid);
+    assert.equal(await widget.locator('.asfw-label').textContent(), "I'm not a robot");
   }
 });

@@ -20,8 +20,8 @@ msgstr "Stadfestinga mislukkast. Prøv igjen seinare."
 msgid "Protected by Anti Spam for WordPress"
 msgstr "Verna av Anti Spam for WordPress"
 
-msgid "To protect your data, we’re verifying that you are a human."
-msgstr "For å verne opplysningane dine kontrollerer vi at du er eit menneske."
+msgid "This check helps prevent spam."
+msgstr "Denne kontrollen hjelper med å stoppe søppelpost."
 
 msgid "I'm not a robot"
 msgstr "Eg er ikkje ein robot"
@@ -33,21 +33,21 @@ msgid "Try again"
 msgstr "Prøv igjen"
 
 msgid "Please verify before submitting."
-msgstr "Fullfør stadfestinga før du sender inn skjemaet."
+msgstr "Stadfest at du ikkje er ein robot før du sender inn skjemaet."
 
 msgid "Verified"
 msgstr "Stadfesta"
 
 msgid "Verifying..."
-msgstr "Stadfestar..."
+msgstr "Kontrollerer..."
 
 msgid "Verifying... please wait."
-msgstr "Stadfestar... vent litt."
+msgstr "Kontrollerer... vent litt."
 
 msgid "This form requires JavaScript."
 msgstr "Dette skjemaet krev JavaScript."
 
 #. translators: %s: number of seconds remaining before the form can be submitted.
 #, php-format
-msgid "Please wait %ss..."
-msgstr "Vent %s sekund..."
+msgid "Please wait %s s..."
+msgstr "Vent %s s..."
