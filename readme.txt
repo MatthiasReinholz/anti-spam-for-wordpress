@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.10.0
-Stable tag: 0.10.0
+Version: 0.10.1
+Stable tag: 0.10.1
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 7.1
@@ -228,6 +228,13 @@ Native WooCommerce product reviews also use the Comments protection. WooCommerce
 5. Floating UI example
 
 == Changelog ==
+
+= 0.10.1 =
+* Fix - Verify insertion of missing empty or disabled settings before reporting a successful save.
+* Fix - End stalled admin reads after the timeout even when cancellation is ignored, and keep late responses from replacing retries.
+* Fix - Clean up expired verification state even when event-table maintenance fails.
+* Fix - Bound Bunny JSON structure before decoding to prevent excessive memory use from dense responses.
+* Fix - Reject malformed proof fields without PHP warnings or consuming a valid challenge.
 
 = 0.10.0 =
 * Fix - Prevent concurrent proof reuse and rate-limit races with atomic verification state and a shared per-IP issuance quota.
