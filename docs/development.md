@@ -160,3 +160,9 @@ Foundation action references are owned by the upstream action catalog. Review an
 Managed-file manifests are collected successfully before sync changes child files. Manifest generation, output and staging errors fail validation or the update rather than yielding a partially accepted file list. Preserve nonzero exit statuses when wrapping these commands and resolve the reported error before retrying.
 
 Plugin Check writes file paths, line/column positions, result codes, error/warning types, messages and documentation links to `dist/plugin-check.json`; failure summaries include file/line locations. Retain those diagnostics when investigating a finding. The single data-feed annotation documented above is local to the validated plain-text URL and leaves other offloading checks active.
+
+### Browser and admin compatibility dependencies
+
+Keep the browser fixtures aligned with the supported WordPress versions. The root `jquery` dependency is pinned to 3.7.1 to represent WordPress 6.4; jQuery 4 changes that compatibility target and removes the package subpath used by the current fixture. Treat a major upgrade as a fixture redesign with explicit oldest-core coverage.
+
+The admin development dependencies deliberately pair `react` and `react-dom` at 18.3.1. Upgrade them together only after verifying WordPress core compatibility and replacing the mounted-test UMD loading contract where necessary. A standalone React DOM 19 proposal is incompatible with React 18. These development packages are excluded from the plugin archive, and production admin bundles use WordPress-provided dependencies. Dependabot proposals still require this compatibility review even when dependency audits report no known advisories.

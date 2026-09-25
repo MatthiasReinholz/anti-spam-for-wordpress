@@ -230,17 +230,16 @@ Native WooCommerce product reviews also use the Comments protection. WooCommerce
 == Changelog ==
 
 = 0.10.0 =
-* Fix - Fix concurrent proof reuse and rate-limit races with atomic verification state and a shared per-IP issuance quota.
-* Fix - Fix authentication policy selection for native WordPress and WooCommerce, preserve checkout/programmatic registration, and protect native product reviews consistently.
-* Fix - Fix stale browser requests and consumed-proof retries across supported providers; honor lazy loading and dynamic widget field names; keep math challenges outside cached page HTML.
-* Fix - Fix failed initialization, legacy migration and event-schema recovery, including WordPress boolean option storage; preserve existing multisite configuration and remove owned state on uninstall.
-* Fix - Fix admin save failures, timeouts, stale responses and pagination; report database read errors instead of empty logs and retain unsaved edits for retry.
-* Fix - Fix Bunny revocation/retry behavior and reject excessive remote lists before mutation; reduce repeated disposable-email lookup work and preserve previous good feeds on failure.
-* Fix - Fix runtime conflicts with other plugins by adopting isolated foundation REST and admin classes.
-* Fix - Fix Forminator's one-argument rendering hook and custom settings sections.
-* Update - Improve credential exclusion, nested event-detail redaction, proxy identity handling and privacy/feed documentation.
-* Update - Improve dependency security, regression coverage, developer guidance and release packaging.
-
+* Fix - Prevent concurrent proof reuse and rate-limit races with atomic verification state and a shared per-IP issuance quota.
+* Fix - Bind native WordPress and WooCommerce authentication to trusted handlers while preserving checkout and programmatic registration.
+* Fix - Renew consumed proofs after form requests, discard stale browser responses, and honor lazy loading and dynamic field names.
+* Fix - Recover failed initialization, migrations and event schemas while preserving existing multisite settings.
+* Fix - Report admin save and database read failures accurately, retain unsaved edits, and handle timeouts and pagination safely.
+* Fix - Make Bunny revocation retryable and reject excessive remote lists before mutation; preserve valid disposable-email feeds on refresh failure.
+* Fix - Prevent shared runtime conflicts with other plugins through isolated foundation REST and admin classes.
+* Fix - Support Forminator's one-argument rendering hook and custom settings sections.
+* Tweak - Strengthen nested event redaction, credential exclusion and trusted-proxy handling; document data processing and upgrade behavior.
+* Dev - Adopt verified wp-plugin-base 1.9.0, update dependencies, expand concurrency and browser regressions, and improve packaging and maintenance guidance.
 
 = 0.9.0 =
 * New - Add bundled widget translations for 15 languages and 38 regional locales, selected automatically from the site language.
