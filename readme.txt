@@ -101,6 +101,10 @@ If your site sends Content Security Policy headers, allow the domain serving the
 
 If your site is behind a CDN, load balancer, or another reverse proxy, add the proxy IPs or CIDR ranges to the Trusted proxies setting so the plugin can safely read forwarded client IP headers.
 
+= Disposable Domain Updates =
+
+Disposable-email checks use a bundled domain list. If you explicitly refresh it or enable background refresh, the server downloads the plain-text list from `raw.githubusercontent.com/disposable/disposable-email-domains/master/domains.txt`. No visitor email addresses or form contents are sent to the list provider; matching happens locally. The provider receives the server's IP address and normal HTTP metadata, including the site URL and WordPress version in WordPress's default user agent. No account or API key is required. See the [source project and license](https://github.com/disposable/disposable-email-domains) and [GitHub privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
+
 = Privacy Policy Text =
 
 The Settings tab includes suggested privacy policy text for sites replacing a third-party CAPTCHA-style service with Anti Spam for WordPress. Choose and save the privacy text legal basis before generating the suggested text. The text is generated from the saved plugin settings, including visitor binding, event logging, disposable email checks, content heuristics, guard features, and Bunny Shield sync. The same suggestion is registered with the WordPress Privacy Policy Guide when that WordPress feature is available.

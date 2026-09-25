@@ -12,6 +12,7 @@ class ASFW_Disposable_Email_Module {
 
 	const OPTION_AUTO_REFRESH = 'asfw_disposable_email_auto_refresh';
 
+	// phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- Server-side plain-text domain data; validated into local options, never enqueued or executed.
 	const DEFAULT_REMOTE_URL = 'https://raw.githubusercontent.com/disposable/disposable-email-domains/master/domains.txt';
 
 	const MAX_REMOTE_BYTES = 8 * 1024 * 1024;
