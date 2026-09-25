@@ -53,6 +53,14 @@ function asfw_event_detail_path_is_sensitive( array $path ) {
 			return true;
 		}
 	}
+	foreach ( $path as $segment ) {
+		$normalized_key = strtolower( preg_replace( '/[^a-zA-Z0-9]/', '', (string) $segment ) );
+		// Include common form fields and HTTP headers without treating counters as credentials.
+		if ( in_array( $normalized_key, array( 'pwd', 'pass', 'userpass', 'credentials', 'passwords' ), true )
+			|| preg_match( '/(?:password|passwd|authorization|cookie|apikey|accesskey|privatekey)$/', $normalized_key ) ) {
+			return true;
+		}
+	}
 	return false;
 }
 

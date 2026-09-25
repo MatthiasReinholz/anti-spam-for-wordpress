@@ -144,7 +144,7 @@ add_filter(
 				&& isset( $_POST['woocommerce-lost-password-nonce'] )
 			) {
 			$nonce_valid = function_exists( 'wp_verify_nonce' )
-				&& wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['woocommerce-lost-password-nonce'] ) ), 'woocommerce-lost-password' );
+				&& wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['woocommerce-lost-password-nonce'] ) ), 'lost_password' );
 			if ( $nonce_valid ) {
 				return $errors;
 			}

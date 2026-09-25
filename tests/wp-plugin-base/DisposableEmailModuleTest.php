@@ -273,6 +273,78 @@ final class DisposableEmailModuleTest extends AsfwPluginTestCase
         $this->assertNotSame('', $module->get_last_refresh());
     }
 
+    /** @dataProvider failedRefreshWrites */
+    public function test_failed_refresh_write_reports_failure_and_remains_retryable(string $failedOption, string $errorCode, array $persistedDomains): void
+    {
+        $this->enableEventLogging();
+        $module = ASFW_Control_Plane::disposable_module();
+        update_option(ASFW_Disposable_Email_Module::OPTION_DOMAINS, array('cached.example'));
+        update_option(ASFW_Disposable_Email_Module::OPTION_LAST_REFRESH, '2020-01-01 00:00:00');
+        $GLOBALS['asfw_test_option_write_failures'][$failedOption] = true;
+        $response = array('response' => array('code' => 200), 'body' => "NEW.EXAMPLE\nnew.example");
+        asfw_test_queue_http_response($response);
+
+        $this->assertSame($persistedDomains, $module->refresh_from_source(true));
+        $this->assertSame($persistedDomains, get_option(ASFW_Disposable_Email_Module::OPTION_DOMAINS));
+        $this->assertSame($errorCode, $module->get_last_refresh_error()->get_error_code());
+        $this->assertSame('2020-01-01 00:00:00', $module->get_last_refresh());
+        $this->assertTrue($module->needs_refresh());
+        $events = ASFW_Control_Plane::store()->fetch_events(array('type' => 'disposable_list_refreshed'));
+        $this->assertCount(1, $events);
+        $this->assertSame('failed', $events[0]['decision']);
+
+        unset($GLOBALS['asfw_test_option_write_failures'][$failedOption]);
+        asfw_test_queue_http_response($response);
+        $this->assertSame(array('new.example'), $module->refresh_from_source(true));
+        $this->assertNull($module->get_last_refresh_error());
+        $this->assertFalse($module->needs_refresh());
+    }
+
+    public static function failedRefreshWrites(): array
+    {
+        return array(
+            'domain list' => array(ASFW_Disposable_Email_Module::OPTION_DOMAINS, 'asfw_disposable_persistence_failed', array('cached.example')),
+            'refresh timestamp' => array(ASFW_Disposable_Email_Module::OPTION_LAST_REFRESH, 'asfw_disposable_refresh_time_failed', array('new.example')),
+        );
+    }
+
+    public function test_unchanged_domain_list_is_successful_when_option_update_returns_false(): void
+    {
+        $module = ASFW_Control_Plane::disposable_module();
+        update_option(ASFW_Disposable_Email_Module::OPTION_DOMAINS, array('cached.example'));
+        update_option(ASFW_Disposable_Email_Module::OPTION_LAST_REFRESH, '2020-01-01 00:00:00');
+        // WordPress also returns false when the desired value is already stored.
+        $GLOBALS['asfw_test_option_write_failures'][ASFW_Disposable_Email_Module::OPTION_DOMAINS] = true;
+        asfw_test_queue_http_response(array('response' => array('code' => 200), 'body' => 'CACHED.EXAMPLE'));
+
+        $this->assertSame(array('cached.example'), $module->refresh_from_source(true));
+        $this->assertNull($module->get_last_refresh_error());
+        $this->assertFalse($module->needs_refresh());
+    }
+
+    public function test_failed_feed_persistence_propagates_to_maintenance_and_cli(): void
+    {
+        update_option('asfw_feature_disposable_email_enabled', 1);
+        update_option('asfw_feature_disposable_email_background_enabled', 1);
+        update_option('asfw_feature_disposable_email_mode', 'log');
+        update_option(ASFW_Disposable_Email_Module::OPTION_DOMAINS, array('cached.example'));
+        update_option(ASFW_Disposable_Email_Module::OPTION_LAST_REFRESH, '2020-01-01 00:00:00');
+        update_option(ASFW_Maintenance::OPTION_LAST_RUN, '2020-01-01 00:00:00');
+        $GLOBALS['asfw_test_option_write_failures'][ASFW_Disposable_Email_Module::OPTION_DOMAINS] = true;
+        $response = array('response' => array('code' => 200), 'body' => 'new.example');
+        asfw_test_queue_http_response($response);
+
+        $result = ASFW_Control_Plane::instance()['maintenance']->run();
+        $this->assertInstanceOf(WP_Error::class, $result);
+        $this->assertSame('asfw_disposable_persistence_failed', $result->get_error_code());
+        $this->assertSame('2020-01-01 00:00:00', get_option(ASFW_Maintenance::OPTION_LAST_RUN));
+
+        asfw_test_queue_http_response($response);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The domain feed could not be saved. Please retry the refresh.');
+        ASFW_Control_Plane::instance()['cli']->disposable(array('refresh'), array('yes' => true));
+    }
+
     public function test_large_feed_reduction_requires_an_explicit_policy_override(): void
     {
         $module = ASFW_Control_Plane::disposable_module();

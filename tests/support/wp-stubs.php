@@ -88,7 +88,10 @@ function wp_unslash($value)
 
 function wp_verify_nonce($nonce, $action = -1)
 {
-    unset($action);
+    if (isset($GLOBALS['asfw_test_nonce_actions'])) {
+        return is_string($nonce) && isset($GLOBALS['asfw_test_nonce_actions'][$nonce])
+            && $GLOBALS['asfw_test_nonce_actions'][$nonce] === $action;
+    }
 
     return is_string($nonce) && '' !== trim($nonce);
 }
@@ -248,6 +251,9 @@ function get_option($option, $default = false)
 
 function update_option($option, $value, $autoload = null)
 {
+    if (!empty($GLOBALS['asfw_test_option_write_failures'][$option])) {
+        return false;
+    }
     $old_value = array_key_exists($option, $GLOBALS['asfw_test_options']) ? $GLOBALS['asfw_test_options'][$option] : null;
     $GLOBALS['asfw_test_options'][$option] = $value;
     do_action('updated_option', $option, $old_value, $value);
@@ -852,6 +858,7 @@ function asfw_test_reset_state(array $options = array(), ?array $active_plugins 
 {
     $_POST = array();
     $_GET = array();
+    unset($GLOBALS['asfw_test_nonce_actions']);
     $GLOBALS['asfw_test_locale'] = 'en_US';
     $GLOBALS['asfw_test_locale_stack'] = array();
 
@@ -861,6 +868,7 @@ function asfw_test_reset_state(array $options = array(), ?array $active_plugins 
     $GLOBALS['asfw_test_action_stack'] = array();
     $GLOBALS['wpdb']->last_error = '';
     $GLOBALS['asfw_test_options'] = array();
+    $GLOBALS['asfw_test_option_write_failures'] = array();
     $GLOBALS['asfw_test_transients'] = array();
     $GLOBALS['asfw_test_http_requests'] = array();
     $GLOBALS['asfw_test_http_responses'] = array();
@@ -992,6 +1000,13 @@ class WP_Error
         }
 
         return $messages;
+    }
+
+    public function get_error_message($code = '')
+    {
+        $messages = $this->get_error_messages($code !== '' ? $code : $this->get_error_code());
+
+        return $messages[0] ?? '';
     }
 
     public function get_error_data($code = '')

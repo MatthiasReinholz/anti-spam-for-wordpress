@@ -3,6 +3,34 @@ declare(strict_types=1);
 
 final class PrivacyHardeningTest extends AsfwPluginTestCase
 {
+    public function test_extension_credentials_are_redacted_in_arrays_and_nested_json(): void
+    {
+        $credentials = array(
+            'password' => 'private-password',
+            'passwd' => 'private-passwd',
+            'pwd' => 123456,
+            'user_pass' => 'private-user-pass',
+            'Authorization' => 'Bearer private-auth',
+            'Proxy-Authorization' => 'Basic private-proxy-auth',
+            'Cookie' => 'session=private-cookie',
+            'Set-Cookie' => 'session=private-new-cookie',
+            'api_key' => 'private-api-key',
+            'apiKey' => 'private-camel-key',
+            'X-API-Key' => 'private-header-key',
+            'AccessKey' => 'private-access-key',
+            'private_key' => 'private-signing-key',
+        );
+        $details = array('extension' => $credentials, 'password_attempts' => 3, 'api_key_count' => 2, 'cookie_enabled' => true);
+        $result = asfw_sanitize_event_details($details);
+        $this->assertSame($result, asfw_sanitize_event_details(json_encode($details)));
+        foreach ($credentials as $key => $value) {
+            $this->assertSame(asfw_hash_value((string) $value, 'extension.' . strtolower($key)), $result['extension'][$key]);
+        }
+        $this->assertSame(3, $result['password_attempts']);
+        $this->assertSame(2, $result['api_key_count']);
+        $this->assertTrue($result['cookie_enabled']);
+    }
+
     public function test_numeric_sensitive_values_are_redacted_but_metrics_keep_their_types(): void
     {
         $result = asfw_sanitize_event_details(array('phone' => 41795551234, 'token' => 123456, 'attempts' => 2, 'score' => 0.5, 'blocked' => true));

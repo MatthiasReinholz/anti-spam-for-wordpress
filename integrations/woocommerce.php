@@ -4,7 +4,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/** Native authentication keeps its policy even when the URL resembles a Woo route. */
+function asfw_is_native_wordpress_auth_request() {
+	if ( ( function_exists( 'did_action' ) && did_action( 'login_init' ) > 0 )
+		|| 'wp-login.php' === ( $GLOBALS['pagenow'] ?? '' ) ) {
+		return true;
+	}
+
+	// These server entrypoints survive subdirectory installs and rewritten login URLs.
+	foreach ( array( 'SCRIPT_NAME', 'SCRIPT_FILENAME' ) as $server_key ) {
+		if ( isset( $_SERVER[ $server_key ] ) && is_string( $_SERVER[ $server_key ] )
+			&& 'wp-login.php' === basename( sanitize_text_field( wp_unslash( $_SERVER[ $server_key ] ) ) ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 function asfw_is_woocommerce_account_request() {
+	if ( asfw_is_native_wordpress_auth_request() ) {
+		return false;
+	}
+
 	$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 	if ( '' === $request_uri ) {
 		return false;
@@ -154,6 +176,9 @@ add_filter(
 		if ( $user instanceof WP_Error ) {
 			return $user;
 		}
+		if ( asfw_is_native_wordpress_auth_request() ) {
+			return $user;
+		}
 		if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) {
 			return $user;
 		}
@@ -212,6 +237,9 @@ add_filter(
 	'lostpassword_post',
 	function ( $errors ) {
 		if ( is_user_logged_in() ) {
+			return $errors;
+		}
+		if ( asfw_is_native_wordpress_auth_request() ) {
 			return $errors;
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Request shape detection is required to scope guards to WooCommerce account routes.

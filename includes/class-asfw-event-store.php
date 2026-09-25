@@ -6,7 +6,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class ASFW_Event_Store {
 
-	const DB_VERSION = 3;
+	// Reverify legacy version 3: older releases recorded it even when DDL failed.
+	const DB_VERSION = 4;
 
 	const OPTION_DB_VERSION = 'asfw_events_db_version';
 

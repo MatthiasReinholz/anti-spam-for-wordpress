@@ -306,7 +306,13 @@ class ASFW_Disposable_Email_Module {
 			)
 		);
 
+		$this->last_refresh_error = null;
 		update_option( self::OPTION_DOMAINS, $domains );
+		// An unchanged option also returns false; verify the persisted value instead.
+		if ( get_option( self::OPTION_DOMAINS, null ) !== $domains ) {
+			$this->last_refresh_error = new WP_Error( 'asfw_disposable_persistence_failed', 'The domain feed could not be saved. Please retry the refresh.' );
+			return $this->get_domains();
+		}
 
 		return $domains;
 	}
@@ -384,11 +390,18 @@ class ASFW_Disposable_Email_Module {
 			$domains = $this->get_bundled_domains();
 		}
 
-		$this->last_refresh_error = $error;
 		if ( ! is_wp_error( $error ) ) {
 			$domains = $this->set_domains( $domains );
-			update_option( self::OPTION_LAST_REFRESH, gmdate( 'Y-m-d H:i:s' ) );
+			$error   = $this->last_refresh_error;
+			if ( ! is_wp_error( $error ) ) {
+				$refreshed_at = gmdate( 'Y-m-d H:i:s' );
+				update_option( self::OPTION_LAST_REFRESH, $refreshed_at );
+				if ( get_option( self::OPTION_LAST_REFRESH, '' ) !== $refreshed_at ) {
+					$error = new WP_Error( 'asfw_disposable_refresh_time_failed', 'The domain feed refresh time could not be saved. Please retry the refresh.' );
+				}
+			}
 		}
+		$this->last_refresh_error = $error;
 
 		$this->store->record_event(
 			'disposable_list_refreshed',

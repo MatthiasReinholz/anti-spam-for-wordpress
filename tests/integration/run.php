@@ -218,18 +218,20 @@ if ($mode === 'database') {
 
     $events = new ASFW_Event_Store();
     $wpdb->query($wpdb->prepare('DROP TABLE %i', $events->get_table_name()));
-    update_option(ASFW_Event_Store::OPTION_DB_VERSION, '0');
+    // Older releases marked version 3 even when table creation failed.
+    update_option(ASFW_Event_Store::OPTION_DB_VERSION, '3');
+    delete_option('asfw_site_initialized');
     $failDdl = static fn($query) => preg_match('/^(CREATE|ALTER) TABLE/i', $query) && str_contains($query, 'asfw_events') ? 'CREATE TABLE asfw_integration_invalid (' : $query;
     $oldSuppress = $wpdb->suppress_errors(true);
     add_filter('query', $failDdl);
     try {
-        $failed = $events->maybe_upgrade_schema();
+        $failed = asfw_initialize_site();
     } finally {
         remove_filter('query', $failDdl);
         $wpdb->suppress_errors($oldSuppress);
     }
-    asfw_integration_assert(is_wp_error($failed) && get_option(ASFW_Event_Store::OPTION_DB_VERSION) === '0', 'failed DDL does not falsely advance the schema version');
-    asfw_integration_assert($events->maybe_upgrade_schema() === true && (int) get_option(ASFW_Event_Store::OPTION_DB_VERSION) === ASFW_Event_Store::DB_VERSION, 'schema creation recovers on the next attempt');
+    asfw_integration_assert($failed === false && get_option(ASFW_Event_Store::OPTION_DB_VERSION) === '3' && !get_option('asfw_site_initialized'), 'failed legacy schema repair preserves its marker and remains uninitialized');
+    asfw_integration_assert(asfw_initialize_site() === true && (int) get_option(ASFW_Event_Store::OPTION_DB_VERSION) === ASFW_Event_Store::DB_VERSION && get_option('asfw_site_initialized') === '1', 'legacy schema repair recovers through site initialization on the next attempt');
     $wpdb->query($wpdb->prepare('ALTER TABLE %i MODIFY id bigint(20) unsigned NOT NULL', $events->get_table_name()));
     update_option(ASFW_Event_Store::OPTION_DB_VERSION, '0');
     asfw_integration_assert(is_wp_error($events->maybe_upgrade_schema()) && get_option(ASFW_Event_Store::OPTION_DB_VERSION) === '0', 'schema validation rejects a correctly typed ID without auto-increment');

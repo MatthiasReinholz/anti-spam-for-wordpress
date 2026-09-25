@@ -374,11 +374,15 @@
 
   function bindProviders() {
     document.addEventListener('wpcf7submit', event => completeWithin(event.target));
+    // HTML Forms dispatches a non-bubbling event on the submitted form.
+    document.addEventListener('hf-submitted', event => completeWithin(event.target), true);
     document.addEventListener('gform/post_render', event => gravityRendered(event.detail?.formId));
     const jquery = window.jQuery;
     if (typeof jquery !== 'function') return;
     jquery(document).on('gform_post_render.asfw', (_event, formId) => gravityRendered(formId));
     jquery(document).on('forminator:form:submit:complete.asfw', event => completeWithin(event.target));
+    jquery(document).on('wpformsAjaxSubmitCompleted.asfw', event => completeWithin(event.target));
+    jquery(document).on('frmFormErrors.asfw', (_event, form) => completeWithin(form));
     jquery(document).on('ajaxComplete.asfw', (_event, _request, settings) => completeWpDiscuzInline(settings));
     jquery(document.body).on('wpdiscuz_comment_post_complete.asfw wpdiscuz_comment_post_failed.asfw', (_event, form) => completeWithin(form));
   }

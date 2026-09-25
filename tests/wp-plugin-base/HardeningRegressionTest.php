@@ -121,7 +121,53 @@ final class HardeningRegressionTest extends AsfwPluginTestCase
         $this->assertFalse($store->record_event('fixture'));
         $GLOBALS['asfw_test_schema_failure'] = false;
         $this->assertTrue($store->install());
+        $this->assertSame((string) ASFW_Event_Store::DB_VERSION, get_option(ASFW_Event_Store::OPTION_DB_VERSION));
+    }
+
+    /** @dataProvider legacySchemaStates */
+    public function test_legacy_schema_marker_is_reverified_during_site_initialization(bool $partial): void
+    {
+        $store = ASFW_Control_Plane::store();
+        $table = $store->get_table_name();
+        if ($partial) {
+            $store->install();
+            $GLOBALS['asfw_test_schema'][$table]['indexes'] = array();
+        } else {
+            unset($GLOBALS['asfw_test_schema'][$table]);
+        }
+        update_option(ASFW_Event_Store::OPTION_DB_VERSION, '3');
+        delete_option('asfw_site_initialized');
+
+        asfw_maybe_initialize_site();
+
+        $this->assertSame((string) ASFW_Event_Store::DB_VERSION, get_option(ASFW_Event_Store::OPTION_DB_VERSION));
+        $this->assertSame('1', get_option('asfw_site_initialized'));
+        $this->assertCount(9, $GLOBALS['asfw_test_schema'][$table]['columns']);
+        $this->assertCount(5, $GLOBALS['asfw_test_schema'][$table]['indexes']);
+        $this->assertFalse($store->maybe_upgrade_schema(), 'Verified schema should not run DDL on every request.');
+    }
+
+    public static function legacySchemaStates(): array
+    {
+        return array('missing table' => array(false), 'missing indexes' => array(true));
+    }
+
+    public function test_failed_legacy_schema_repair_remains_uninitialized_and_retries(): void
+    {
+        $store = ASFW_Control_Plane::store();
+        update_option(ASFW_Event_Store::OPTION_DB_VERSION, '3');
+        delete_option('asfw_site_initialized');
+        unset($GLOBALS['asfw_test_schema'][$store->get_table_name()]);
+        $GLOBALS['asfw_test_schema_failure'] = true;
+
+        asfw_maybe_initialize_site();
+
         $this->assertSame('3', get_option(ASFW_Event_Store::OPTION_DB_VERSION));
+        $this->assertFalse(get_option('asfw_site_initialized'));
+        $GLOBALS['asfw_test_schema_failure'] = false;
+        asfw_maybe_initialize_site();
+        $this->assertSame((string) ASFW_Event_Store::DB_VERSION, get_option(ASFW_Event_Store::OPTION_DB_VERSION));
+        $this->assertSame('1', get_option('asfw_site_initialized'));
     }
 
     public function test_database_delete_failure_is_not_reported_as_successful_maintenance(): void

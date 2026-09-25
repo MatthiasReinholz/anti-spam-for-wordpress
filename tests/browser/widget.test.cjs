@@ -665,6 +665,89 @@ for (const providerEvent of ['forminator:form:submit:complete', 'wpdiscuz_commen
   });
 }
 
+for (const outcome of ['validation error', 'transport failure']) {
+  test(`WPForms ${outcome} renews only the completed form after preserving in-flight credentials`, async t => {
+    const page = await pageFor(t);
+    const counts = await guardRoutes(page);
+    await addGuards(page);
+    await guardsReady(page);
+    let receiveRequest;
+    const requestReceived = new Promise(resolve => { receiveRequest = resolve; });
+    await page.route('**/wpforms-submit', route => receiveRequest(route));
+    await page.evaluate(() => {
+      const second = document.createElement('form');
+      second.innerHTML = '<asfw-widget name="second" challengeurl="/challenge"></asfw-widget>';
+      document.body.append(second);
+      const form = document.querySelector('form');
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        window.wpformsPayload = Object.fromEntries(new FormData(form));
+        jQuery.ajax({
+          method: 'POST', url: '/wpforms-submit', data: new FormData(form), contentType: false, processData: false,
+          // WPForms emits this on the submitted form after its request settles.
+          complete: (request, status) => jQuery(form).trigger('wpformsAjaxSubmitCompleted', [request, status]),
+        });
+      });
+    });
+    await page.locator('asfw-widget').evaluateAll(elements => Promise.all(elements.map(el => el.startVerification())));
+    const secondProof = await page.locator('input[name=second]').inputValue();
+    await page.locator('form > button[type=submit]').click();
+    await page.waitForFunction(() => !!window.wpformsPayload);
+    const pending = await requestReceived;
+    const payload = await page.evaluate(() => window.wpformsPayload);
+    assert.ok(payload.proof);
+    assert.equal(await page.locator('input[name=proof]').inputValue(), payload.proof);
+    assert.equal(await page.locator('[name=asfw_submit_delay_token]').inputValue(), payload.asfw_submit_delay_token);
+    assert.equal(counts.delay, 1);
+    if (outcome === 'validation error') {
+      await pending.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: false, data: { errors: { email: 'Please use another address.' } } }) });
+    } else {
+      await pending.abort('failed');
+    }
+    await page.waitForFunction(() => document.querySelector('[name=asfw_submit_delay_token]').value === 'delay-2');
+    assert.equal(await page.locator('asfw-widget').first().evaluate(el => el.getState()), 'idle');
+    assert.equal(await page.locator('input[name=proof]').inputValue(), '');
+    assert.equal(await page.locator('input[name=second]').inputValue(), secondProof);
+    assert.equal(await page.locator('asfw-widget').nth(1).evaluate(el => el.getState()), 'verified');
+    assert.equal(counts.delay, 2);
+    assert.equal(await page.locator('asfw-widget').first().evaluate(el => el.startVerification()), true);
+  });
+}
+
+for (const provider of ['Formidable', 'HTML Forms']) {
+  test(`${provider} validation response renews only its form using the native provider event contract`, async t => {
+    const page = await pageFor(t);
+    const counts = await guardRoutes(page);
+    await addGuards(page);
+    await guardsReady(page);
+    await page.evaluate(() => {
+      const second = document.createElement('form');
+      second.innerHTML = '<asfw-widget name="second" challengeurl="/challenge"></asfw-widget>';
+      document.body.append(second);
+    });
+    await page.locator('asfw-widget').evaluateAll(elements => Promise.all(elements.map(el => el.startVerification())));
+    const secondProof = await page.locator('input[name=second]').inputValue();
+    const duringCompletion = await page.evaluate(provider => {
+      const form = document.querySelector('form');
+      const proof = new FormData(form).get('proof');
+      if (provider === 'Formidable') {
+        jQuery(document).trigger('frmFormErrors', [form, { errors: { email: 'Use another address.' } }]);
+      } else {
+        // HTML Forms constructs CustomEvent without bubbles=true.
+        form.dispatchEvent(new CustomEvent('hf-submitted'));
+      }
+      return { proof, after: new FormData(form).get('proof') };
+    }, provider);
+    assert.ok(duringCompletion.proof);
+    assert.equal(duringCompletion.after, duringCompletion.proof);
+    await page.waitForFunction(() => document.querySelector('[name=asfw_submit_delay_token]').value === 'delay-2');
+    assert.equal(await page.locator('asfw-widget').first().evaluate(el => el.getState()), 'idle');
+    assert.equal(await page.locator('input[name=proof]').inputValue(), '');
+    assert.equal(await page.locator('input[name=second]').inputValue(), secondProof);
+    assert.equal(counts.delay, 2);
+  });
+}
+
 test('Gravity native and legacy render events coalesce after a submitted form', async t => {
   const page = await pageFor(t);
   const counts = await guardRoutes(page);
