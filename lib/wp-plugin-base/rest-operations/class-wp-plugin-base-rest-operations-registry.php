@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Runtime class prefixes vary by consumer; managed filenames remain stable.
 /**
  * REST operations registry.
  *
@@ -10,13 +10,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'WP_Plugin_Base_REST_Operations_Registry' ) ) {
+if ( ! class_exists( 'ASFW_WP_Plugin_Base_REST_Operations_Registry' ) ) {
 	/**
 	 * Stores operation manifests declared by the child repository.
 	 *
 	 * @since NEXT
 	 */
-	class WP_Plugin_Base_REST_Operations_Registry {
+	class ASFW_WP_Plugin_Base_REST_Operations_Registry {
 		/**
 		 * Registered operations keyed by id.
 		 *

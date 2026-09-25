@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-25T09:46:12+00:00\n"
+"POT-Creation-Date: 2026-09-25T12:51:07+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: anti-spam-for-wordpress\n"
@@ -1312,6 +1312,12 @@ msgstr ""
 msgid "Executes the %s operation."
 msgstr ""
 
+#. translators: %s: ability name.
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-abilities-adapter.php:131
+#, php-format
+msgid "Could not register operation ability %s. Check its manifest and category."
+msgstr ""
+
 #: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-executor.php:33
 msgid "The REST operation callback is invalid."
 msgstr ""
@@ -1335,39 +1341,43 @@ msgid "The REST operation permission callback failed."
 msgstr ""
 
 #: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:91
-#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:104
-#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:113
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:108
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:123
 msgid "You are not allowed to execute this operation."
 msgstr ""
 
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:142
+msgid "The REST operation capability configuration is invalid."
+msgstr ""
+
 #. translators: 1: operation id, 2: thrown exception class name.
-#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:136
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:161
 #, php-format
 msgid "REST operation %1$s capability_callback threw an uncaught %2$s."
 msgstr ""
 
-#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:178
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:203
 msgid "You do not have the required operation scope."
 msgstr ""
 
-#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:225
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:250
 msgid "The REST operation scope filter failed."
 msgstr ""
 
-#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:233
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:258
 msgid "The REST operation scope filter returned invalid data."
 msgstr ""
 
-#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:315
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-permissions.php:340
 msgid "The REST operation scope configuration is invalid."
 msgstr ""
 
-#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-responses.php:124
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-responses.php:122
 msgid "The REST operation failed."
 msgstr ""
 
 #. translators: %s: operation id.
-#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-rest-adapter.php:96
+#: lib/wp-plugin-base/rest-operations/class-wp-plugin-base-rest-operations-rest-adapter.php:101
 #, php-format
 msgid "Skipped registering REST operation %s because its callback is missing or not callable."
 msgstr ""

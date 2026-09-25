@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Runtime class prefixes vary by consumer; managed filenames remain stable.
 /**
  * REST operation authorization helpers.
  *
@@ -10,13 +10,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'WP_Plugin_Base_REST_Operations_Permissions' ) ) {
+if ( ! class_exists( 'ASFW_WP_Plugin_Base_REST_Operations_Permissions' ) ) {
 	/**
 	 * Evaluates capability and scope constraints for operations.
 	 *
 	 * @since NEXT
 	 */
-	class WP_Plugin_Base_REST_Operations_Permissions {
+	class ASFW_WP_Plugin_Base_REST_Operations_Permissions {
 		/**
 		 * Checks whether the current request may execute the operation.
 		 *
@@ -98,12 +98,22 @@ if ( ! class_exists( 'WP_Plugin_Base_REST_Operations_Permissions' ) ) {
 				$capabilities = array( $capabilities );
 			}
 
+			if ( ! is_array( $capabilities ) ) {
+				return self::invalid_capability_configuration_error();
+			}
+
 			if ( empty( $capabilities ) ) {
 				return new WP_Error(
 					'wp_plugin_base_rest_forbidden',
 					__( 'You are not allowed to execute this operation.', 'anti-spam-for-wordpress' ),
 					array( 'status' => 403 )
 				);
+			}
+
+			foreach ( $capabilities as $capability ) {
+				if ( ! is_string( $capability ) || '' === trim( $capability ) ) {
+					return self::invalid_capability_configuration_error();
+				}
 			}
 
 			foreach ( $capabilities as $capability ) {
@@ -117,6 +127,21 @@ if ( ! class_exists( 'WP_Plugin_Base_REST_Operations_Permissions' ) ) {
 			}
 
 			return true;
+		}
+
+		/**
+		 * Rejects malformed capability metadata before evaluating permissions.
+		 *
+		 * @since NEXT
+		 *
+		 * @return WP_Error
+		 */
+		private static function invalid_capability_configuration_error() {
+			return new WP_Error(
+				'wp_plugin_base_rest_invalid_capability_configuration',
+				__( 'The REST operation capability configuration is invalid.', 'anti-spam-for-wordpress' ),
+				array( 'status' => 500 )
+			);
 		}
 
 		/**

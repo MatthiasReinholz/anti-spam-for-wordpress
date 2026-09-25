@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Runtime class prefixes vary by consumer; managed filenames remain stable.
 /**
  * REST adapter for operation manifests.
  *
@@ -10,13 +10,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'WP_Plugin_Base_REST_Operations_REST_Adapter' ) ) {
+if ( ! class_exists( 'ASFW_WP_Plugin_Base_REST_Operations_REST_Adapter' ) ) {
 	/**
 	 * Registers REST routes from operation manifests.
 	 *
 	 * @since NEXT
 	 */
-	class WP_Plugin_Base_REST_Operations_REST_Adapter {
+	class ASFW_WP_Plugin_Base_REST_Operations_REST_Adapter {
 		/**
 		 * Registers all operations with the REST API.
 		 *
@@ -55,14 +55,19 @@ if ( ! class_exists( 'WP_Plugin_Base_REST_Operations_REST_Adapter' ) ) {
 				array(
 					'methods'             => $operation['methods'],
 					'callback'            => function ( WP_REST_Request $request ) use ( $operation ) {
-						return WP_Plugin_Base_REST_Operations_Responses::prepare_rest_result(
-							WP_Plugin_Base_REST_Operations_Executor::execute( $operation, $request ),
+						return ASFW_WP_Plugin_Base_REST_Operations_Responses::prepare_rest_result(
+							ASFW_WP_Plugin_Base_REST_Operations_Executor::execute( $operation, $request ),
 							$operation,
 							$request
 						);
 					},
 					'permission_callback' => function ( WP_REST_Request $request ) use ( $plugin_slug, $operation ) {
-						return WP_Plugin_Base_REST_Operations_Permissions::check_operation( $plugin_slug, $operation, $request );
+						$prepared_request = ASFW_WP_Plugin_Base_REST_Operations_Input::prepare_rest_request( $operation, $request );
+						if ( is_wp_error( $prepared_request ) ) {
+							return $prepared_request;
+						}
+
+						return ASFW_WP_Plugin_Base_REST_Operations_Permissions::check_operation( $plugin_slug, $operation, $request );
 					},
 					'args'                => self::build_args( $operation ),
 				)
@@ -78,7 +83,7 @@ if ( ! class_exists( 'WP_Plugin_Base_REST_Operations_REST_Adapter' ) ) {
 		 * @return array<string,mixed>
 		 */
 		private static function build_args( array $operation ) {
-			return WP_Plugin_Base_REST_Operations_Input::build_args( $operation );
+			return ASFW_WP_Plugin_Base_REST_Operations_Input::build_args( $operation );
 		}
 
 		/**

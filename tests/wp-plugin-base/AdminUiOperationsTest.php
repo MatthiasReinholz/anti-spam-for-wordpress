@@ -7,7 +7,7 @@ final class WpPluginBaseAdminUiOperationsTest extends AsfwPluginTestCase
     {
         require_once dirname(__DIR__, 2) . '/lib/wp-plugin-base/admin-ui/class-wp-plugin-base-admin-ui-loader.php';
 
-        WP_Plugin_Base_Admin_UI_Loader::register_page(
+        ASFW_WP_Plugin_Base_Admin_UI_Loader::register_page(
             array(
                 'page_title' => 'Anti Spam for WordPress',
                 'menu_title' => 'Anti Spam for WordPress',

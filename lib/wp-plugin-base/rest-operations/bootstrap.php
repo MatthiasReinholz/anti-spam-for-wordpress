@@ -20,24 +20,24 @@ require_once __DIR__ . '/class-wp-plugin-base-rest-operations-abilities-adapter.
 
 $wp_plugin_base_rest_operations_bootstrap = dirname( __DIR__, 3 ) . '/includes/rest-operations/bootstrap.php';
 
-WP_Plugin_Base_REST_Operations_Registry::set_bootstrap_path( $wp_plugin_base_rest_operations_bootstrap );
+ASFW_WP_Plugin_Base_REST_Operations_Registry::set_bootstrap_path( $wp_plugin_base_rest_operations_bootstrap );
 
 add_action(
 	'rest_api_init',
 	static function () {
-		WP_Plugin_Base_REST_Operations_REST_Adapter::register_all(
+		ASFW_WP_Plugin_Base_REST_Operations_REST_Adapter::register_all(
 			'anti-spam-for-wordpress',
 			'anti-spam-for-wordpress/v1',
-			WP_Plugin_Base_REST_Operations_Registry::all()
+			ASFW_WP_Plugin_Base_REST_Operations_Registry::all()
 		);
 	}
 );
 
-if ( 'true' === 'false' ) {
+if ( filter_var( 'false', FILTER_VALIDATE_BOOLEAN ) ) {
 	add_action(
 		'wp_abilities_api_categories_init',
 		static function () {
-			WP_Plugin_Base_REST_Operations_Abilities_Adapter::register_category(
+			ASFW_WP_Plugin_Base_REST_Operations_Abilities_Adapter::register_category(
 				'anti-spam-for-wordpress',
 				'Anti Spam for WordPress'
 			);
@@ -47,10 +47,10 @@ if ( 'true' === 'false' ) {
 	add_action(
 		'wp_abilities_api_init',
 		static function () {
-			WP_Plugin_Base_REST_Operations_Abilities_Adapter::register_operations(
+			ASFW_WP_Plugin_Base_REST_Operations_Abilities_Adapter::register_operations(
 				'anti-spam-for-wordpress',
 				'anti-spam-for-wordpress',
-				WP_Plugin_Base_REST_Operations_Registry::all()
+				ASFW_WP_Plugin_Base_REST_Operations_Registry::all()
 			);
 		}
 	);

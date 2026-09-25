@@ -33,7 +33,7 @@ Hotfixes use the same model from `hotfix/x.y.z` branches.
 
 ## CI And Release Automation
 
-This project uses local managed workflow files generated from `wp-plugin-base` version `v1.8.3`.
+This project uses local managed workflow files generated from `wp-plugin-base` version `v1.9.0`.
 
 If you use a coding agent in this repository, treat `.wp-plugin-base/` as authoritative infrastructure code and avoid hand-editing generated managed files directly. Make behavior changes in the vendored foundation source/templates, then rerun sync.
 
@@ -118,3 +118,11 @@ This project inherits the foundation security model:
 - the project should keep automation credentials and host-specific CI policies tightly scoped for the pinned foundation version
 - workflow, script, and dependency-policy changes should be reviewed like privileged infrastructure changes
 - `update-foundation` only trusts published foundation releases that pass provenance checks
+
+## Child PHPCS rules
+
+Project-specific PHPCS exclusions and compatibility exceptions belong in the optional
+`.wp-plugin-base-quality-pack/phpcs-child.xml` ruleset. Create that child-owned file,
+then run foundation sync to include it from the managed `.phpcs.xml.dist`.
+Sync preserves its contents. Removing the overlay and syncing removes the include.
+Keep exceptions narrow; generated admin asset metadata is already excluded by the foundation.

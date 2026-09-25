@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Runtime class prefixes vary by consumer; managed filenames remain stable.
 /**
  * Shared operation execution helpers.
  *
@@ -10,13 +10,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'WP_Plugin_Base_REST_Operations_Executor' ) ) {
+if ( ! class_exists( 'ASFW_WP_Plugin_Base_REST_Operations_Executor' ) ) {
 	/**
 	 * Executes operation callbacks consistently across transports.
 	 *
 	 * @since NEXT
 	 */
-	class WP_Plugin_Base_REST_Operations_Executor {
+	class ASFW_WP_Plugin_Base_REST_Operations_Executor {
 		/**
 		 * Runs an operation callback and normalizes the result.
 		 *
@@ -47,7 +47,7 @@ if ( ! class_exists( 'WP_Plugin_Base_REST_Operations_Executor' ) ) {
 				);
 			}
 
-			return WP_Plugin_Base_REST_Operations_Responses::normalize( $result );
+			return ASFW_WP_Plugin_Base_REST_Operations_Responses::normalize( $result );
 		}
 
 		/**

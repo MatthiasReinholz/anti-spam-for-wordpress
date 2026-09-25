@@ -28,7 +28,7 @@ npx playwright install chromium
 npm run test:admin
 ```
 
-The admin manifest and lockfile remain child-owned when the foundation is updated. Review corresponding starter updates, regenerate this project's lockfile, and preserve its application source and React 18 pins. Audit development dependencies with `npm --prefix .wp-plugin-base-admin-ui audit --include=dev` after dependency changes.
+The admin manifest, lockfile and application source remain child-owned when the foundation is updated; sync preserves them. Review matching starter changes manually, regenerate this project's lockfile instead of copying a starter lock, and preserve its application source and React 18 pins. Dependency update proposals still require that child-specific review. Audit development dependencies with `npm --prefix .wp-plugin-base-admin-ui audit --include=dev` after dependency changes.
 
 Keep dependency overrides scoped to the consuming major version. In particular, `minimatch` v3 consumers need its callable export while v10 consumers use its named export; forcing every consumer onto one major breaks typed linting. `tests/admin/dependency-contracts.test.cjs` exercises actual TypeScript project-service parsing to protect this contract. The YAML and SVGO overrides likewise preserve their consumers' major-version APIs.
 
@@ -147,6 +147,16 @@ Use the quality-pack PHP checks and WordPress readiness checks described in `CON
 
 Release preparation takes user-facing notes from merged pull requests' `Changelog` sections, falling back to their titles when no section is present. Review the generated `readme.txt` entry and update the dated `CHANGELOG.md` entry in the release pull request before merging it.
 
-## Temporary foundation integration note
+## Foundation runtime and maintenance
 
-The project consumes verified foundation 1.8.3. Its managed PHPCS file temporarily includes the child-owned `.wp-plugin-base-quality-pack/phpcs-child.xml` overlay to retain the existing generated-asset and compatibility-loader exceptions. This is an intentional one-line managed-file divergence while upstream synchronization support awaits release. A 1.8.3 resync removes that include; restore it until upgrading to the foundation release containing overlay support. The overlay does not suppress checks on implementation files.
+The project consumes verified [foundation 1.9.0](https://github.com/MatthiasReinholz/wp-plugin-base/releases/tag/v1.9.0), commit `efa11cba9b980f400ddbbc3ca6115a3fb3aa2450`, with `RUNTIME_CLASS_PREFIX=ASFW_` explicitly set in `.wp-plugin-base.env`. Generated REST-operation and admin-loader classes use that prefix, including `ASFW_WP_Plugin_Base_REST_Operations_Registry` and `ASFW_WP_Plugin_Base_Admin_UI_Loader`. Keep the child-owned admin bootstrap reference aligned with this setting. Global aliases would defeat the isolation and must not be added.
+
+`tests/wp-plugin-base/RuntimeIsolationTest.php` loads the actual plugin together with an unprefixed foundation consumer in both orders. Both register `settings.read`; the test checks separate manifests, permission decisions, callbacks, route namespaces and admin pages. Keep this regression when changing runtime generation or bootstrap order.
+
+The optional `.wp-plugin-base-quality-pack/phpcs-child.xml` remains child-owned. Foundation sync now includes it in the generated PHPCS configuration automatically. The earlier 1.8.3 manual include workaround is no longer needed. Keep project-specific exclusions in that overlay and regenerate the managed configuration; the overlay does not suppress checks on implementation files.
+
+Foundation action references are owned by the upstream action catalog. Review and stage any custom workflow paths migrated by sync. An initial upgrade from older foundation automation must be performed manually because a running older updater cannot acquire new staging steps midway through its own run. Subsequent updates use the manifest-aware staging flow.
+
+Managed-file manifests are collected successfully before sync changes child files. Manifest generation, output and staging errors fail validation or the update rather than yielding a partially accepted file list. Preserve nonzero exit statuses when wrapping these commands and resolve the reported error before retrying.
+
+Plugin Check writes file paths, line/column positions, result codes, error/warning types, messages and documentation links to `dist/plugin-check.json`; failure summaries include file/line locations. Retain those diagnostics when investigating a finding. The single data-feed annotation documented above is local to the validated plain-text URL and leaves other offloading checks active.
