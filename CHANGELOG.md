@@ -4,6 +4,14 @@ All notable changes to this project should be documented in this file.
 
 The format follows a simple Keep a Changelog-style layout with one section per released version and concise bullet points for user-visible changes.
 
+## [0.10.1] - 2026-09-25
+
+- Verify missing false, zero and empty settings are persisted before reporting a successful save; preserve literal-false extension values.
+- Settle admin read deadlines independently of transport cancellation, permit explicit retry, and ignore late responses.
+- Drain expired verification state before event-table maintenance so logging failures cannot block cleanup.
+- Bound Bunny response bytes, JSON nesting and structural allocations before decoding while retaining valid large flat content.
+- Reject malformed proof inputs and salt parameters without PHP warnings or consuming valid verification state.
+
 ## [0.10.0] - 2026-09-25
 
 - Prevent concurrent proof reuse and quota races with atomic database state and a shared per-IP issuance limit.

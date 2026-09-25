@@ -230,12 +230,11 @@ Native WooCommerce product reviews also use the Comments protection. WooCommerce
 == Changelog ==
 
 = 0.10.1 =
-* Fix - Fix failed insertion of empty or disabled settings being reported as a successful save.
-* Fix - Fix admin reads remaining stuck when a transport ignores cancellation; allow explicit retry and reject late responses.
-* Fix - Fix expired verification-state cleanup being skipped after event-table failures.
-* Fix - Fix excessive memory use when decoding structurally dense Bunny responses.
-* Fix - Fix PHP warnings from malformed proof fields while preserving controlled rejection.
-
+* Fix - Verify insertion of missing empty or disabled settings before reporting a successful save.
+* Fix - End stalled admin reads after the timeout even when cancellation is ignored, and keep late responses from replacing retries.
+* Fix - Clean up expired verification state even when event-table maintenance fails.
+* Fix - Bound Bunny JSON structure before decoding to prevent excessive memory use from dense responses.
+* Fix - Reject malformed proof fields without PHP warnings or consuming a valid challenge.
 
 = 0.10.0 =
 * Fix - Prevent concurrent proof reuse and rate-limit races with atomic verification state and a shared per-IP issuance quota.
