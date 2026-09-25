@@ -373,7 +373,7 @@ if ( ! function_exists( 'asfw_rest_operation_settings_update' ) ) {
 	 *
 	 * @param WP_REST_Request     $request Request.
 	 * @param array<string,mixed> $operation Operation metadata.
-	 * @return array<string,mixed>
+	 * @return array<string,mixed>|WP_Error
 	 */
 	function asfw_rest_operation_settings_update( $request, array $operation ) {
 		unset( $operation );
@@ -406,10 +406,7 @@ if ( ! function_exists( 'asfw_rest_operation_settings_update' ) ) {
 
 			$old_value = get_option( $option );
 
-			if ( is_string( $raw_value ) ) {
-				$raw_value = wp_unslash( $raw_value );
-			}
-
+			// REST request parameters are already unslashed, including decoded JSON.
 			if ( isset( $callbacks[ $option ] ) && is_callable( $callbacks[ $option ] ) ) {
 				$sanitized = call_user_func( $callbacks[ $option ], $raw_value );
 			} else {
@@ -417,6 +414,16 @@ if ( ! function_exists( 'asfw_rest_operation_settings_update' ) ) {
 			}
 
 			update_option( $option, $sanitized );
+			if ( ! asfw_rest_option_values_equal( get_option( $option ), $sanitized ) ) {
+				return new WP_Error(
+					'asfw_settings_save_failed',
+					__( 'Some settings could not be saved. Your edits are retained; retry saving after checking the database connection.', 'anti-spam-for-wordpress' ),
+					array(
+						'status'  => 503,
+						'updated' => $updated,
+					)
+				);
+			}
 			if ( class_exists( 'ASFW_Settings_Registrar', false ) ) {
 				ASFW_Settings_Registrar::sync_legacy_feature_options( $option );
 			}

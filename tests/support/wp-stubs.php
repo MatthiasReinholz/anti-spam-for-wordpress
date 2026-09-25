@@ -27,6 +27,7 @@ $GLOBALS['asfw_test_privacy_policy_content'] = $GLOBALS['asfw_test_privacy_polic
 $GLOBALS['asfw_test_locale'] = $GLOBALS['asfw_test_locale'] ?? 'en_US';
 $GLOBALS['asfw_active_plugins'] = $GLOBALS['asfw_active_plugins'] ?? array(
 	'woocommerce/woocommerce.php',
+	'forminator/forminator.php',
 	'html-forms/html-forms.php',
 	'wpdiscuz/class.WpdiscuzCore.php',
 );
@@ -63,6 +64,17 @@ function esc_attr($text)
 function wp_kses($content, $allowed_html)
 {
     return (string) $content;
+}
+
+/** Model the ASCII username normalization used by wp_authenticate(). */
+function sanitize_user($username, $strict = false)
+{
+    $raw = $username;
+    $username = strip_tags((string) $username);
+    $username = preg_replace('/%[a-fA-F0-9]{2}|&.+?;/', '', $username);
+    if ($strict) { $username = preg_replace('/[^a-z0-9 _.@-]/i', '', $username); }
+    $username = preg_replace('/\s+/', ' ', trim($username));
+    return apply_filters('sanitize_user', $username, $raw, $strict);
 }
 
 function sanitize_text_field($value)
@@ -251,7 +263,14 @@ function get_option($option, $default = false)
 
 function update_option($option, $value, $autoload = null)
 {
+    // WordPress compares missing options with its default false before inserting.
+    if ($value === false && !array_key_exists($option, $GLOBALS['asfw_test_options'])) {
+        return false;
+    }
     if (!empty($GLOBALS['asfw_test_option_write_failures'][$option])) {
+        if (is_int($GLOBALS['asfw_test_option_write_failures'][$option])) {
+            --$GLOBALS['asfw_test_option_write_failures'][$option];
+        }
         return false;
     }
     $old_value = array_key_exists($option, $GLOBALS['asfw_test_options']) ? $GLOBALS['asfw_test_options'][$option] : null;
@@ -263,6 +282,12 @@ function update_option($option, $value, $autoload = null)
 
 function add_option($option, $value = '', $deprecated = '', $autoload = false)
 {
+    if (!empty($GLOBALS['asfw_test_option_write_failures'][$option])) {
+        if (is_int($GLOBALS['asfw_test_option_write_failures'][$option])) {
+            --$GLOBALS['asfw_test_option_write_failures'][$option];
+        }
+        return false;
+    }
     if (array_key_exists($option, $GLOBALS['asfw_test_options'])) {
         return false;
     }

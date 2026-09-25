@@ -7,13 +7,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( asfw_plugin_active( 'forminator' ) ) {
 	add_action(
 		'forminator_render_button_markup',
-		function ( $html, $form_id ) {
-			unset( $form_id );
-
+		function ( $html ) {
 			return asfw_forminator_render_widget( $html );
 		},
 		10,
-		2
+		1
 	);
 
 	add_action(

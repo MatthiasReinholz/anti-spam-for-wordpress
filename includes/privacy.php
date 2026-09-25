@@ -12,11 +12,11 @@ function asfw_hash_value( $value, $purpose = 'generic' ) {
 }
 
 /** Bound work as well as output for extension-provided, potentially recursive details. */
-function asfw_sanitize_event_detail_value( $value, $path = array(), &$budget = null ) {
+function asfw_sanitize_event_detail_value( $value, $path = array(), &$budget = null, $depth = 0 ) {
 	if ( null === $budget ) {
 		$budget = 200;
 	}
-	if ( --$budget < 0 || count( $path ) > 8 ) {
+	if ( --$budget < 0 || count( $path ) > 8 || $depth > 8 ) {
 		return '[truncated]';
 	}
 	if ( is_array( $value ) || is_object( $value ) ) {
@@ -33,7 +33,7 @@ function asfw_sanitize_event_detail_value( $value, $path = array(), &$budget = n
 			}
 			// Identity can occur in extension-supplied keys as well as values.
 			$safe_key               = asfw_private_detail_text( (string) $key, array( 'key' ) );
-			$sanitized[ $safe_key ] = asfw_sanitize_event_detail_value( $child_value, array_merge( $path, array( (string) $key ) ), $budget );
+			$sanitized[ $safe_key ] = asfw_sanitize_event_detail_value( $child_value, array_merge( $path, array( (string) $key ) ), $budget, $depth + 1 );
 		}
 		return $sanitized;
 	}
@@ -43,7 +43,25 @@ function asfw_sanitize_event_detail_value( $value, $path = array(), &$budget = n
 	if ( is_bool( $value ) || is_int( $value ) || is_float( $value ) || null === $value ) {
 		return $value;
 	}
+	if ( is_string( $value ) && strlen( $value ) <= 8192 ) {
+		$trimmed = ltrim( $value );
+		if ( '' !== $trimmed && in_array( $trimmed[0], array( '{', '[', '"' ), true ) ) {
+			$decoded = json_decode( $value, true, 16 );
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return '[truncated]';
+			}
+			// Nested serialized errors need the same privacy rules and shared limits.
+			return asfw_sanitize_event_detail_value( $decoded, $path, $budget, $depth + 1 );
+		}
+	}
 	return asfw_private_detail_text( (string) $value, $path );
+}
+
+/** Credential fields must never participate in content analysis. */
+function asfw_field_is_credential( $field_name ) {
+	$normalized_key = strtolower( preg_replace( '/[^a-zA-Z0-9]/', '', (string) $field_name ) );
+	return in_array( $normalized_key, array( 'pass', 'pass1', 'pass2', 'pass1text', 'pass2text', 'grecaptcharesponse', 'hcaptcharesponse', 'cfturnstileresponse' ), true )
+		|| 1 === preg_match( '/(?:passwords?|passwd|pwd|userpass|credentials|authorization|cookie|apikey|accesskey|privatekey|token|secret|salt|signature|nonce)(?:[0-9]+|confirmation|confirm|current|new|old|repeat)?$/', $normalized_key );
 }
 
 function asfw_event_detail_path_is_sensitive( array $path ) {
@@ -54,10 +72,8 @@ function asfw_event_detail_path_is_sensitive( array $path ) {
 		}
 	}
 	foreach ( $path as $segment ) {
-		$normalized_key = strtolower( preg_replace( '/[^a-zA-Z0-9]/', '', (string) $segment ) );
 		// Include common form fields and HTTP headers without treating counters as credentials.
-		if ( in_array( $normalized_key, array( 'pwd', 'pass', 'userpass', 'credentials', 'passwords' ), true )
-			|| preg_match( '/(?:password|passwd|authorization|cookie|apikey|accesskey|privatekey)$/', $normalized_key ) ) {
+		if ( asfw_field_is_credential( $segment ) ) {
 			return true;
 		}
 	}
@@ -103,7 +119,7 @@ function asfw_sanitize_event_details( $details ) {
 			// Failed structured input must not fall back to unsanitized serialized secrets.
 			return array( '_truncated' => true );
 		}
-		$details = is_array( $decoded ) ? $decoded : array( 'message' => $details );
+		$details = is_array( $decoded ) ? $decoded : array( 'message' => is_string( $decoded ) ? $decoded : $details );
 	}
 	return asfw_sanitize_event_detail_value( $details );
 }

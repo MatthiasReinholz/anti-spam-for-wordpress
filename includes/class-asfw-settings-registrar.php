@@ -44,20 +44,13 @@ final class ASFW_Settings_Registrar {
 
 		self::register_external_settings();
 
-		foreach ( ASFW_Settings_Definitions::get_sections() as $section ) {
+		$sections = ASFW_Settings_Definitions::get_sections();
+		foreach ( $sections as $section ) {
 			ASFW_Settings_Renderer::register_settings_section( $section );
 		}
 
-		$section_order = array(
-			'asfw_integrations_settings_section',
-			'asfw_general_settings_section',
-			'asfw_security_settings_section',
-			'asfw_widget_settings_section',
-			'asfw_control_plane_settings_section',
-			'asfw_bunny_settings_section',
-		);
-
-		foreach ( $section_order as $section_id ) {
+		foreach ( $sections as $section ) {
+			$section_id = $section['id'];
 			if ( empty( $fields_by_section[ $section_id ] ) ) {
 				continue;
 			}

@@ -1,4 +1,4 @@
-import { createElement, useState } from '@wordpress/element';
+import { createElement, useEffect, useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import {
 	Button,
@@ -7,6 +7,7 @@ import {
 	CardHeader,
 	CheckboxControl,
 	Flex,
+	Notice,
 	Panel,
 	PanelBody,
 	SelectControl,
@@ -160,14 +161,46 @@ function PrivacyPolicyTextCard( {
 	isSaving,
 } ) {
 	const [ copied, setCopied ] = useState( false );
+	const [ copyError, setCopyError ] = useState( '' );
+	const copyTimer = useRef();
+	const mounted = useRef( false );
 	const text = String( payload?.text || '' );
 	const hasGeneratedText = text !== '';
 
+	useEffect( () => {
+		mounted.current = true;
+		return () => {
+			mounted.current = false;
+			window.clearTimeout( copyTimer.current );
+		};
+	}, [] );
+
 	const copyText = async () => {
-		if ( window.navigator?.clipboard?.writeText ) {
+		setCopyError( '' );
+		setCopied( false );
+		window.clearTimeout( copyTimer.current );
+		try {
+			if ( ! window.navigator?.clipboard?.writeText ) {
+				throw new Error( 'Clipboard unavailable' );
+			}
 			await window.navigator.clipboard.writeText( text );
+			if ( ! mounted.current ) {
+				return;
+			}
 			setCopied( true );
-			window.setTimeout( () => setCopied( false ), 2000 );
+			copyTimer.current = window.setTimeout(
+				() => setCopied( false ),
+				2000
+			);
+		} catch {
+			if ( mounted.current ) {
+				setCopyError(
+					__(
+						'Automatic copying is unavailable. Select the suggested text and copy it manually.',
+						'anti-spam-for-wordpress'
+					)
+				);
+			}
 		}
 	};
 
@@ -267,6 +300,13 @@ function PrivacyPolicyTextCard( {
 								'anti-spam-for-wordpress'
 							)
 						)
+				  )
+				: null,
+			copyError
+				? createElement(
+						Notice,
+						{ status: 'warning', isDismissible: false },
+						copyError
 				  )
 				: null
 		)

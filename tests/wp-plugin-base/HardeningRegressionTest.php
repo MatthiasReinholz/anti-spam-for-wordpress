@@ -163,7 +163,7 @@ final class HardeningRegressionTest extends AsfwPluginTestCase
         asfw_maybe_initialize_site();
 
         $this->assertSame('3', get_option(ASFW_Event_Store::OPTION_DB_VERSION));
-        $this->assertFalse(get_option('asfw_site_initialized'));
+        $this->assertNotSame('1', get_option('asfw_site_initialized'));
         $GLOBALS['asfw_test_schema_failure'] = false;
         asfw_maybe_initialize_site();
         $this->assertSame((string) ASFW_Event_Store::DB_VERSION, get_option(ASFW_Event_Store::OPTION_DB_VERSION));

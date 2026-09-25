@@ -41,13 +41,32 @@ export default function useSettings( enabled, onNotice ) {
 		saving.current = true;
 		setSaving( true );
 		const submitted = { ...draft.current };
+		const controller = new AbortController();
+		let timeout;
 		try {
-			// A mutation may commit even if the view goes away. Do not report an
-			// abort as a rollback; ignore its result after unmount instead.
-			const response = await fetchOperation( 'settings.update', {
-				method: 'POST',
-				data: { values: submitted },
-			} );
+			// A timed-out mutation may still commit. Race the timeout explicitly
+			// so a transport that ignores abort cannot block saving indefinitely
+			// or replace a later retry's result with an old response.
+			const response = await Promise.race( [
+				fetchOperation( 'settings.update', {
+					method: 'POST',
+					data: { values: submitted },
+					signal: controller.signal,
+				} ),
+				new Promise( ( resolve, reject ) => {
+					timeout = window.setTimeout( () => {
+						reject(
+							new Error(
+								__(
+									'The save request timed out. Your edits are retained, but some settings may already have been saved. Retry saving or reload to confirm the stored values.',
+									'anti-spam-for-wordpress'
+								)
+							)
+						);
+						controller.abort();
+					}, 30000 );
+				} ),
+			] );
 			if ( ! mounted.current ) {
 				return;
 			}
@@ -89,6 +108,7 @@ export default function useSettings( enabled, onNotice ) {
 				} );
 			}
 		} finally {
+			window.clearTimeout( timeout );
 			saving.current = false;
 			if ( mounted.current ) {
 				setSaving( false );

@@ -118,6 +118,40 @@ if ($mode === 'uninstall') {
 }
 
 asfw_integration_assert((bool) wp_using_ext_object_cache() === ($mode === 'redis'), 'persistent object-cache mode matches ' . $mode);
+asfw_integration_assert(get_option('asfw_site_initialized') === '1', 'bootstrap completes all persisted initialization stages');
+$initialTable = (new ASFW_Event_Store())->get_table_name();
+asfw_integration_assert($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($initialTable))) === $initialTable, 'bootstrap creates the event table before reporting initialization complete');
+
+// WordPress's missing-false shortcut and registered checkbox sanitizers differ
+// from a simple in-memory option map. Exercise both in each real cache mode.
+$booleanOption = 'asfw_integration_boolean_fixture';
+delete_option($booleanOption);
+try {
+    asfw_integration_assert(update_option($booleanOption, false) === false && get_option($booleanOption, null) === null, 'a missing false update does not create a WordPress option');
+    $failBooleanWrite = static fn($query) => preg_match('/^\s*(INSERT|UPDATE)\s/i', $query) && str_contains($query, "'" . $booleanOption . "'") ? 'INSERT INTO asfw_integration_missing_options (option_name) VALUES (1)' : $query;
+    $oldSuppress = $wpdb->suppress_errors(true);
+    add_filter('query', $failBooleanWrite);
+    try {
+        asfw_integration_assert(asfw_persist_initial_option($booleanOption, false) === false && get_option($booleanOption, null) === null, 'failed insertion of a false default remains a storage failure');
+    } finally {
+        remove_filter('query', $failBooleanWrite);
+        $wpdb->suppress_errors($oldSuppress);
+    }
+    asfw_integration_assert(asfw_persist_initial_option($booleanOption, false) === true && get_option($booleanOption, null) !== null, 'verified initialization explicitly inserts an absent false default');
+    delete_option($booleanOption);
+    add_filter('sanitize_option_' . $booleanOption, 'asfw_sanitize_checkbox_option');
+    try {
+        asfw_integration_assert(asfw_persist_initial_option($booleanOption, false) === true && get_option($booleanOption) === 0, 'registered checkbox sanitizer may persist false as integer zero');
+        wp_cache_delete($booleanOption, 'options');
+        wp_cache_delete('alloptions', 'options');
+        asfw_integration_assert(get_option($booleanOption) === '0' && asfw_persist_initial_option($booleanOption, false) === true, 'database string zero verifies as the same persisted false setting');
+        asfw_integration_assert(asfw_persist_initial_option($booleanOption, true) === true && (string) get_option($booleanOption) === '1', 'registered checkbox sanitizer preserves a verified true setting');
+    } finally {
+        remove_filter('sanitize_option_' . $booleanOption, 'asfw_sanitize_checkbox_option');
+    }
+} finally {
+    delete_option($booleanOption);
+}
 update_option('asfw_feature_math_challenge_enabled', 1);
 update_option('asfw_feature_math_challenge_mode', 'block');
 update_option('asfw_feature_math_challenge_scope_mode', 'all');

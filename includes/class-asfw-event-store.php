@@ -6,6 +6,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class ASFW_Event_Store {
 
+	/** @var WP_Error|null Failure from the most recent read, cleared before each read. */
+	private $last_read_error;
+
 	// Reverify legacy version 3: older releases recorded it even when DDL failed.
 	const DB_VERSION = 4;
 
@@ -121,6 +124,9 @@ class ASFW_Event_Store {
 			return $this->schema_error();
 		}
 		update_option( self::OPTION_DB_VERSION, (string) self::DB_VERSION );
+		if ( (string) self::DB_VERSION !== (string) get_option( self::OPTION_DB_VERSION, '' ) ) {
+			return $this->schema_error();
+		}
 
 		return true;
 	}
@@ -183,16 +189,15 @@ class ASFW_Event_Store {
 	}
 
 	public function install() {
-		$updated = $this->maybe_upgrade_schema();
-		if ( '' === (string) get_option( self::OPTION_RETENTION_DAYS, '' ) ) {
+		$updated           = $this->maybe_upgrade_schema();
+		$current_retention = get_option( self::OPTION_RETENTION_DAYS, '' );
+		if ( '' === (string) $current_retention ) {
 			$legacy_retention = trim( (string) get_option( self::OPTION_RETENTION_DAYS_LEGACY, '' ) );
-			if ( '' !== $legacy_retention ) {
-				update_option( self::OPTION_RETENTION_DAYS, $legacy_retention );
+			$retention        = '' !== $legacy_retention ? $legacy_retention : '30';
+			update_option( self::OPTION_RETENTION_DAYS, $retention );
+			if ( (string) get_option( self::OPTION_RETENTION_DAYS, '' ) !== $retention ) {
+				return $this->schema_error();
 			}
-		}
-
-		if ( '' === (string) get_option( self::OPTION_RETENTION_DAYS, '' ) ) {
-			update_option( self::OPTION_RETENTION_DAYS, '30' );
 		}
 
 		return $updated;
@@ -509,9 +514,54 @@ class ASFW_Event_Store {
 		return false;
 	}
 
+	/**
+	 * Inspect immediately after a read to distinguish an empty result from failure.
+	 *
+	 * Read methods retain their array/integer return contracts for integrations.
+	 *
+	 * @return WP_Error|null
+	 */
+	public function get_last_read_error() {
+		return $this->last_read_error;
+	}
+
+	private function begin_read() {
+		$this->last_read_error = null;
+		$installed             = $this->install();
+		if ( is_wp_error( $installed ) ) {
+			$this->last_read_error = new WP_Error( $installed->get_error_code(), $installed->get_error_message(), array( 'status' => 503 ) );
+			return false;
+		}
+		return true;
+	}
+
+	private function mark_read_failed() {
+		$this->last_read_error = new WP_Error( 'asfw_event_read_failed', __( 'Events could not be loaded. Please retry.', 'anti-spam-for-wordpress' ), array( 'status' => 503 ) );
+	}
+
+	private function read_rows( $rows ) {
+		$wpdb = $this->get_wpdb();
+		if ( ! is_array( $rows ) || ! empty( $wpdb->last_error ) ) {
+			$this->mark_read_failed();
+			return array();
+		}
+		return $rows;
+	}
+
+	private function read_count( $count ) {
+		$wpdb = $this->get_wpdb();
+		if ( ! ( is_int( $count ) || is_string( $count ) ) || ! ctype_digit( (string) $count ) || ! empty( $wpdb->last_error ) ) {
+			$this->mark_read_failed();
+			return 0;
+		}
+		return (int) $count;
+	}
+
 	public function fetch_events( array $args = array() ) {
 		$wpdb = $this->get_wpdb();
-		$this->install();
+		if ( ! $this->begin_read() ) {
+			return array();
+		}
 
 		$args = array_merge(
 			array(
@@ -528,7 +578,7 @@ class ASFW_Event_Store {
 
 		$type_variants = $this->get_event_type_variants( $args['type'] );
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_fetch_events' ) && count( $type_variants ) <= 1 ) {
-			$rows = (array) $wpdb->asfw_fetch_events( $this->get_table_name(), $args );
+			$rows = $this->read_rows( $wpdb->asfw_fetch_events( $this->get_table_name(), $args ) );
 			$rows = $this->apply_date_range_to_rows( $rows, $args );
 
 			return $this->normalize_event_rows_for_response( $rows );
@@ -545,7 +595,11 @@ class ASFW_Event_Store {
 				$variant_args['type']   = $variant;
 				$variant_args['limit']  = $page_window;
 				$variant_args['offset'] = 0;
-				$merged                 = array_merge( $merged, $wpdb->asfw_fetch_events( $this->get_table_name(), $variant_args ) );
+				$rows                   = $this->read_rows( $wpdb->asfw_fetch_events( $this->get_table_name(), $variant_args ) );
+				if ( is_wp_error( $this->last_read_error ) ) {
+					return array();
+				}
+				$merged = array_merge( $merged, $rows );
 			}
 
 			$merged = $this->merge_events_by_id( $merged );
@@ -570,15 +624,18 @@ class ASFW_Event_Store {
 			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and $sql is prepared above.
 			$rows = $wpdb->get_results( $sql, ARRAY_A );
 
-			return $this->normalize_event_rows_for_response( is_array( $rows ) ? $rows : array() );
+			return $this->normalize_event_rows_for_response( $this->read_rows( $rows ) );
 		}
 
+		$this->mark_read_failed();
 		return array();
 	}
 
 	public function count_events( array $args = array() ) {
 		$wpdb = $this->get_wpdb();
-		$this->install();
+		if ( ! $this->begin_read() ) {
+			return 0;
+		}
 
 		$args = array_merge(
 			array(
@@ -596,7 +653,7 @@ class ASFW_Event_Store {
 
 		$type_variants = $this->get_event_type_variants( $args['type'] );
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_count_events' ) && count( $type_variants ) <= 1 ) {
-			return (int) $wpdb->asfw_count_events( $this->get_table_name(), $args );
+			return $this->read_count( $wpdb->asfw_count_events( $this->get_table_name(), $args ) );
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_count_events' ) && count( $type_variants ) > 1 ) {
@@ -604,7 +661,10 @@ class ASFW_Event_Store {
 			foreach ( $type_variants as $variant ) {
 				$variant_args         = $args;
 				$variant_args['type'] = $variant;
-				$total               += (int) $wpdb->asfw_count_events( $this->get_table_name(), $variant_args );
+				$total               += $this->read_count( $wpdb->asfw_count_events( $this->get_table_name(), $variant_args ) );
+				if ( is_wp_error( $this->last_read_error ) ) {
+					return 0;
+				}
 			}
 
 			return $total;
@@ -633,18 +693,22 @@ class ASFW_Event_Store {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic fragments are a normalized table identifier plus placeholder-only WHERE clauses.
 			$sql = $wpdb->prepare( $query, $params );
 			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and $sql is prepared above.
-			return (int) $wpdb->get_var( $sql );
+			$count = $wpdb->get_var( $sql );
+			return $this->read_count( $count );
 		}
 
+		$this->mark_read_failed();
 		return 0;
 	}
 
 	public function get_type_counts() {
 		$wpdb = $this->get_wpdb();
-		$this->install();
+		if ( ! $this->begin_read() ) {
+			return array();
+		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_type_counts' ) ) {
-			return $this->normalize_type_counts( $wpdb->asfw_type_counts( $this->get_table_name() ) );
+			return $this->normalize_type_counts( $this->read_rows( $wpdb->asfw_type_counts( $this->get_table_name() ) ) );
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'get_results' ) ) {
@@ -654,7 +718,7 @@ class ASFW_Event_Store {
 			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and the query has no external values.
 			$rows   = $wpdb->get_results( $query, ARRAY_A );
 			$counts = array();
-			foreach ( (array) $rows as $row ) {
+			foreach ( $this->read_rows( $rows ) as $row ) {
 				if ( isset( $row['event_type'] ) ) {
 					$counts[ $row['event_type'] ] = isset( $row['total'] ) ? intval( $row['total'], 10 ) : 0;
 				}
@@ -663,15 +727,18 @@ class ASFW_Event_Store {
 			return $this->normalize_type_counts( $counts );
 		}
 
+		$this->mark_read_failed();
 		return array();
 	}
 
 	public function get_module_counts() {
 		$wpdb = $this->get_wpdb();
-		$this->install();
+		if ( ! $this->begin_read() ) {
+			return array();
+		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_module_counts' ) ) {
-			return $wpdb->asfw_module_counts( $this->get_table_name() );
+			return $this->read_rows( $wpdb->asfw_module_counts( $this->get_table_name() ) );
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'get_results' ) ) {
@@ -681,7 +748,7 @@ class ASFW_Event_Store {
 			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and the query has no external values.
 			$rows   = $wpdb->get_results( $query, ARRAY_A );
 			$counts = array();
-			foreach ( (array) $rows as $row ) {
+			foreach ( $this->read_rows( $rows ) as $row ) {
 				$feature            = isset( $row['feature_name'] ) && '' !== $row['feature_name'] ? $row['feature_name'] : 'core';
 				$counts[ $feature ] = isset( $row['total'] ) ? intval( $row['total'], 10 ) : 0;
 			}
@@ -689,16 +756,19 @@ class ASFW_Event_Store {
 			return $counts;
 		}
 
+		$this->mark_read_failed();
 		return array();
 	}
 
 	public function get_daily_counts( $days = 7 ) {
 		$wpdb = $this->get_wpdb();
-		$this->install();
+		if ( ! $this->begin_read() ) {
+			return array();
+		}
 
 		$days = max( 1, intval( $days, 10 ) );
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_daily_counts' ) ) {
-			return $wpdb->asfw_daily_counts( $this->get_table_name(), $days );
+			return $this->read_rows( $wpdb->asfw_daily_counts( $this->get_table_name(), $days ) );
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'get_results' ) ) {
@@ -711,12 +781,16 @@ class ASFW_Event_Store {
 			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and $sql is prepared above.
 			$rows   = $wpdb->get_results( $sql, ARRAY_A );
 			$counts = array();
+			$rows   = $this->read_rows( $rows );
+			if ( is_wp_error( $this->last_read_error ) ) {
+				return array();
+			}
 
 			for ( $offset = $days - 1; $offset >= 0; $offset-- ) {
 				$counts[ gmdate( 'Y-m-d', time() - ( $offset * 86400 ) ) ] = 0;
 			}
 
-			foreach ( (array) $rows as $row ) {
+			foreach ( $rows as $row ) {
 				if ( isset( $row['day'] ) ) {
 					$counts[ $row['day'] ] = isset( $row['total'] ) ? intval( $row['total'], 10 ) : 0;
 				}
@@ -725,6 +799,7 @@ class ASFW_Event_Store {
 			return $counts;
 		}
 
+		$this->mark_read_failed();
 		return array();
 	}
 

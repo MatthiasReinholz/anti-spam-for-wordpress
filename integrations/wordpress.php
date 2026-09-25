@@ -76,18 +76,8 @@ add_filter(
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 			return $user;
 		}
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- This nonce field is read only to detect the WooCommerce login flow.
-		if (
-				asfw_plugin_active( 'woocommerce' )
-				&& function_exists( 'asfw_is_woocommerce_account_request' )
-				&& asfw_is_woocommerce_account_request()
-				&& isset( $_POST['woocommerce-login-nonce'] )
-			) {
-			$nonce_valid = function_exists( 'wp_verify_nonce' )
-				&& wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['woocommerce-login-nonce'] ) ), 'woocommerce-login' );
-			if ( $nonce_valid ) {
-				return $user;
-			}
+		if ( class_exists( 'ASFW_WooCommerce_Login_Dispatch', false ) && ASFW_WooCommerce_Login_Dispatch::is_active() ) {
+			return $user;
 		}
 
 		$plugin       = asfw_plugin_instance();
@@ -308,7 +298,7 @@ add_filter(
 		$comment_post_id  = isset( $comment['comment_post_ID'] ) ? (int) $comment['comment_post_ID'] : 0;
 		$native_request   = asfw_consume_native_comment_submission_marker( $comment_post_id );
 		$provider_request = asfw_is_wpdiscuz_comment_request();
-		if ( isset( $comment['comment_type'] ) && ! in_array( $comment['comment_type'], array( '', 'comment' ), true ) && ! ( $provider_request && 'review' === $comment['comment_type'] ) ) {
+		if ( isset( $comment['comment_type'] ) && ! in_array( $comment['comment_type'], array( '', 'comment', 'review' ), true ) ) {
 			return $comment;
 		}
 		if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {

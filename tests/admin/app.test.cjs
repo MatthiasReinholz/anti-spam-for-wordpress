@@ -171,6 +171,70 @@ test('save failure preserves the draft and later explicit retry can succeed', as
   await page.getByText('Settings saved.', { exact: true }).waitFor();
 });
 
+for (const ignoreAbort of [false, true]) {
+  test(`save timeout retains edits and permits an explicit retry (transport ignores abort: ${ignoreAbort})`, async t => {
+    let firstRequest;
+    let posts = 0;
+    const page = await pageFor(t, 'settings', async page => {
+      await page.addInitScript(value => { window.ignoreAdminAbort = value; }, ignoreAbort);
+      await page.route('**/api/**/settings', route => {
+        if (route.request().method() !== 'POST') return json(route, settings());
+        posts++;
+        if (posts === 1) { firstRequest = route; return; }
+        return json(route, { settings: settings('retry value') });
+      });
+    });
+    await page.getByLabel('First setting', { exact: true }).fill('first attempt');
+    await page.clock.install();
+    await page.getByRole('button', { name: 'Save Settings', exact: true }).click();
+    await waitCalls(page, 2);
+    await page.getByLabel('First setting', { exact: true }).fill('retry value');
+    await page.clock.fastForward(30001);
+    await page.getByText('The save request timed out.', { exact: false }).waitFor();
+    assert.equal(await page.getByLabel('First setting', { exact: true }).inputValue(), 'retry value');
+    assert.equal(await page.getByRole('button', { name: 'Save Settings', exact: true }).isEnabled(), true);
+    assert.equal(posts, 1, 'Timeout must not automatically repeat the mutation.');
+    await page.getByRole('button', { name: 'Save Settings', exact: true }).click();
+    await page.getByText('Settings saved.', { exact: true }).waitFor();
+    assert.equal(posts, 2);
+    if (ignoreAbort) {
+      await json(firstRequest, { settings: settings('stale first attempt') });
+      await page.waitForTimeout(30);
+      assert.equal(await page.getByLabel('First setting', { exact: true }).inputValue(), 'retry value');
+      assert.equal(await page.getByText('Settings saved.', { exact: true }).count(), 1);
+    }
+    assert.deepEqual(await page.evaluate(() => window.adminFailures), []);
+  });
+}
+
+for (const unavailable of [false, true]) {
+  test(`privacy text copy failure offers a manual fallback and can recover (API unavailable: ${unavailable})`, async t => {
+    const page = await pageFor(t, 'settings', async page => {
+      await page.addInitScript(value => {
+        Object.defineProperty(window.navigator, 'clipboard', { configurable: true, value: value ? undefined : {
+          writeText: () => Promise.reject(new DOMException('Permission denied', 'NotAllowedError')),
+        } });
+      }, unavailable);
+    });
+    await page.getByRole('button', { name: 'Copy text', exact: true }).click();
+    await page.getByText('Automatic copying is unavailable. Select the suggested text and copy it manually.', { exact: true }).waitFor();
+    assert.equal(await page.getByLabel('Suggested text', { exact: false }).inputValue(), 'Suggested policy');
+    assert.deepEqual(await page.evaluate(() => window.adminFailures), []);
+    await page.evaluate(() => {
+      Object.defineProperty(window.navigator, 'clipboard', { configurable: true, value: {
+        writeText: async text => { window.copiedPolicy = text; },
+      } });
+    });
+    await page.clock.install();
+    await page.getByRole('button', { name: 'Copy text', exact: true }).click();
+    await page.getByRole('button', { name: 'Copied', exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => window.copiedPolicy), 'Suggested policy');
+    assert.equal(await page.getByText('Automatic copying is unavailable.', { exact: false }).count(), 0);
+    await page.clock.fastForward(2001);
+    await page.getByRole('button', { name: 'Copy text', exact: true }).waitFor();
+  });
+}
+
 test('unmount ignores a pending save result without claiming that the mutation was canceled', async t => {
   let pending;
   const page = await pageFor(t, 'settings', async page => {

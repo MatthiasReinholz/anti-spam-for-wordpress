@@ -14,7 +14,10 @@ function asfw_initialize_site() {
 		return false;
 	}
 	try {
-		asfw_maybe_migrate_legacy_settings( true );
+		// Retrying an existing installation must remain possible after a partial failure.
+		if ( ! asfw_persist_initial_option( 'asfw_site_initialized', '0', false ) || ! asfw_maybe_migrate_legacy_settings( true ) ) {
+			return false;
+		}
 		// Discard cached misses before provisioning a secret under the exclusive lease.
 		wp_cache_delete( 'asfw_secret', 'options' );
 		wp_cache_delete( 'notoptions', 'options' );
@@ -26,6 +29,9 @@ function asfw_initialize_site() {
 			} else {
 				update_option( 'asfw_secret', $secret, false );
 			}
+		}
+		if ( '' === trim( (string) get_option( 'asfw_secret', '' ) ) ) {
+			return false;
 		}
 		$defaults = array(
 			'asfw_complexity'                => 'medium',
@@ -50,18 +56,22 @@ function asfw_initialize_site() {
 		foreach ( $defaults as $name => $value ) {
 			if ( null === get_option( $name, null ) ) {
 				add_option( $name, $value, '', false );
+				if ( null === get_option( $name, null ) ) {
+					return false;
+				}
 			}
 		}
-		asfw_seed_control_plane_defaults();
+		if ( ! asfw_seed_control_plane_defaults() ) {
+			return false;
+		}
 		asfw_initialize_control_plane();
 		$services  = ASFW_Control_Plane::instance();
 		$installed = $services['store']->install();
 		$services['maintenance']->maybe_schedule();
-		if ( is_wp_error( $installed ) || '' === (string) get_option( 'asfw_secret', '' ) ) {
+		if ( is_wp_error( $installed ) ) {
 			return false;
 		}
-		update_option( 'asfw_site_initialized', '1', false );
-		return true;
+		return asfw_persist_initial_option( 'asfw_site_initialized', '1', false );
 	} finally {
 		$store->release_lease( 'site-initialization', $lease );
 	}
@@ -69,7 +79,7 @@ function asfw_initialize_site() {
 
 /** Lazy repair also covers sites not yet reached by a network initialization batch. */
 function asfw_maybe_initialize_site() {
-	if ( '1' !== get_option( 'asfw_site_initialized', '' ) || '' === (string) get_option( 'asfw_secret', '' ) ) {
+	if ( '1' !== get_option( 'asfw_site_initialized', '' ) || '' === trim( (string) get_option( 'asfw_secret', '' ) ) ) {
 		asfw_initialize_site();
 	}
 }

@@ -7,41 +7,60 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class ASFW_Settings_Schema {
 
 	public static function get_sections() {
-		return apply_filters(
-			'asfw_settings_schema_sections',
+		$default_sections = array(
 			array(
-				array(
-					'id'       => 'asfw_integrations_settings_section',
-					'title'    => __( 'Protection Placements', 'anti-spam-for-wordpress' ),
-					'callback' => 'asfw_integrations_section_callback',
-				),
-				array(
-					'id'       => 'asfw_general_settings_section',
-					'title'    => __( 'Core Challenge', 'anti-spam-for-wordpress' ),
-					'callback' => 'asfw_general_section_callback',
-				),
-				array(
-					'id'       => 'asfw_security_settings_section',
-					'title'    => __( 'Security Hardening', 'anti-spam-for-wordpress' ),
-					'callback' => 'asfw_security_section_callback',
-				),
-				array(
-					'id'       => 'asfw_widget_settings_section',
-					'title'    => __( 'Widget and Shortcode', 'anti-spam-for-wordpress' ),
-					'callback' => 'asfw_widget_section_callback',
-				),
-				array(
-					'id'       => 'asfw_control_plane_settings_section',
-					'title'    => __( 'Observability and Policy', 'anti-spam-for-wordpress' ),
-					'callback' => 'asfw_control_plane_section_callback',
-				),
-				array(
-					'id'       => 'asfw_bunny_settings_section',
-					'title'    => __( 'Bunny Shield', 'anti-spam-for-wordpress' ),
-					'callback' => 'asfw_bunny_section_callback',
-				),
-			)
+				'id'       => 'asfw_integrations_settings_section',
+				'title'    => __( 'Protection Placements', 'anti-spam-for-wordpress' ),
+				'callback' => 'asfw_integrations_section_callback',
+			),
+			array(
+				'id'       => 'asfw_general_settings_section',
+				'title'    => __( 'Core Challenge', 'anti-spam-for-wordpress' ),
+				'callback' => 'asfw_general_section_callback',
+			),
+			array(
+				'id'       => 'asfw_security_settings_section',
+				'title'    => __( 'Security Hardening', 'anti-spam-for-wordpress' ),
+				'callback' => 'asfw_security_section_callback',
+			),
+			array(
+				'id'       => 'asfw_widget_settings_section',
+				'title'    => __( 'Widget and Shortcode', 'anti-spam-for-wordpress' ),
+				'callback' => 'asfw_widget_section_callback',
+			),
+			array(
+				'id'       => 'asfw_control_plane_settings_section',
+				'title'    => __( 'Observability and Policy', 'anti-spam-for-wordpress' ),
+				'callback' => 'asfw_control_plane_section_callback',
+			),
+			array(
+				'id'       => 'asfw_bunny_settings_section',
+				'title'    => __( 'Bunny Shield', 'anti-spam-for-wordpress' ),
+				'callback' => 'asfw_bunny_section_callback',
+			),
 		);
+
+		$sections    = apply_filters( 'asfw_settings_schema_sections', $default_sections );
+		$section_ids = array_fill_keys(
+			array_merge( array_column( $default_sections, 'id' ), array_column( $sections, 'id' ) ),
+			true
+		);
+		foreach ( ASFW_Feature_Registry::get_settings_features() as $feature ) {
+			$section_id = $feature['section'];
+			if ( isset( $section_ids[ $section_id ] ) ) {
+				continue;
+			}
+
+			// Keep valid feature settings visible even when an extension omits section metadata.
+			$sections[]                 = array(
+				'id'       => $section_id,
+				'title'    => isset( $feature['label'] ) ? $feature['label'] : $section_id,
+				'callback' => '',
+			);
+			$section_ids[ $section_id ] = true;
+		}
+
+		return $sections;
 	}
 
 	public static function get_fields_by_section() {
@@ -411,6 +430,9 @@ final class ASFW_Settings_Schema {
 			$feature_fields = self::feature_fields( $feature );
 			if ( empty( $feature_fields ) ) {
 				continue;
+			}
+			if ( ! isset( $fields[ $feature['section'] ] ) ) {
+				$fields[ $feature['section'] ] = array();
 			}
 
 			if ( 'asfw_bunny_settings_section' === $feature['section'] ) {

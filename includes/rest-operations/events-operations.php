@@ -96,7 +96,14 @@ if ( ! function_exists( 'asfw_rest_operation_events_list' ) ) {
 		$per_page = max( 1, min( 200, $per_page ) );
 
 		$filters = asfw_rest_events_filters_from_request( $request );
-		$offset  = ( $page - 1 ) * $per_page;
+		$total   = $store->count_events( $filters );
+		$error   = $store->get_last_read_error();
+		if ( is_wp_error( $error ) ) {
+			return $error;
+		}
+		$total_pages = max( 1, (int) ceil( $total / $per_page ) );
+		$page        = min( $page, $total_pages );
+		$offset      = ( $page - 1 ) * $per_page;
 
 		$query_args = array_merge(
 			$filters,
@@ -106,8 +113,11 @@ if ( ! function_exists( 'asfw_rest_operation_events_list' ) ) {
 			)
 		);
 
-		$total = $store->count_events( $filters );
 		$rows  = $store->fetch_events( $query_args );
+		$error = $store->get_last_read_error();
+		if ( is_wp_error( $error ) ) {
+			return $error;
+		}
 
 		$items = array();
 		foreach ( $rows as $row ) {
@@ -127,25 +137,30 @@ if ( ! function_exists( 'asfw_rest_operation_events_list' ) ) {
 			);
 		}
 
+		$type_counts = $store->get_type_counts();
+		$error       = $store->get_last_read_error();
+		if ( is_wp_error( $error ) ) {
+			return $error;
+		}
 		$types = array();
-		foreach ( $store->get_type_counts() as $event_type => $count ) {
+		foreach ( $type_counts as $event_type => $count ) {
 			$types[] = array(
 				'value' => (string) $event_type,
 				'label' => sprintf( '%s (%d)', (string) $event_type, intval( $count, 10 ) ),
 			);
 		}
 
+		$module_counts = $store->get_module_counts();
+		$error         = $store->get_last_read_error();
+		if ( is_wp_error( $error ) ) {
+			return $error;
+		}
 		$features = array();
-		foreach ( $store->get_module_counts() as $feature => $count ) {
+		foreach ( $module_counts as $feature => $count ) {
 			$features[] = array(
 				'value' => (string) $feature,
 				'label' => sprintf( '%s (%d)', (string) $feature, intval( $count, 10 ) ),
 			);
-		}
-
-		$total_pages = max( 1, (int) ceil( $total / $per_page ) );
-		if ( $page > $total_pages ) {
-			$page = $total_pages;
 		}
 
 		$retention_days = $store->get_retention_days();

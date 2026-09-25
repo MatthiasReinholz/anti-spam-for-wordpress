@@ -1,0 +1,11 @@
+<?php
+
+/**
+ * Option reads depend on mutable database/cache state and WordPress filters.
+ *
+ * @param string $option Option name.
+ * @param mixed $default Value returned when the option is absent.
+ * @return mixed Stored value or the supplied default.
+ * @phpstan-impure
+ */
+function get_option($option, $default = false) {}

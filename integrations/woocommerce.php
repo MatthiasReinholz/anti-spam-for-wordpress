@@ -22,6 +22,12 @@ function asfw_is_native_wordpress_auth_request() {
 	return false;
 }
 
+require_once __DIR__ . '/class-asfw-woocommerce-login-dispatch.php';
+
+add_filter( 'woocommerce_login_credentials', array( 'ASFW_WooCommerce_Login_Dispatch', 'mark' ), PHP_INT_MAX, 1 );
+add_filter( 'authenticate', array( 'ASFW_WooCommerce_Login_Dispatch', 'begin' ), 0, 2 );
+add_filter( 'authenticate', array( 'ASFW_WooCommerce_Login_Dispatch', 'finish' ), PHP_INT_MAX, 1 );
+
 function asfw_is_woocommerce_account_request() {
 	if ( asfw_is_native_wordpress_auth_request() ) {
 		return false;
@@ -135,14 +141,14 @@ add_action(
 	0
 );
 
-add_action(
-	'woocommerce_register_post',
-	function ( $user_login, $user_email, $errors ) {
+add_filter(
+	'woocommerce_process_registration_errors',
+	function ( $errors ) {
 		$plugin = AntiSpamForWordPressPlugin::$instance;
 		$mode   = $plugin->get_integration_woocommerce_register();
 		if ( ! empty( $mode ) ) {
 			if ( asfw_verify_posted_widget( 'woocommerce:register', 'asfw_register' ) === false ) {
-				return $errors->add(
+				$errors->add(
 					'asfw_error_message',
 					esc_html__( 'Could not verify you are not a robot.', 'anti-spam-for-wordpress' )
 				);
@@ -152,7 +158,7 @@ add_action(
 		return $errors;
 	},
 	10,
-	3
+	1
 );
 
 add_action(
@@ -185,8 +191,7 @@ add_filter(
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 			return $user;
 		}
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Request shape detection is required to scope guards to WooCommerce account routes.
-		if ( ! isset( $_POST['woocommerce-login-nonce'] ) && ! asfw_is_woocommerce_account_request() ) {
+		if ( ! ASFW_WooCommerce_Login_Dispatch::is_active() ) {
 			return $user;
 		}
 		list($mode, $context) = asfw_get_woocommerce_login_protection();
@@ -197,10 +202,6 @@ add_filter(
 				'asfw-error',
 				esc_html__( 'Could not verify you are not a robot.', 'anti-spam-for-wordpress' )
 			);
-		}
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- This nonce field is read only to detect the WooCommerce login flow.
-		if ( ! isset( $_POST['woocommerce-login-nonce'] ) ) {
-			return $user;
 		}
 
 		if ( ! empty( $mode ) ) {

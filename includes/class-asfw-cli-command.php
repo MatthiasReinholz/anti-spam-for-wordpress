@@ -86,10 +86,17 @@ class ASFW_CLI_Command {
 	public function status( array $args, array $assoc_args ) {
 		unset( $args, $assoc_args );
 
+		$events = $this->store->count_events();
+		$error  = $this->store->get_last_read_error();
+		if ( is_wp_error( $error ) ) {
+			$this->cli_error( $error->get_error_message() );
+			return $error;
+		}
+
 		$status = array(
 			'store'    => array(
 				'table'          => $this->store->get_table_name(),
-				'events'         => $this->store->count_events(),
+				'events'         => $events,
 				'retention_days' => $this->store->get_retention_days(),
 			),
 			'features' => $this->get_feature_status_rows(),
@@ -129,7 +136,12 @@ class ASFW_CLI_Command {
 						'status' => isset( $assoc_args['status'] ) ? $assoc_args['status'] : '',
 					)
 				);
-					$this->cli_log( wp_json_encode( $events ) );
+				$error  = $this->store->get_last_read_error();
+				if ( is_wp_error( $error ) ) {
+					$this->cli_error( $error->get_error_message() );
+					return $error;
+				}
+				$this->cli_log( wp_json_encode( $events ) );
 				return $events;
 
 			case 'prune':

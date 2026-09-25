@@ -307,4 +307,56 @@ final class WpPluginBaseAdminUiOperationsTest extends AsfwPluginTestCase
         $this->assertArrayHasKey('sample', $analyticsResponse);
         $this->assertArrayHasKey('daily_challenges', $analyticsResponse);
     }
+
+    public function test_settings_update_reports_failed_writes_and_can_be_retried(): void
+    {
+        $option = AntiSpamForWordPressPlugin::$option_kill_switch;
+        $GLOBALS['asfw_test_option_write_failures'][$option] = true;
+        $request = new WP_REST_Request(array('values' => array($option => 1)));
+
+        $response = asfw_rest_operation_settings_update($request, array());
+
+        $this->assertInstanceOf(WP_Error::class, $response);
+        $this->assertSame('asfw_settings_save_failed', $response->get_error_code());
+        $this->assertSame(503, $response->get_error_data()['status']);
+        $this->assertSame(0, get_option($option));
+
+        unset($GLOBALS['asfw_test_option_write_failures'][$option]);
+        $this->assertIsArray(asfw_rest_operation_settings_update($request, array()));
+        $this->assertSame(1, get_option($option));
+    }
+
+    public function test_settings_update_accepts_unchanged_values_when_no_write_occurs(): void
+    {
+        $option = AntiSpamForWordPressPlugin::$option_kill_switch;
+        $GLOBALS['asfw_test_option_write_failures'][$option] = true;
+        $response = asfw_rest_operation_settings_update(new WP_REST_Request(array('values' => array($option => 0))), array());
+
+        $this->assertIsArray($response);
+        $this->assertContains($option, $response['updated']);
+    }
+
+    public function test_settings_json_preserves_literal_backslashes(): void
+    {
+        $option = AntiSpamForWordPressPlugin::$option_footer_text;
+        $value = 'Protected by C:\\Local\\Security';
+        $response = asfw_rest_operation_settings_update(new WP_REST_Request(array('values' => array($option => $value))), array());
+
+        $this->assertIsArray($response);
+        $this->assertSame($value, get_option($option));
+    }
+
+    public function test_events_clamps_the_page_before_fetching_rows(): void
+    {
+        update_option('asfw_feature_event_logging_enabled', 1);
+        update_option('asfw_feature_event_logging_mode', 'log');
+        update_option('asfw_feature_event_logging_scope_mode', 'all');
+        ASFW_Control_Plane::store()->record_event('challenge_issued', array('event_context' => 'custom:contact'));
+
+        $response = asfw_rest_operation_events_list(new WP_REST_Request(array('page_number' => PHP_INT_MAX, 'per_page' => 50)), array());
+
+        $this->assertSame(1, $response['pagination']['page']);
+        $this->assertCount(1, $response['items']);
+        $this->assertSame('challenge_issued', $response['items'][0]['event_type']);
+    }
 }

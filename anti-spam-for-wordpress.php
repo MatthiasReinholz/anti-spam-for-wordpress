@@ -74,7 +74,12 @@ register_activation_hook( __FILE__, 'asfw_activate' );
 register_deactivation_hook( __FILE__, 'asfw_deactivate' );
 
 add_action( 'init', 'asfw_init' );
-add_action( 'admin_init', 'asfw_maybe_migrate_legacy_settings' );
+add_action(
+	'admin_init',
+	static function () {
+		asfw_maybe_migrate_legacy_settings();
+	}
+);
 
 ASFW_Integration_Loader::bootstrap( __DIR__ );
 asfw_initialize_control_plane();
@@ -124,19 +129,20 @@ function asfw_normalize_migrated_mode( $value ) {
 	return $value;
 }
 
+/** @return bool Whether migration is complete or no migration is needed. */
 function asfw_maybe_migrate_legacy_settings( $force = false ) {
 	$migration_option = 'asfw_migration_completed';
 	if ( get_option( $migration_option ) ) {
-		return;
+		return true;
 	}
 
 	$legacy_secret = get_option( 'altcha_secret', null );
 	if ( null === $legacy_secret ) {
 		if ( $force ) {
-			update_option( $migration_option, ASFW_VERSION );
+			return asfw_persist_initial_option( $migration_option, ASFW_VERSION );
 		}
 
-		return;
+		return true;
 	}
 
 	$option_map = array(
@@ -202,8 +208,10 @@ function asfw_maybe_migrate_legacy_settings( $force = false ) {
 			$legacy_value = asfw_normalize_migrated_mode( $legacy_value );
 		}
 
-		update_option( $new_option, $legacy_value );
+		if ( ! asfw_persist_initial_option( $new_option, $legacy_value ) ) {
+			return false;
+		}
 	}
 
-	update_option( $migration_option, ASFW_VERSION );
+	return asfw_persist_initial_option( $migration_option, ASFW_VERSION );
 }

@@ -55,7 +55,7 @@ function asfwSetOptionalDataAttribute(element, name, value) {
 
 class ASFWWidgetElement extends HTMLElement {
   static get observedAttributes() {
-    return ['appearance', 'auto', 'challengeurl', 'data-asfw-challengeurl', 'data-asfw-min-submit-time', 'data-asfw-privacy-new-tab', 'data-asfw-privacy-url', 'delay', 'floating', 'hidefooter', 'hidelogo', 'layout', 'name', 'strings'];
+    return ['appearance', 'auto', 'challengeurl', 'data-asfw-challengeurl', 'data-asfw-field', 'data-asfw-lazy', 'data-asfw-min-submit-time', 'data-asfw-privacy-new-tab', 'data-asfw-privacy-url', 'delay', 'floating', 'hidefooter', 'hidelogo', 'layout', 'name', 'strings'];
   }
 
   constructor() {
@@ -63,6 +63,9 @@ class ASFWWidgetElement extends HTMLElement {
     this._challenge = null;
     this._challengeIssuedAt = 0;
     this._challengeUrl = '';
+    this._challengePromise = null;
+    this._challengeController = null;
+    this._prefetchStarted = false;
     this._form = null;
     this._verifyPromise = null;
     this._verificationGeneration = 0;
@@ -96,14 +99,14 @@ class ASFWWidgetElement extends HTMLElement {
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (this._configuring) {
-      if (oldValue !== newValue && ['name', 'delay', 'data-asfw-min-submit-time'].includes(name)) this._configurationChanged = true;
+      if (oldValue !== newValue && ['name', 'data-asfw-field', 'delay', 'data-asfw-min-submit-time'].includes(name)) this._configurationChanged = true;
       return;
     }
     if (!this.isConnected || !this._rendered) {
       return;
     }
 
-    if (oldValue !== newValue && ['name', 'delay', 'data-asfw-min-submit-time'].includes(name)) {
+    if (oldValue !== newValue && ['name', 'data-asfw-field', 'delay', 'data-asfw-min-submit-time'].includes(name)) {
       this.clearVerification(true);
     }
     this.refresh();
@@ -277,6 +280,11 @@ class ASFWWidgetElement extends HTMLElement {
     if (this.getAutoMode() === 'onload' && !this._autoStarted) {
       this._autoStarted = true;
       void this.startVerification();
+    } else if (this.getAutoMode() !== 'onload' && this.getAttribute('data-asfw-lazy') === '0' && !this._prefetchStarted) {
+      // Eager loading prepares data without solving or marking a manual widget
+      // verified. A failed prefetch is retried only on explicit verification.
+      this._prefetchStarted = true;
+      void this.ensureChallenge(this._verificationGeneration).catch(() => {});
     }
   }
 
@@ -402,12 +410,16 @@ class ASFWWidgetElement extends HTMLElement {
     this._verificationGeneration += 1;
     this._controller?.abort();
     this._controller = null;
+    this._challengeController?.abort();
+    this._challengeController = null;
+    this._challengePromise = null;
     this._verifyPromise = null;
     if (this._form) ASFW_FORM_SUBMISSIONS.delete(this._form);
     if (this._valueInput) this._valueInput.value = '';
     if (clearChallenge) {
       this._challenge = null;
       this._challengeIssuedAt = 0;
+      this._prefetchStarted = false;
     }
     this._autoStarted = false;
     this.setState('idle');
@@ -552,23 +564,32 @@ class ASFWWidgetElement extends HTMLElement {
     };
   }
 
-  async ensureChallenge(generation, signal) {
+  async ensureChallenge(generation) {
     if (this._challenge && !this.isChallengeExpired()) {
       return this._challenge;
     }
 
-    const controller = this._controller;
-    const timeout = window.setTimeout(() => controller?.abort(), ASFW_REQUEST_TIMEOUT_MS);
-    let challenge;
-    try {
-      challenge = await this.fetchChallenge(signal);
-    } finally {
-      window.clearTimeout(timeout);
-    }
-    if (generation !== this._verificationGeneration) return null;
-    this._challenge = challenge;
-    this._challengeIssuedAt = Date.now();
-    return this._challenge;
+    if (this._challengePromise) return this._challengePromise;
+
+    const controller = new AbortController();
+    this._challengeController = controller;
+    this._challengePromise = (async () => {
+      const timeout = window.setTimeout(() => controller.abort(), ASFW_REQUEST_TIMEOUT_MS);
+      try {
+        const challenge = await this.fetchChallenge(controller.signal);
+        if (generation !== this._verificationGeneration) return null;
+        this._challenge = challenge;
+        this._challengeIssuedAt = Date.now();
+        return challenge;
+      } finally {
+        window.clearTimeout(timeout);
+        if (this._challengeController === controller) {
+          this._challengePromise = null;
+          this._challengeController = null;
+        }
+      }
+    })();
+    return this._challengePromise;
   }
 
   async solveChallenge(challenge, generation, signal) {
@@ -609,7 +630,7 @@ class ASFWWidgetElement extends HTMLElement {
         }
 
         if (generation !== this._verificationGeneration) return false;
-        const challenge = await this.ensureChallenge(generation, controller.signal);
+        const challenge = await this.ensureChallenge(generation);
         if (generation !== this._verificationGeneration) return false;
         const number = await this.solveChallenge(challenge, generation, controller.signal);
         if (generation !== this._verificationGeneration) return false;

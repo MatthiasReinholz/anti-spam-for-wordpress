@@ -14,14 +14,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  wordpress-integration:
-    name: WordPress integration
+  wordpress-runtime:
+    name: WordPress ${{ matrix.wordpress }} / PHP ${{ matrix.php }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - wordpress: '6.4'
+            php: '8.3'
+          - wordpress: '7.1.2'
+            php: '8.3'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: '22'
+      - name: Verify isolated cleanup after partial startup
+        run: python3 tests/integration/test-cleanup.py
       - name: Exercise real WordPress, database concurrency, Redis, and multisite
+        env:
+          ASFW_WP_VERSION: ${{ matrix.wordpress }}
+          ASFW_PHP_VERSION: ${{ matrix.php }}
         run: bash scripts/test-wordpress-integration.sh
+
+  wordpress-integration:
+    name: WordPress integration
+    if: ${{ always() }}
+    needs: wordpress-runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every supported-version integration check
+        env:
+          RUNTIME_RESULT: ${{ needs.wordpress-runtime.result }}
+        run: test "$RUNTIME_RESULT" = success

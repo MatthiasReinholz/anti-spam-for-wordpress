@@ -881,3 +881,118 @@ test('batch configuration starts one verification and initializes renamed metada
   assert.equal(challenges, 1);
   assert.ok(await page.locator('[name=renamed_started]').inputValue());
 });
+
+for (const configure of [false, true]) {
+  test(`data field changes ${configure ? 'through configure' : 'directly'} invalidate and rename verification`, async t => {
+    const page = await pageFor(t);
+    await page.locator('asfw-widget').evaluate(el => el.configure({ name: false, 'data-asfw-field': 'first' }));
+    await page.locator('asfw-widget').evaluate(el => el.startVerification());
+    await page.locator('asfw-widget').evaluate((el, configure) => {
+      if (configure) el.configure({ 'data-asfw-field': 'second' });
+      else el.setAttribute('data-asfw-field', 'second');
+    }, configure);
+    const after = await page.locator('asfw-widget').evaluate(el => {
+      const values = new FormData(el.closest('form'));
+      return { state: el.getState(), field: el.querySelector('input').name,
+        oldProof: values.has('first'), proof: values.get('second') };
+    });
+    assert.deepEqual(after, { state: 'idle', field: 'second', oldProof: false, proof: '' });
+    await page.waitForFunction(() => !!document.querySelector('input[name=second_started]'));
+    assert.equal(await page.locator('asfw-widget').evaluate(el => el.startVerification()), true);
+    assert.equal(await page.evaluate(() => !!new FormData(document.querySelector('form')).get('second')), true);
+  });
+}
+
+test('lazy loading defers requests while eager loading only prefetches manual verification', async t => {
+  const page = await pageFor(t);
+  let challenges = 0;
+  await page.route('**/challenge', route => { challenges += 1; return route.continue(); });
+  await page.locator('asfw-widget').evaluate(el => el.configure({ 'data-asfw-lazy': '1' }));
+  await page.locator('input[name=email]').focus();
+  assert.equal(challenges, 0);
+  await page.locator('asfw-widget').evaluate(el => el.configure({ 'data-asfw-lazy': '0' }));
+  await page.waitForFunction(() => !!document.querySelector('asfw-widget')._challenge);
+  assert.equal(challenges, 1);
+  assert.deepEqual(await page.locator('asfw-widget').evaluate(el => ({ state: el.getState(), proof: el.querySelector('input').value })), { state: 'idle', proof: '' });
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.startVerification()), true);
+  assert.equal(challenges, 1);
+});
+
+test('eager loading shares a pending request with verification and does not retry a failed prefetch automatically', async t => {
+  const page = await pageFor(t);
+  let receiveRequest;
+  let challenges = 0;
+  const received = new Promise(resolve => { receiveRequest = resolve; });
+  await page.route('**/challenge', route => { challenges += 1; receiveRequest(route); });
+  await page.locator('asfw-widget').evaluate(el => el.configure({ 'data-asfw-lazy': '0' }));
+  const request = await received;
+  await page.locator('asfw-widget').evaluate(el => { void el.startVerification(); });
+  await request.fulfill({ status: 503, body: '' });
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'error');
+  await page.locator('asfw-widget').evaluate(el => el.configure({ appearance: 'dark' }));
+  assert.equal(challenges, 1);
+  await page.unroute('**/challenge');
+  await page.route('**/challenge', route => { challenges += 1; return route.continue(); });
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.startVerification()), true);
+  assert.equal(challenges, 2);
+});
+
+test('eager loading discards a stale response after reset', async t => {
+  const page = await pageFor(t);
+  let receiveRequest;
+  let challenges = 0;
+  const received = new Promise(resolve => { receiveRequest = resolve; });
+  await page.route('**/challenge', route => {
+    challenges += 1;
+    if (challenges === 1) receiveRequest(route);
+    else return route.continue();
+  });
+  await page.locator('asfw-widget').evaluate(el => el.configure({ 'data-asfw-lazy': '0' }));
+  const request = await received;
+  await page.locator('asfw-widget').evaluate(el => el.reset());
+  await request.continue().catch(() => {});
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.startVerification()), true);
+  assert.equal(challenges, 2);
+});
+
+test('eager loading refreshes a prefetched challenge that expires before manual verification', async t => {
+  const page = await pageFor(t);
+  await page.clock.install();
+  let challenges = 0;
+  await page.route('**/challenge', route => {
+    challenges += 1;
+    if (challenges !== 1) return route.continue();
+    const salt = `short?expires=${Math.floor(Date.now() / 1000) + 1}`;
+    return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ algorithm: 'SHA-256', salt,
+      challenge: createHash('sha256').update(salt + '2').digest('hex'), maxnumber: 10, signature: 'fixture' }) });
+  });
+  await page.locator('asfw-widget').evaluate(el => el.configure({ 'data-asfw-lazy': '0' }));
+  await page.waitForFunction(() => !!document.querySelector('asfw-widget')._challenge);
+  await page.clock.fastForward(2000);
+  await page.locator('asfw-widget .asfw-control').click();
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
+  assert.equal(challenges, 2);
+});
+
+test('eager loading bounds a stalled prefetch and permits explicit retry', async t => {
+  const page = await pageFor(t);
+  await page.clock.install();
+  let receiveRequest;
+  let challenges = 0;
+  const received = new Promise(resolve => { receiveRequest = resolve; });
+  await page.route('**/challenge', route => {
+    challenges += 1;
+    if (challenges === 1) receiveRequest(route);
+    else return route.continue();
+  });
+  await page.locator('asfw-widget').evaluate(el => el.configure({ 'data-asfw-lazy': '0' }));
+  const request = await received;
+  await page.clock.fastForward(10001);
+  await page.waitForFunction(() => !document.querySelector('asfw-widget')._challengePromise);
+  await request.abort().catch(() => {});
+  await page.locator('asfw-widget').evaluate(el => el.configure({ appearance: 'dark' }));
+  assert.equal(challenges, 1);
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.getState()), 'idle');
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.startVerification()), true);
+  assert.equal(challenges, 2);
+});

@@ -204,6 +204,119 @@ final class RemoteReliabilityTest extends AsfwPluginTestCase
         }
     }
 
+    /** @dataProvider confirmedAbsence */
+    public function test_idempotent_revoke_clears_all_local_ip_state(bool $missingList): void
+    {
+        $store = new ASFW_Atomic_State_Store();
+        $keys = array('counter', 'banned', 'dry_run');
+        foreach ($keys as $kind) {
+            $this->assertTrue($store->create('bunny:zone:42:asfw_bunny_' . $kind . '_' . md5('8.8.8.8'), array('count' => 10), 300));
+        }
+        if ($missingList) {
+            asfw_test_queue_http_response(array('response' => array('code' => 404), 'body' => '{}'));
+            asfw_test_queue_http_response($this->response(array('customLists' => array())));
+        } else {
+            asfw_test_queue_http_response($this->response(array('data' => array('id' => 77, 'content' => ''))));
+        }
+        $result = (new AsfwRemoteReliabilityModule($this->plugin()))->revoke_ip('8.8.8.8', true);
+        $this->assertSame($missingList ? 'missing_list' : 'unchanged', $result['status']);
+        foreach ($keys as $kind) {
+            $this->assertNull($store->read('bunny:zone:42:asfw_bunny_' . $kind . '_' . md5('8.8.8.8')));
+        }
+        foreach ($GLOBALS['asfw_test_http_requests'] as $request) {
+            $this->assertSame('GET', $request['args']['method']);
+        }
+    }
+
+    public static function confirmedAbsence(): array
+    {
+        return array(array(false), array(true));
+    }
+
+    public function test_revoke_rediscovers_a_replaced_list_without_creating_one(): void
+    {
+        asfw_test_queue_http_response(array('response' => array('code' => 404), 'body' => '{}'));
+        asfw_test_queue_http_response($this->response(array('customLists' => array(array('id' => 88, 'name' => ASFW_Bunny_Shield_Module::LIST_NAME)))));
+        asfw_test_queue_http_response($this->response(array('data' => array('id' => 88, 'content' => "8.8.8.8\n1.1.1.1"))));
+        asfw_test_queue_http_response($this->response(array('data' => array('id' => 88, 'content' => '1.1.1.1'))));
+        $result = (new AsfwRemoteReliabilityModule($this->plugin()))->revoke_ip('8.8.8.8', true);
+        $this->assertSame('updated', $result['status']);
+        $this->assertSame(88, $result['list_id']);
+        $this->assertSame('88', (string) get_option('asfw_feature_bunny_shield_access_list_id'));
+        $this->assertSame(array('GET', 'GET', 'GET', 'PATCH'), array_column(array_column($GLOBALS['asfw_test_http_requests'], 'args'), 'method'));
+    }
+
+    public function test_revoke_preserves_local_state_and_cached_id_on_remote_failure(): void
+    {
+        $store = new ASFW_Atomic_State_Store();
+        $key = 'bunny:zone:42:asfw_bunny_banned_' . md5('8.8.8.8');
+        $store->create($key, array('count' => 1), 300);
+        foreach (array(new WP_Error('timeout'), $this->response(array('data' => array('id' => 77)))) as $response) {
+            asfw_test_queue_http_response($response);
+            $this->assertInstanceOf(WP_Error::class, (new AsfwRemoteReliabilityModule($this->plugin()))->revoke_ip('8.8.8.8', true));
+            $this->assertIsArray($store->read($key));
+            $this->assertSame('77', get_option('asfw_feature_bunny_shield_access_list_id'));
+        }
+    }
+
+    public function test_revoke_does_not_clear_state_after_losing_its_lease(): void
+    {
+        $store = new ASFW_Atomic_State_Store();
+        $key = 'bunny:zone:42:asfw_bunny_banned_' . md5('8.8.8.8');
+        $store->create($key, array('count' => 1), 300);
+        $client = new AsfwRemoteReliabilityClient();
+        $client->onRead = static function () use ($store): void {
+            $leaseKey = 'bunny:zone:42:mutation';
+            $store->replace($leaseKey, $store->read($leaseKey), array('owner' => 'replacement'), 60);
+        };
+        $result = (new AsfwRemoteReliabilityModule($this->plugin(), $client))->revoke_ip('8.8.8.8', true);
+        $this->assertSame('asfw_bunny_busy', $result->get_error_code());
+        $this->assertIsArray($store->read($key));
+    }
+
+    public function test_revoke_preserves_state_after_atomic_delete_failure_and_clears_it_on_retry(): void
+    {
+        $store = new ASFW_Atomic_State_Store();
+        $snapshots = array();
+        foreach (array('counter', 'banned', 'dry_run') as $kind) {
+            $key = 'bunny:zone:42:asfw_bunny_' . $kind . '_' . md5('8.8.8.8');
+            $this->assertTrue($store->create($key, array('count' => 5), 300));
+            $snapshots[$key] = $store->read($key);
+        }
+        $counterKey = 'asfw_bunny_counter_' . md5('8.8.8.8');
+        set_transient($counterKey, array('count' => 5), 300);
+        $counterOption = $store->option_name('bunny:zone:42:' . $counterKey);
+        $GLOBALS['asfw_test_atomic_before_query'] = static function ($query) use ($counterOption): void {
+            // Fail the real counter DELETE; allow the independent lease release.
+            $GLOBALS['asfw_test_atomic_failure'] = str_starts_with($query, 'DELETE') && str_contains($query, $counterOption);
+        };
+        asfw_test_queue_http_response($this->response(array('data' => array('id' => 77, 'content' => ''))));
+        $module = new AsfwRemoteReliabilityModule($this->plugin());
+        try {
+            $result = $module->revoke_ip('8.8.8.8', true);
+        } finally {
+            $GLOBALS['asfw_test_atomic_failure'] = false;
+            $GLOBALS['asfw_test_atomic_before_query'] = null;
+        }
+        $this->assertInstanceOf(WP_Error::class, $result);
+        $this->assertSame('asfw_bunny_revoke_state_failed', $result->get_error_code());
+        foreach ($snapshots as $key => $snapshot) {
+            $this->assertSame($snapshot, $store->read($key));
+        }
+        $this->assertSame(array('count' => 5), get_transient($counterKey));
+        $this->assertNull($store->read('bunny:zone:42:mutation'));
+        $this->assertSame(array('GET'), array_column(array_column($GLOBALS['asfw_test_http_requests'], 'args'), 'method'));
+
+        asfw_test_queue_http_response($this->response(array('data' => array('id' => 77, 'content' => ''))));
+        $this->assertSame('unchanged', $module->revoke_ip('8.8.8.8', true)['status']);
+        foreach (array_keys($snapshots) as $key) {
+            $this->assertNull($store->read($key));
+        }
+        $this->assertFalse(get_transient($counterKey));
+        $this->assertNull($store->read('bunny:zone:42:mutation'));
+        $this->assertSame(array('GET', 'GET'), array_column(array_column($GLOBALS['asfw_test_http_requests'], 'args'), 'method'));
+    }
+
 }
 
 class AsfwRemoteReliabilityModule extends ASFW_Bunny_Shield_Module

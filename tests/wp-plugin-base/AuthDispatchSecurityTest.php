@@ -97,6 +97,7 @@ final class AuthDispatchSecurityTest extends AsfwPluginTestCase
         $this->seedPostedWidget('woocommerce:login');
 
         $this->assertTrue(asfw_is_woocommerce_account_request());
+        apply_filters('woocommerce_login_credentials', array('user_login' => 'demo', 'user_password' => 'secret'));
         $this->assertNotInstanceOf(WP_Error::class, apply_filters('authenticate', null, 'demo', 'secret'));
     }
 

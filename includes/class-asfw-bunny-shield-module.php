@@ -4,6 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/class-asfw-bunny-list-content.php';
+
 class ASFW_Bunny_Shield_Module {
 
 	const LIST_NAME = 'Anti Spam for WordPress';
@@ -358,39 +360,9 @@ class ASFW_Bunny_Shield_Module {
 		return is_array( $this->read_state( $this->get_dedupe_key( $ip ) ) );
 	}
 
+	/** @return array|WP_Error Reject the whole list when it is invalid or excessive. */
 	protected function normalize_entries( $content ) {
-		$entries = preg_split( '/[\r\n,]+/', trim( (string) $content ), -1, PREG_SPLIT_NO_EMPTY );
-		if ( ! is_array( $entries ) ) {
-			return array();
-		}
-
-		$plugin  = $this->plugin();
-		$entries = array_map(
-			static function ( $entry ) use ( $plugin ) {
-				$entry = trim( (string) $entry );
-				if ( '' === $entry ) {
-					return '';
-				}
-
-				if ( $plugin instanceof AntiSpamForWordPressPlugin ) {
-					$entry = $plugin->normalize_ip( $entry );
-				}
-
-				return $entry;
-			},
-			$entries
-		);
-
-		$entries = array_values(
-			array_filter(
-				$entries,
-				static function ( $entry ) {
-					return '' !== $entry;
-				}
-			)
-		);
-
-		return array_values( array_unique( $entries ) );
+		return ASFW_Bunny_List_Content::parse( $content, array( $this->plugin(), 'normalize_ip' ) );
 	}
 
 	protected function build_content( array $entries ) {
@@ -449,17 +421,16 @@ class ASFW_Bunny_Shield_Module {
 		if ( ! empty( $payload['checksum'] ) && ( ! is_string( $payload['checksum'] ) || ! hash_equals( hash( 'sha256', $content ), strtolower( $payload['checksum'] ) ) ) ) {
 			return $this->invalid_response();
 		}
-		foreach ( preg_split( '/[\r\n,]+/', trim( $content ), -1, PREG_SPLIT_NO_EMPTY ) as $entry ) {
-			if ( '' === $this->plugin()->normalize_ip( trim( $entry ) ) ) {
-				return $this->invalid_response();
-			}
+		$entries = $this->normalize_entries( $content );
+		if ( is_wp_error( $entries ) ) {
+			return $entries;
 		}
 		return array(
 			'list_id'  => $id,
 			'name'     => isset( $payload['name'] ) && is_string( $payload['name'] ) ? $payload['name'] : self::LIST_NAME,
 			'content'  => $content,
 			'checksum' => hash( 'sha256', $content ),
-			'entries'  => $this->normalize_entries( $content ),
+			'entries'  => $entries,
 			'raw'      => $payload,
 			'response' => $response,
 		);
@@ -530,11 +501,15 @@ class ASFW_Bunny_Shield_Module {
 	}
 
 	protected function apply_remote_update( $list_id, array $entries ) {
+		$content = $this->build_content( $entries );
+		$checked = $this->normalize_entries( $content );
+		if ( is_wp_error( $checked ) ) {
+			return $checked;
+		}
 		if ( ! $this->owns_remote_lease() ) {
 			return new WP_Error( 'asfw_bunny_busy', __( 'Bunny Shield synchronization is busy. Please try again.', 'anti-spam-for-wordpress' ) );
 		}
 		$client   = $this->get_client();
-		$content  = $this->build_content( $entries );
 		$created  = 0 === intval( $list_id, 10 );
 		$response = $created
 			? $client->create_access_list( self::LIST_NAME, $content, $this->get_shield_zone_id(), self::LIST_DESCRIPTION )
@@ -816,27 +791,12 @@ class ASFW_Bunny_Shield_Module {
 
 		return $this->with_remote_lock(
 			function () use ( $normalized_ip ) {
-				$list_id = $this->get_access_list_id();
-				if ( $list_id <= 0 ) {
-					$list = $this->get_or_create_access_list( array(), false );
-					if ( is_wp_error( $list ) ) {
-						return $list;
-					}
-					if ( empty( $list['list_id'] ) ) {
-						return array(
-							'status' => 'missing_list',
-							'ip'     => $normalized_ip,
-						);
-					}
-
-					$list_id = intval( $list['list_id'], 10 );
-				}
-
-				$current = $this->get_existing_list_content( $list_id );
+				// Resolve cached IDs through the same confirmed-404 recovery as sync.
+				$current = $this->get_or_create_access_list( array(), false );
 				if ( is_wp_error( $current ) ) {
 					return $current;
 				}
-
+				$list_id = isset( $current['list_id'] ) ? intval( $current['list_id'], 10 ) : 0;
 				$entries = isset( $current['entries'] ) && is_array( $current['entries'] ) ? $current['entries'] : array();
 				$updated = array_values(
 					array_filter(
@@ -847,30 +807,36 @@ class ASFW_Bunny_Shield_Module {
 					)
 				);
 
-				if ( $updated === $entries ) {
-					return array(
-						'status'  => 'unchanged',
-						'ip'      => $normalized_ip,
-						'list_id' => $list_id,
-					);
+				$response = array(
+					'status' => $list_id > 0 ? 'unchanged' : 'missing_list',
+					'ip'     => $normalized_ip,
+				);
+				if ( $list_id > 0 ) {
+					$response['list_id'] = $list_id;
+				}
+				if ( $updated !== $entries ) {
+					$result = $this->apply_remote_update( $list_id, $updated );
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
+					$response['status'] = 'updated';
+					$response['result'] = $result;
 				}
 
-				$result = $this->apply_remote_update( $list_id, $updated );
-				if ( is_wp_error( $result ) ) {
-					return $result;
+				// Confirmed absence is a successful idempotent revoke too.
+				if ( ! $this->owns_remote_lease() ) {
+					return new WP_Error( 'asfw_bunny_busy', __( 'Bunny Shield synchronization is busy. Please try again.', 'anti-spam-for-wordpress' ) );
 				}
-
-				$this->clear_signal_state( $normalized_ip );
-				$this->delete_state( $this->get_dedupe_key( $normalized_ip, false ) );
-				$this->delete_state( $this->get_dedupe_key( $normalized_ip, true ) );
+				foreach ( array( $this->get_signal_key( $normalized_ip ), $this->get_dedupe_key( $normalized_ip, false ), $this->get_dedupe_key( $normalized_ip, true ) ) as $key ) {
+					$cleared = $this->delete_state( $key );
+					if ( is_wp_error( $cleared ) || false === $cleared ) {
+						return new WP_Error( 'asfw_bunny_revoke_state_failed', __( 'The remote entry is absent, but local synchronization state could not be cleared. Please retry revoking it.', 'anti-spam-for-wordpress' ) );
+					}
+				}
+				delete_transient( $this->get_signal_key( $normalized_ip ) );
 				$this->clear_last_failure_state();
 
-				return array(
-					'status'  => 'updated',
-					'ip'      => $normalized_ip,
-					'list_id' => $list_id,
-					'result'  => $result,
-				);
+				return $response;
 			}
 		);
 	}

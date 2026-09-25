@@ -14,6 +14,12 @@ class ASFW_Disposable_Email_Module {
 
 	const DEFAULT_REMOTE_URL = 'https://raw.githubusercontent.com/disposable/disposable-email-domains/master/domains.txt';
 
+	const MAX_REMOTE_BYTES = 8 * 1024 * 1024;
+
+	const MAX_REMOTE_LINES = 400000;
+
+	const MAX_REMOTE_DOMAINS = 200000;
+
 	protected $candidate_email_fields = array(
 		'wordpress:register'   => array( 'user_email' ),
 		'wordpress:comments'   => array( 'email' ),
@@ -180,11 +186,7 @@ class ASFW_Disposable_Email_Module {
 			return $analysis;
 		}
 
-		foreach ( $emails as $field_name => $email ) {
-			if ( ! $this->is_disposable_email( $email ) ) {
-				continue;
-			}
-
+		foreach ( $this->find_disposable_emails( $emails ) as $field_name => $email ) {
 			$matched[]        = sanitize_key( (string) $field_name );
 			$matched_emails[] = $email;
 		}
@@ -319,12 +321,26 @@ class ASFW_Disposable_Email_Module {
 
 	/** Validate the complete feed before allowing it to replace the last good list. */
 	protected function parse_remote_domains( $body, array $current ) {
-		if ( '' === trim( $body ) || strlen( $body ) > 8 * 1024 * 1024 ) {
+		if ( '' === trim( $body ) || strlen( $body ) > self::MAX_REMOTE_BYTES ) {
 			return new WP_Error( 'asfw_disposable_invalid_size', 'Empty or oversized domain feed.' );
 		}
 
-		$domains = array();
-		foreach ( preg_split( '/[\r\n]+/', $body ) as $line ) {
+		$domains    = array();
+		$offset     = 0;
+		$line_count = 0;
+		$body_size  = strlen( $body );
+		// Scan one line at a time: millions of tiny lines must not allocate an array.
+		while ( $offset < $body_size ) {
+			if ( ++$line_count > self::MAX_REMOTE_LINES ) {
+				return new WP_Error( 'asfw_disposable_too_many_lines', 'The domain feed contains too many lines.' );
+			}
+			$line_length = strcspn( $body, "\r\n", $offset );
+			$line        = substr( $body, $offset, $line_length );
+			$offset     += $line_length;
+			if ( $offset < $body_size && "\r" === $body[ $offset ] && $offset + 1 < $body_size && "\n" === $body[ $offset + 1 ] ) {
+				++$offset;
+			}
+			++$offset;
 			$line = strtolower( trim( $line ) );
 			if ( '' === $line || '#' === substr( $line, 0, 1 ) ) {
 				continue;
@@ -333,6 +349,9 @@ class ASFW_Disposable_Email_Module {
 				return new WP_Error( 'asfw_disposable_invalid_domain', 'Malformed domain feed.' );
 			}
 			$domains[ $line ] = true;
+			if ( count( $domains ) > self::MAX_REMOTE_DOMAINS ) {
+				return new WP_Error( 'asfw_disposable_too_many_domains', 'The domain feed contains too many unique domains.' );
+			}
 		}
 
 		$domains = array_keys( $domains );
@@ -369,7 +388,7 @@ class ASFW_Disposable_Email_Module {
 					array(
 						'timeout'             => 5,
 						'redirection'         => 0,
-						'limit_response_size' => 8 * 1024 * 1024 + 1,
+						'limit_response_size' => self::MAX_REMOTE_BYTES + 1,
 					)
 				);
 				if ( is_wp_error( $response ) ) {
@@ -422,16 +441,28 @@ class ASFW_Disposable_Email_Module {
 		return $domains;
 	}
 
-	public function is_disposable_email( $email ) {
-		$email = trim( strtolower( (string) $email ) );
-		if ( '' === $email || false === strpos( $email, '@' ) ) {
-			return false;
+	/** Match a submission against one fresh domain lookup, preserving field names. */
+	public function find_disposable_emails( array $emails ) {
+		if ( empty( $emails ) ) {
+			return array();
 		}
+		$domains = array_fill_keys( $this->get_domains(), true );
+		$matched = array();
+		foreach ( $emails as $field_name => $email ) {
+			if ( ! is_scalar( $email ) ) {
+				continue;
+			}
+			$email = trim( strtolower( (string) $email ) );
+			$at    = strrpos( $email, '@' );
+			if ( false !== $at && isset( $domains[ substr( $email, $at + 1 ) ] ) ) {
+				$matched[ $field_name ] = $email;
+			}
+		}
+		return $matched;
+	}
 
-		$parts  = explode( '@', $email );
-		$domain = array_pop( $parts );
-
-		return in_array( $domain, $this->get_domains(), true );
+	public function is_disposable_email( $email ) {
+		return ! empty( $this->find_disposable_emails( array( $email ) ) );
 	}
 
 	public function get_last_refresh() {

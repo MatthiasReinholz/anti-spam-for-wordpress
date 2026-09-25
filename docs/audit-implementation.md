@@ -1,59 +1,70 @@
 # Audit implementation record
 
-The implementation starts from release 0.9.0, commit `8f28e4b66b857a91fceafb1efbbc47706a953e53`, verified against the latest `origin/main` on 25 September 2026. The shared foundation (`wp-plugin-base`) was upgraded to the published, provenance-verified v1.8.3 release at `58a1aa68acababb303eea6760923c60cbf648f10`. Unreleased upstream changes are kept in a separate foundation branch.
+This work starts from plugin release 0.9.0, commit `8f28e4b66b857a91fceafb1efbbc47706a953e53`, checked against the latest `origin/main` on 25 September 2026. The shared foundation is `MatthiasReinholz/wp-plugin-base`.
 
-Ten focused reviewers re-examined the plan. Implementation and a further cross-review prioritized exploitable policy gaps, concurrency failures, lifecycle correctness, and test coverage before organizational improvements. This record describes bounded engineering changes; an audit cannot establish that a project is defect-free.
+The earlier ten-reviewer plan review was followed by thirteen deeper audits. Each implementation received a second review, targeted regressions, and combined validation. This record describes verified engineering improvements; no audit establishes that a project is defect-free.
 
-## Prioritized changes
+## Review coverage
 
-| Priority | Engineering task | Implemented result |
+| Reviewer | Scope |
+| --- | --- |
+| 1 | Holistic completeness, documentation, supported versions, packaging |
+| 2 | Atomic proof consumption, quotas, leases, database failure behavior |
+| 3 | Native and WooCommerce authentication, registration, and reviews |
+| 4 | Widget lifecycle, lazy loading, dynamic fields, browser races |
+| 5 | Foundation integration, provenance, dependency and workflow policy |
+| 6 | Admin request state, persistence, timeout, clipboard failures |
+| 7 | Event queries, schema checks, migrations, initialization recovery |
+| 8 | Bunny remote state, revocation, retries and local cleanup |
+| 9 | Event privacy, credentials, feed memory and submission CPU bounds |
+| 10 | Third-party integration hook contracts and provider compatibility |
+| 11 | Runtime coexistence, settings extension contracts, option ownership |
+| 12 | Real WordPress harness isolation, cleanup, packaging and release gates |
+| 13 | Independent cross-review of security-sensitive fixes and failure paths |
+
+The thirteenth reviewer reproduced two additional defects: a one-shot retention migration failure could fall through to a different default, and duplicate-heavy Bunny list responses could exhaust a 128 MiB PHP process. Both received bounded fixes and regressions. This record is a pre-release checkpoint; publication awaits the verified foundation update described below.
+
+## Prioritized engineering changes
+
+| Priority | Task | Result |
 | --- | --- | --- |
-| P1 | Make proof consumption and quotas atomic | Database compare-and-swap state, exact one-time consumption, bounded contention retries, fail-closed storage errors, and one per-IP issuance quota across contexts, User Agents, math, delay, and proof requests. Invalid signatures cannot consume legitimate challenges. |
-| P1 | Bind protection to actual provider routes | CoBlocks interception runs only when its integration is enabled and restores native state afterward. Trusted native and wpDiscuz dispatch select their effective policy; signed public fields cannot downgrade a known route. Main and inline wpDiscuz click transports verify before serialization. |
-| P1 | Repair browser request and completion lifecycle | Per-form state, cancellation and generation checks, bounded observers, explicit retry, multiple-widget coordination, and renewal only after reset or settled requests. Math markup is safe to cache because issuance happens separately. |
-| P1 | Provision and clean multisite state reliably | Missing-only initialization preserves configured disabled values and secrets. Network initialization uses 100-site batches with lazy repair and new-site support. Deactivation removes argument-bearing jobs. Uninstall visits every site and removes the complete owned option inventory, event tables, and security state. |
-| P1 | Verify behavior against real infrastructure | Independent PHP workers test concurrent proof use and quotas against WordPress and MariaDB. The same suite verifies an actual Redis object cache, multisite activation, failed schema installation and recovery, and uninstall. CI includes the integration harness, all three browser engines, and PHP 8.0–8.5, including the advertised minimum runtime. |
-| P2 | Make admin requests predictable | Views, transport, resource state, and settings drafts are separate modules. Errors require explicit retry; stale reads cannot overwrite current state; duplicate saves are blocked; edits made during a save survive its response and tab changes. |
-| P2 | Make remote operations preserve valid state | Disposable feeds validate size, format, domain content, and suspicious shrinkage before replacement. Bunny updates use owned network-wide leases and reread remote state, preserve backoff history, distinguish dry runs, and reject malformed or logically unsuccessful responses. |
-| P2 | Harden identity, privacy, and persistence | One explicitly selected forwarding header is trusted only behind configured proxies. IPv6 forms normalize consistently. Context punctuation is preserved. Event details receive bounded recursive privacy sanitation, including structured strings and sensitive numeric fields. Schema versions advance only after verifying columns and indexes; database and feed errors reach maintenance and CLI callers. Expired security rows drain in bounded follow-up batches. |
-| P2 | Keep shared infrastructure fixes upstream | The separate foundation change adds one action-pin policy, migrations for reviewed predecessor pins, staging of migrated child workflows, dependency-update ownership, optional child PHPCS overlays, and compatible fixes for vulnerable development dependencies. The child consumes released foundation source unchanged. |
-| P3 | Document and expose extension contracts | A registration hook accepts unique integration IDs. Development guidance documents ownership, server-side custom form verification, completion events, cache exclusions, migrations, proxy configuration, privacy, and test boundaries. Translation source and production admin assets are regenerated. |
+| P1 | Make proof consumption and quotas atomic | Database compare-and-swap state, exact one-time consumption, bounded contention retries, fail-closed storage errors, and one per-IP issuance quota across contexts, User Agents, math, delay, and proof requests. Invalid signatures cannot consume a legitimate challenge. |
+| P1 | Bind authentication and comment policy to trusted dispatch | Native login/reset cannot be downgraded with WooCommerce-looking URLs or public nonces. WooCommerce login policy applies only to its actual validated handler and one matching authentication call. Account registration protection does not intercept checkout or programmatic customer creation. Native product reviews, wpDiscuz, and CoBlocks retain their intended policies. |
+| P1 | Correct browser lifecycle and provider retries | Per-form cancellation and generation checks, bounded observers, explicit retries, multiple-widget coordination, and renewal after settled requests. wpDiscuz verifies before serialization. Lazy loading and dynamic field names honor their documented settings. |
+| P1 | Recover incomplete initialization without replacing settings | Required writes and completion markers are verified. Legacy migration stops on persistence failure, including a one-shot retention failure. Schema version 4 rechecks historical version-3 installations. Multisite initialization uses bounded batches, lazy repair, and new-site support. |
+| P1 | Isolate the foundation runtime | **Pending upstream release adoption.** The upstream fix and isolated migration preflight use plugin-specific runtime classes. A prepared coexistence regression covers both load orders and overlapping operation identifiers; it will be added with the verified foundation update. |
+| P1 | Exercise real storage and supported versions | Independent workers race against WordPress/MariaDB, repeat with a verified Redis object cache, and exercise multisite repair/uninstall. CI covers WordPress 6.4 and 7.1.2 on PHP 8.3, browser engines Chromium/Firefox/WebKit, and strict PHP 8.0–8.5 runtime tests. |
+| P2 | Report unavailable data and failed saves honestly | Event reads expose a checked error state while preserving public return types. Admin and CLI consumers return errors instead of empty logs. Settings saves verify persisted values, preserve JSON backslashes, retain drafts after failures/timeouts, and clamp pagination before querying. |
+| P2 | Bound and validate remote data | Disposable feeds and Bunny IP lists parse incrementally with byte, entry and unique-value limits. Malformed or excessive data cannot replace a good list or trigger partial remote mutations. Disposable matching builds one fresh domain lookup per submission. |
+| P2 | Make Bunny revocation idempotent and retryable | Owned network-wide leases, stale-list rediscovery, validated responses, explicit dry-run state and durable backoff. Confirmed remote absence clears local counters and deduplication state; failed local cleanup remains a retryable error. |
+| P2 | Improve privacy boundaries | One selected forwarding header is trusted only behind configured proxies. Recursive event sanitation covers nested JSON and credential keys within shared limits. Heuristics exclude credentials. Generated privacy text accurately describes private expiring database options. |
+| P2 | Correct provider and extension contracts | Forminator's one-argument PayPal rendering hook no longer fatals. Custom settings sections and new feature sections render correctly; explicit metadata and built-in ordering remain stable. |
+| P2 | Keep shared infrastructure fixes upstream | **Upstream release coordination in progress.** Reviewed foundation changes cover safe generation, authenticated source fetching, runtime isolation, immutable release recovery, action-pin policy/migration, dependency ownership/remediation, optional PHPCS overlays, and isolated tooling cleanup. The foundation task is conducting another audit before publication. |
+| P3 | Improve maintenance documentation and packaging | Developer guidance covers ownership, custom server enforcement, provider completion events, cache exclusions, migrations, privacy, extension contracts and limits. Translation sources and admin production assets are rebuilt. PHPStan configuration remains outside the release ZIP. |
 
-## Follow-up audit
+## Compatibility and operational limits
 
-A fresh review of the implemented branch found additional defects and corrected them before completion:
+- Public facade signatures remain available. Names containing `transient` identify logical keys; callers must use the facade instead of assuming WordPress transient storage.
+- Previously issued transient-based verification tokens need a fresh attempt after upgrade. Frontend retry/completion paths obtain replacements.
+- A quota of zero explicitly means unlimited. Other issuance shares one per-IP bucket; shared public IPs need limits appropriate to legitimate traffic.
+- WordPress cron must run regularly for large-network initialization and expired-state cleanup. Deactivation and uninstall remove continuation jobs as well as primary jobs.
+- Bunny coordination covers one WordPress network. Separate installations and external list editors require dedicated lists or external coordination.
+- Provider hook contracts were checked against available official source, with production-script browser regressions. This does not substitute for live testing of every supported commercial provider/version combination.
+- The real WordPress suite uses PHP 8.3. The older PHP 8.0 container could not build locally because its Debian package sources failed; PHP 8.0 compatibility is covered by the separate strict runtime suite.
+- Test cleanup is scoped to each run's owned containers, volumes, networks and configuration. Partial-startup fallback and Redis failures are covered by command-stub regressions; failed cleanup retains recovery files.
 
-- **[P1] Native authentication policy:** Native WordPress login and password-reset dispatch now takes precedence over WooCommerce-looking URL parameters and public guest nonces. A solved WooCommerce proof cannot select a weaker policy on a native route. Genuine WooCommerce reset requests use the provider's actual `lost_password` nonce action. Regression tests cover both providers, rewritten URLs, subdirectory entrypoints, and single-use proof handling.
-- **[P2] Legacy schema verification:** Event schema version 4 forces the new postcondition checks for installations previously marked version 3, including failed historical migrations. Failed repair remains uninitialized and retryable; verified installations avoid repeated DDL. Real WordPress tests exercise failed repair and recovery through site initialization.
-- **[P2] Feed persistence:** Domain-list and refresh-timestamp writes verify the stored result. Failed writes report an error to maintenance and CLI, preserve retryability, and never claim a successful refresh. An unchanged stored value remains successful.
-- **[P2] Provider retries:** WPForms AJAX completion, Formidable validation errors, and HTML Forms parsed-response events renew consumed verification only after the affected request completes. Browser regressions retain credentials during submission and preserve unrelated forms.
-- **[P2] Extension event privacy:** Common password, authorization, cookie, and API-key fields receive the existing privacy hashing, including nested structured details. Ordinary counters and booleans retain their types.
+## Validation evidence for this checkpoint
 
-These corrections received an independent follow-up review. Provider event contracts were checked against their official source; this does not replace end-to-end testing of every supported provider version.
+The combined PHP suite passes **448 tests and 2,796 assertions**. An independent randomized-order run also passes under a 128 MiB memory limit (peak 101.69 MiB). Real WordPress, MariaDB and Redis validation passes **85 assertions on each of WordPress 6.4 and 7.1.2**, using PHP 8.3; both environments were removed by their owned cleanup routines. These real-runtime tests caught a missing-false option insertion defect that the initial stubs did not model; the implementation and stubs now cover it.
 
-## Compatibility and operations
+The production browser suite passes **45 Chromium cases**. The mounted admin suite covers **12 cases**. The isolated cleanup suite passes **15 regression cases**, including partial startup, ownership checks and Redis failures. Repository/build/package validation, coding standards, PHPStan, the security pack, and translation generation pass. The release ZIP excludes tests, development dependencies and PHPStan configuration. Root and child-admin npm audits report zero known vulnerabilities, including development dependencies.
 
-- Existing public facade signatures remain available. Names containing `transient` now identify logical keys; callers must use the facade rather than assume WordPress transient storage.
-- Previously issued transient-based tokens need a fresh verification after upgrade. Frontend retry and completion paths obtain replacement tokens.
-- Zero remains an explicit unlimited quota. All issuance otherwise shares one per-IP bucket. Shared public IPs should use limits appropriate to their legitimate traffic.
-- WordPress cron must run regularly to initialize large networks and drain expired security rows. Deactivation and uninstall remove both maintenance and continuation jobs.
-- Bunny coordination covers one WordPress network. Independent installations or external editors need dedicated remote lists or external coordination.
-- New provider regressions use the production browser scripts and real jQuery. They do not constitute live end-to-end tests of every supported third-party plugin version.
+Hosted CI passed all required checks on the preceding commit, including Firefox/WebKit and PHP 8.0–8.5. This checkpoint must pass those checks again at its own commit before merge. Local Firefox cannot start reliably in this macOS environment; hosted Linux CI provides its browser evidence. The previous Plugin Check run had zero errors and seven warnings (existing name/slug notices, deliberate bundled translations, and managed foundation runtime hooks); Plugin Check will be repeated after the final foundation migration.
 
-## Validation evidence
+## Pending foundation adoption and publication
 
-Local validation passed the managed repository and package checks, the WordPress quality and security packs, PHPStan, PHP coding standards, translation-catalog checks, and clean admin production builds. The PHP suite has 347 tests and 2,388 assertions. The separate real WordPress suite passed 69 assertions using WordPress 7.1.2, MariaDB, and Redis, with its owned environment removed afterward. Root and child-admin npm audits reported zero known vulnerabilities, including development dependencies.
+The child currently consumes genuine, provenance-verified **wp-plugin-base v1.8.3**, commit `58a1aa68acababb303eea6760923c60cbf648f10`. Unreleased upstream source has not been relabeled as a release. This project intentionally retains one temporary managed PHPCS overlay include, documented in [development.md](development.md), until upstream overlay support is released.
 
-The public browser suite passed all 38 Chromium cases. The eight mounted React admin tests passed after installing the updated dependency tree. The repository CI runs the browser suite on Chromium, Firefox, and WebKit. Firefox could not start in the local macOS environment because its sandbox/framebuffer initialization failed, so its validation uses Linux CI.
+The coordinated foundation work is tracked in [PR #343](https://github.com/MatthiasReinholz/wp-plugin-base/pull/343) and [PR #344](https://github.com/MatthiasReinholz/wp-plugin-base/pull/344). Its owner is reconciling the candidate with a further audit before publication. After a verified upstream release, the child must adopt the exact released source, select its isolated runtime class prefix, add the coexistence regression, remove the temporary overlay divergence, and rerun final release gates. The current vendored development tooling still needs that update; clean child-owned npm audits do not establish that every vendored development dependency is advisory-free.
 
-WordPress Plugin Check reported zero errors and seven warnings: three existing restricted-name/slug notices, the deliberate bundled-translation loader, and three warnings in managed foundation runtime code about shared prefixes or dynamic hooks. These are recorded rather than hidden. Renaming the published plugin or removing its bundled-translation behavior would change existing contracts and is not part of this hardening.
-
-The quality-pack PHPStan process initially exhausted the host's 128 MB default. The project now explicitly allocates a 2 GB analysis limit; the complete quality pack passes with that setting.
-
-## Shared foundation follow-up
-
-The foundation fixes must be reviewed and released through its existing release process, then consumed through this project's verified updater. Do not relabel unpublished source as v1.8.3. Until that release, this project intentionally retains one managed PHPCS overlay include, documented in [development.md](development.md), and manually migrated its reviewed browser workflow pins. The shared migration/tooling fixes are tracked in [wp-plugin-base PR #343](https://github.com/MatthiasReinholz/wp-plugin-base/pull/343). The related [wp-plugin-base PR #344](https://github.com/MatthiasReinholz/wp-plugin-base/pull/344) contains additional scanner dependency remediation and multi-environment test cleanup. Both must be coordinated through upstream review, validation, and a verified release. The currently vendored development tooling therefore still needs that release; zero-vulnerability npm results for the child-owned root/admin locks do not mean all vendored development dependencies are advisory-free.
-
-Copyable handoff for the upstream maintainers:
-
-> Please coordinate review of wp-plugin-base PRs #343 and #344 associated with this audit. It centralizes approved action pins, migrates only explicitly reviewed predecessor pins while preserving child workflow content, stages those exact migrated workflow paths, assigns foundation-owned action updates to the foundation and child npm updates to children, supports child PHPCS overlays, and patches compatible development dependencies. Please release it through the existing verified release process after CI passes, then update Anti Spam for WordPress through its verified foundation updater. The child currently uses genuine v1.8.3 source and documents its temporary PHPCS overlay include; no unpublished patch is disguised as that release.
+The plugin release will follow the managed preparation pull request, required checks, protected merge, annotated tag and signed artifact publication. No plugin release is claimed by this checkpoint.
