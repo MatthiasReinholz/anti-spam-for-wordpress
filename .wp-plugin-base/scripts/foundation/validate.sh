@@ -142,7 +142,8 @@ fi
 
 bash "$ROOT_DIR/scripts/foundation/check_version.sh"
 bash "$ROOT_DIR/scripts/foundation/test_changelog_policy.sh"
-bash "$ROOT_DIR/scripts/foundation/check_release_branch.sh" "release/$(tr -d '\n' < "$ROOT_DIR/VERSION")"
+current_branch="${GITHUB_HEAD_REF:-$(git -C "$ROOT_DIR" branch --show-current)}"
+bash "$ROOT_DIR/scripts/foundation/check_release_branch.sh" "${current_branch:-detached-head}"
 
 # Keep fixture validation hermetic even if the runner exports repository-level config vars.
 unset FOUNDATION_REPOSITORY FOUNDATION_VERSION PLUGIN_NAME PLUGIN_SLUG MAIN_PLUGIN_FILE README_FILE ZIP_FILE
@@ -294,6 +295,11 @@ bash "$ROOT_DIR/scripts/foundation/test_rest_operations_pack_abilities.sh"
 bash "$ROOT_DIR/scripts/foundation/test_gitlab_support.sh"
 bash "$ROOT_DIR/scripts/foundation/test_create_or_update_pr_auth_header_reset.sh"
 bash "$ROOT_DIR/scripts/foundation/test_pr_changelog_body_extraction.sh"
+bash "$ROOT_DIR/scripts/foundation/test_release_auth_header_cleanup.sh"
+ruby "$ROOT_DIR/scripts/foundation/test_action_pin_migrations.rb"
+bash "$ROOT_DIR/scripts/foundation/test_child_policy_sync.sh"
+bash "$ROOT_DIR/scripts/foundation/test_temporary_wordpress_cleanup.sh"
+bash "$ROOT_DIR/scripts/foundation/test_pre_push_git_isolation.sh"
 bash "$ROOT_DIR/scripts/foundation/test_lint_pack_pruning.sh"
 bash "$ROOT_DIR/scripts/foundation/test_run_quality_pack_local_fallback.sh"
 bash "$ROOT_DIR/scripts/foundation/test_run_php_runtime_smoke_local_fallback.sh"

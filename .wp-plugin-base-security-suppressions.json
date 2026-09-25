@@ -13,10 +13,16 @@
       "justification": "Anonymous forms need this endpoint to obtain a server-signed submit-delay token before submission."
     },
     {
+      "kind": "rest_permission_callback_true",
+      "identifier": "anti-spam-for-wordpress/v1:math-challenge",
+      "path": "includes/rest.php",
+      "justification": "Anonymous forms fetch fresh per-visitor math challenges through this same-site, aggregate-rate-limited, no-store endpoint so page caches never contain security tokens."
+    },
+    {
       "kind": "rest_route_bypass",
       "identifier": "register_rest_route",
       "path": "includes/rest.php",
-      "justification": "Challenge and submit-delay public routes intentionally remain direct register_rest_route endpoints while the admin UI uses the managed operation registry."
+      "justification": "Challenge, math, and submit-delay public routes intentionally remain direct register_rest_route endpoints while the admin UI uses the managed operation registry."
     }
   ]
 }

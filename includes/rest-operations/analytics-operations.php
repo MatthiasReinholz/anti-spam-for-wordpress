@@ -31,6 +31,10 @@ if ( ! function_exists( 'asfw_rest_operation_analytics_read' ) ) {
 
 		$filters     = asfw_rest_events_filters_from_request( $request );
 		$total_count = $store->count_events( $filters );
+		$error       = $store->get_last_read_error();
+		if ( is_wp_error( $error ) ) {
+			return $error;
+		}
 		$sample_cap  = 5000;
 		$sample_size = min( $sample_cap, max( 0, intval( $total_count, 10 ) ) );
 
@@ -43,6 +47,10 @@ if ( ! function_exists( 'asfw_rest_operation_analytics_read' ) ) {
 				)
 			)
 		);
+		$error  = $store->get_last_read_error();
+		if ( is_wp_error( $error ) ) {
+			return $error;
+		}
 
 		$daily_challenges = array();
 		$daily_verify     = array();

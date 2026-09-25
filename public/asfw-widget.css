@@ -65,7 +65,7 @@ asfw-widget {
   gap: 0.35rem;
 }
 
-.asfw-submit-delay-status.is-active::before {
+.asfw-submit-delay-status.is-pending::before {
   content: "";
   width: 0.7rem;
   height: 0.7rem;
@@ -81,5 +81,23 @@ asfw-widget {
 @keyframes asfw-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+.asfw-guard-status {
+  display: block;
+}
+
+.asfw-guard-retry {
+  margin: 0.3rem 0;
+}
+
+.asfw-guard-retry[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asfw-submit-delay-status.is-pending::before {
+    animation: none;
   }
 }

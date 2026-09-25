@@ -284,6 +284,7 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
         $_POST['woocommerce-login-nonce'] = 'nonce';
         $_SERVER['REQUEST_URI'] = '/my-account/';
 
+        apply_filters('woocommerce_login_credentials', array('user_login' => 'demo', 'user_password' => 'secret'));
         $result = apply_filters('authenticate', null, 'demo', 'secret');
 
         $this->assertInstanceOf(WP_Error::class, $result);
@@ -348,6 +349,7 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
 
         $this->seedPostedWidget('wordpress:login');
 
+        apply_filters('woocommerce_login_credentials', array('user_login' => 'demo', 'user_password' => 'secret'));
         $result = apply_filters('authenticate', null, 'demo', 'secret');
 
         $this->assertNotInstanceOf(WP_Error::class, $result);
@@ -390,6 +392,7 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
 
         $this->seedPostedWidget('woocommerce:login');
 
+        apply_filters('woocommerce_login_credentials', array('user_login' => 'demo', 'user_password' => 'secret'));
         $result = apply_filters('authenticate', null, 'demo', 'secret');
 
         $this->assertNotInstanceOf(WP_Error::class, $result);
@@ -402,7 +405,7 @@ final class AuthIntegrationTest extends AsfwPluginTestCase
         $_POST['woocommerce-login-nonce'] = '';
         $_SERVER['REQUEST_URI'] = '/my-account/';
 
-        $this->seedPostedWidget('wordpress:login');
+        apply_filters('woocommerce_login_credentials', array('user_login' => 'demo', 'user_password' => 'secret'));
 
         $result = apply_filters('authenticate', null, 'demo', 'secret');
 

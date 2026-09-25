@@ -22,7 +22,7 @@ final class BunnyShieldTest extends AsfwPluginTestCase
         $this->assertSame('60', (string) get_option(AntiSpamForWordPressPlugin::$option_feature_bunny_shield_ttl_minutes));
     }
 
-    public function test_bunny_feature_enablement_is_feature_registry_only_while_other_accessors_keep_legacy_fallbacks(): void
+    public function test_explicit_modern_bunny_defaults_take_precedence_over_stale_legacy_values(): void
     {
         update_option(AntiSpamForWordPressPlugin::$option_bunny_enabled, true);
         update_option(AntiSpamForWordPressPlugin::$option_bunny_api_key, 'legacy-api-key');
@@ -34,13 +34,13 @@ final class BunnyShieldTest extends AsfwPluginTestCase
         update_option(AntiSpamForWordPressPlugin::$option_bunny_dedupe_window, '7200');
 
         $this->assertFalse($this->plugin()->get_bunny_enabled());
-        $this->assertSame('legacy-api-key', $this->plugin()->get_bunny_api_key());
-        $this->assertSame(42, $this->plugin()->get_bunny_shield_zone_id());
-        $this->assertSame(77, $this->plugin()->get_bunny_access_list_id());
-        $this->assertFalse($this->plugin()->get_bunny_dry_run());
-        $this->assertFalse($this->plugin()->get_bunny_fail_open());
-        $this->assertSame(2, $this->plugin()->get_bunny_threshold());
-        $this->assertSame(7200, $this->plugin()->get_bunny_dedupe_window());
+        $this->assertSame('', $this->plugin()->get_bunny_api_key());
+        $this->assertSame(0, $this->plugin()->get_bunny_shield_zone_id());
+        $this->assertSame(0, $this->plugin()->get_bunny_access_list_id());
+        $this->assertTrue($this->plugin()->get_bunny_dry_run());
+        $this->assertTrue($this->plugin()->get_bunny_fail_open());
+        $this->assertSame(10, $this->plugin()->get_bunny_threshold());
+        $this->assertSame(3600, $this->plugin()->get_bunny_dedupe_window());
     }
 
     public function test_bunny_feature_explicit_disable_does_not_fallback_to_legacy_enable_flag(): void

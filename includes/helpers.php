@@ -98,6 +98,9 @@ function asfw_enqueue_scripts() {
 			'defaultFieldName'   => 'asfw',
 			'honeypotEnabled'    => $plugin ? (bool) $plugin->get_honeypot() : false,
 			'lazy'               => $plugin ? (bool) $plugin->get_lazy() : false,
+			'guardPreparing'     => __( 'Preparing verification...', 'anti-spam-for-wordpress' ),
+			'guardError'         => __( 'Verification could not be prepared. Try again.', 'anti-spam-for-wordpress' ),
+			'guardRetry'         => __( 'Try again', 'anti-spam-for-wordpress' ),
 			/* translators: %s: number of seconds remaining before the form can be submitted. */
 			'submitDelayMessage' => __( 'Please wait %s s...', 'anti-spam-for-wordpress' ),
 		)

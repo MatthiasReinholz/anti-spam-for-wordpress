@@ -18,13 +18,13 @@ if ( ! class_exists( 'ASFW_Client_Identity', false ) ) {
 		}
 
 		public function normalize_ip( $ip_address ) {
-			$ip_address = trim( (string) $ip_address, " \t\n\r\0\x0B\"'[]" );
+			$ip_address = trim( (string) $ip_address, " \t\n\r\0\x0B\"'" );
 			if ( '' === $ip_address ) {
 				return '';
 			}
 
 			if ( stripos( $ip_address, 'for=' ) === 0 ) {
-				$ip_address = trim( substr( $ip_address, 4 ), " \t\n\r\0\x0B\"'[]" );
+				$ip_address = trim( substr( $ip_address, 4 ), " \t\n\r\0\x0B\"'" );
 			}
 
 			if ( preg_match( '/^\[([^\]]+)\](?::\d+)?$/', $ip_address, $matches ) === 1 ) {
@@ -33,7 +33,20 @@ if ( ! class_exists( 'ASFW_Client_Identity', false ) ) {
 				$ip_address = preg_replace( '/:\d+$/', '', $ip_address );
 			}
 
-			return filter_var( $ip_address, FILTER_VALIDATE_IP ) ? $ip_address : '';
+			if ( false === filter_var( $ip_address, FILTER_VALIDATE_IP ) ) {
+				return '';
+			}
+
+			$binary = inet_pton( $ip_address );
+			if ( false === $binary ) {
+				return '';
+			}
+			// IPv4-mapped IPv6 and alternate IPv6 spellings identify the same client.
+			if ( 16 === strlen( $binary ) && substr( $binary, 0, 12 ) === str_repeat( chr( 0 ), 10 ) . chr( 255 ) . chr( 255 ) ) {
+				$binary = substr( $binary, 12 );
+			}
+
+			return (string) inet_ntop( $binary );
 		}
 
 		public function get_trusted_proxy_list() {
@@ -132,32 +145,35 @@ if ( ! class_exists( 'ASFW_Client_Identity', false ) ) {
 			$segments   = explode( ',', (string) $header_value );
 			$candidates = array();
 			foreach ( $segments as $segment ) {
-				$pairs = explode( ';', $segment );
+				$pairs         = explode( ';', $segment );
+				$forwarded_for = null;
 				foreach ( $pairs as $pair ) {
 					$pair = trim( $pair );
 					if ( stripos( $pair, 'for=' ) !== 0 ) {
 						continue;
 					}
 
-					$candidates[] = substr( $pair, 4 );
+					if ( null !== $forwarded_for ) {
+						return '';
+					}
+					$forwarded_for = substr( $pair, 4 );
 				}
+				if ( null === $forwarded_for ) {
+					return '';
+				}
+				$candidates[] = $forwarded_for;
 			}
 
 			return $this->extract_client_from_forward_chain( $candidates );
 		}
 
 		private function extract_client_from_forward_chain( array $candidates ) {
-			$normalized = array_values(
-				array_filter(
-					array_map( array( $this, 'normalize_ip' ), $candidates )
-				)
-			);
-			if ( empty( $normalized ) ) {
-				return '';
-			}
-
-			for ( $index = count( $normalized ) - 1; $index >= 0; --$index ) {
-				$candidate = $normalized[ $index ];
+			for ( $index = count( $candidates ) - 1; $index >= 0; --$index ) {
+				$candidate = $this->normalize_ip( $candidates[ $index ] );
+				// An invalid hop makes the remaining, less trusted chain unusable.
+				if ( '' === $candidate ) {
+					return '';
+				}
 				if ( ! $this->is_trusted_proxy_ip( $candidate ) ) {
 					return $candidate;
 				}
@@ -172,17 +188,13 @@ if ( ! class_exists( 'ASFW_Client_Identity', false ) ) {
 				return '' !== $remote_address ? $remote_address : 'unknown';
 			}
 
-			$headers = array(
-				'HTTP_CF_CONNECTING_IP',
-				'HTTP_X_REAL_IP',
-				'HTTP_FORWARDED',
-				'HTTP_X_FORWARDED_FOR',
+			$header_name = (string) apply_filters(
+				'asfw_trusted_proxy_header',
+				get_option( 'asfw_trusted_proxy_header', 'HTTP_X_FORWARDED_FOR' ),
+				$remote_address
 			);
-			foreach ( $headers as $header_name ) {
-				if ( empty( $_SERVER[ $header_name ] ) ) {
-					continue;
-				}
-
+			$allowed     = array( 'HTTP_X_FORWARDED_FOR', 'HTTP_FORWARDED', 'HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP' );
+			if ( in_array( $header_name, $allowed, true ) && ! empty( $_SERVER[ $header_name ] ) && is_string( $_SERVER[ $header_name ] ) ) {
 				$header_value = sanitize_text_field( wp_unslash( $_SERVER[ $header_name ] ) );
 				if ( 'HTTP_FORWARDED' === $header_name ) {
 					$candidate = $this->extract_forwarded_header_ip( $header_value );

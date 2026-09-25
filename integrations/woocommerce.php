@@ -4,7 +4,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/** Native authentication keeps its policy even when the URL resembles a Woo route. */
+function asfw_is_native_wordpress_auth_request() {
+	if ( ( function_exists( 'did_action' ) && did_action( 'login_init' ) > 0 )
+		|| 'wp-login.php' === ( $GLOBALS['pagenow'] ?? '' ) ) {
+		return true;
+	}
+
+	// These server entrypoints survive subdirectory installs and rewritten login URLs.
+	foreach ( array( 'SCRIPT_NAME', 'SCRIPT_FILENAME' ) as $server_key ) {
+		if ( isset( $_SERVER[ $server_key ] ) && is_string( $_SERVER[ $server_key ] )
+			&& 'wp-login.php' === basename( sanitize_text_field( wp_unslash( $_SERVER[ $server_key ] ) ) ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+require_once __DIR__ . '/class-asfw-woocommerce-login-dispatch.php';
+
+add_filter( 'woocommerce_login_credentials', array( 'ASFW_WooCommerce_Login_Dispatch', 'mark' ), PHP_INT_MAX, 1 );
+add_filter( 'authenticate', array( 'ASFW_WooCommerce_Login_Dispatch', 'begin' ), 0, 2 );
+add_filter( 'authenticate', array( 'ASFW_WooCommerce_Login_Dispatch', 'finish' ), PHP_INT_MAX, 1 );
+
 function asfw_is_woocommerce_account_request() {
+	if ( asfw_is_native_wordpress_auth_request() ) {
+		return false;
+	}
+
 	$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 	if ( '' === $request_uri ) {
 		return false;
@@ -113,14 +141,14 @@ add_action(
 	0
 );
 
-add_action(
-	'woocommerce_register_post',
-	function ( $user_login, $user_email, $errors ) {
+add_filter(
+	'woocommerce_process_registration_errors',
+	function ( $errors ) {
 		$plugin = AntiSpamForWordPressPlugin::$instance;
 		$mode   = $plugin->get_integration_woocommerce_register();
 		if ( ! empty( $mode ) ) {
 			if ( asfw_verify_posted_widget( 'woocommerce:register', 'asfw_register' ) === false ) {
-				return $errors->add(
+				$errors->add(
 					'asfw_error_message',
 					esc_html__( 'Could not verify you are not a robot.', 'anti-spam-for-wordpress' )
 				);
@@ -130,7 +158,7 @@ add_action(
 		return $errors;
 	},
 	10,
-	3
+	1
 );
 
 add_action(
@@ -154,14 +182,16 @@ add_filter(
 		if ( $user instanceof WP_Error ) {
 			return $user;
 		}
+		if ( asfw_is_native_wordpress_auth_request() ) {
+			return $user;
+		}
 		if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) {
 			return $user;
 		}
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 			return $user;
 		}
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Request shape detection is required to scope guards to WooCommerce account routes.
-		if ( ! isset( $_POST['woocommerce-login-nonce'] ) && ! asfw_is_woocommerce_account_request() ) {
+		if ( ! ASFW_WooCommerce_Login_Dispatch::is_active() ) {
 			return $user;
 		}
 		list($mode, $context) = asfw_get_woocommerce_login_protection();
@@ -172,10 +202,6 @@ add_filter(
 				'asfw-error',
 				esc_html__( 'Could not verify you are not a robot.', 'anti-spam-for-wordpress' )
 			);
-		}
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- This nonce field is read only to detect the WooCommerce login flow.
-		if ( ! isset( $_POST['woocommerce-login-nonce'] ) ) {
-			return $user;
 		}
 
 		if ( ! empty( $mode ) ) {
@@ -212,6 +238,9 @@ add_filter(
 	'lostpassword_post',
 	function ( $errors ) {
 		if ( is_user_logged_in() ) {
+			return $errors;
+		}
+		if ( asfw_is_native_wordpress_auth_request() ) {
 			return $errors;
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Request shape detection is required to scope guards to WooCommerce account routes.

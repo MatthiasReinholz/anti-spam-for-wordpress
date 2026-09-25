@@ -47,6 +47,7 @@ require_once __DIR__ . '/includes/class-asfw-privacy-policy-text.php';
 require_once __DIR__ . '/includes/class-asfw-options.php';
 require_once __DIR__ . '/includes/class-asfw-context-helper.php';
 require_once __DIR__ . '/includes/class-asfw-client-identity.php';
+require_once __DIR__ . '/includes/class-asfw-atomic-state-store.php';
 require_once __DIR__ . '/includes/class-asfw-rate-limiter.php';
 require_once __DIR__ . '/includes/class-asfw-challenge-manager.php';
 require_once __DIR__ . '/includes/class-asfw-verifier.php';
@@ -60,6 +61,7 @@ require_once __DIR__ . '/includes/class-asfw-schema.php';
 require_once __DIR__ . '/lib/wp-plugin-base/rest-operations/bootstrap.php';
 require_once __DIR__ . '/lib/wp-plugin-base/admin-ui/bootstrap.php';
 require_once __DIR__ . '/public/widget.php';
+require_once __DIR__ . '/includes/lifecycle.php';
 
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Static property names are part of the legacy plugin API.
 AntiSpamForWordPressPlugin::$widget_script_src = plugin_dir_url( __FILE__ ) . 'public/asfw-widget.js';
@@ -72,7 +74,12 @@ register_activation_hook( __FILE__, 'asfw_activate' );
 register_deactivation_hook( __FILE__, 'asfw_deactivate' );
 
 add_action( 'init', 'asfw_init' );
-add_action( 'admin_init', 'asfw_maybe_migrate_legacy_settings' );
+add_action(
+	'admin_init',
+	static function () {
+		asfw_maybe_migrate_legacy_settings();
+	}
+);
 
 ASFW_Integration_Loader::bootstrap( __DIR__ );
 asfw_initialize_control_plane();
@@ -110,113 +117,8 @@ add_shortcode(
 
 function asfw_init() {
 	load_plugin_textdomain( 'anti-spam-for-wordpress', false, dirname( plugin_basename( ASFW_FILE ) ) . '/languages' );
-	if ( function_exists( 'asfw_seed_control_plane_defaults' ) ) {
-		asfw_seed_control_plane_defaults();
-	}
+	asfw_maybe_initialize_site();
 	asfw_initialize_control_plane();
-}
-
-function asfw_activate() {
-	asfw_initialize_control_plane();
-	if ( function_exists( 'asfw_seed_control_plane_defaults' ) ) {
-		asfw_seed_control_plane_defaults();
-	}
-	asfw_maybe_migrate_legacy_settings( true );
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_secret, '' ) === '' ) {
-		$plugin = asfw_plugin_instance();
-		if ( $plugin instanceof AntiSpamForWordPressPlugin ) {
-			update_option( AntiSpamForWordPressPlugin::$option_secret, $plugin->random_secret() );
-		} else {
-			update_option( AntiSpamForWordPressPlugin::$option_secret, bin2hex( random_bytes( 32 ) ) );
-		}
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_complexity, '' ) === '' ) {
-		update_option( AntiSpamForWordPressPlugin::$option_complexity, 'medium' );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_expires, '' ) === '' ) {
-		update_option( AntiSpamForWordPressPlugin::$option_expires, '300' );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_hidefooter, null ) === null ) {
-		update_option( AntiSpamForWordPressPlugin::$option_hidefooter, true );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_hidelogo, null ) === null ) {
-		update_option( AntiSpamForWordPressPlugin::$option_hidelogo, false );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_widget_appearance, null ) === null ) {
-		update_option( AntiSpamForWordPressPlugin::$option_widget_appearance, 'light' );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_widget_layout, null ) === null ) {
-		update_option( AntiSpamForWordPressPlugin::$option_widget_layout, 'compact' );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_privacy_new_tab, null ) === null ) {
-		update_option( AntiSpamForWordPressPlugin::$option_privacy_new_tab, false );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_privacy_legal_basis, null ) === null ) {
-		update_option( AntiSpamForWordPressPlugin::$option_privacy_legal_basis, ASFW_Privacy_Policy_Text::LEGAL_BASIS_REVIEW_REQUIRED );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_integration_custom, '' ) === '' ) {
-		update_option( AntiSpamForWordPressPlugin::$option_integration_custom, 'captcha' );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_lazy, null ) === null ) {
-		update_option( AntiSpamForWordPressPlugin::$option_lazy, true );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_rate_limit_max_challenges, '' ) === '' ) {
-		update_option( AntiSpamForWordPressPlugin::$option_rate_limit_max_challenges, '30' );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_rate_limit_max_failures, '' ) === '' ) {
-		update_option( AntiSpamForWordPressPlugin::$option_rate_limit_max_failures, '10' );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_rate_limit_window, '' ) === '' ) {
-		update_option( AntiSpamForWordPressPlugin::$option_rate_limit_window, '600' );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_honeypot, null ) === null ) {
-		update_option( AntiSpamForWordPressPlugin::$option_honeypot, true );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_min_submit_time, '' ) === '' ) {
-		update_option( AntiSpamForWordPressPlugin::$option_min_submit_time, '3' );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_visitor_binding, '' ) === '' ) {
-		update_option( AntiSpamForWordPressPlugin::$option_visitor_binding, 'ip' );
-	}
-
-	if ( get_option( AntiSpamForWordPressPlugin::$option_trusted_proxies, null ) === null ) {
-		update_option( AntiSpamForWordPressPlugin::$option_trusted_proxies, '' );
-	}
-
-	$control_plane = ASFW_Control_Plane::instance();
-	if ( isset( $control_plane['store'] ) && $control_plane['store'] instanceof ASFW_Event_Store ) {
-		$control_plane['store']->install();
-	}
-
-	if ( isset( $control_plane['maintenance'] ) && $control_plane['maintenance'] instanceof ASFW_Maintenance ) {
-		$control_plane['maintenance']->maybe_schedule();
-	}
-}
-
-function asfw_deactivate() {
-	if ( class_exists( 'ASFW_Control_Plane', false ) ) {
-		$control_plane = ASFW_Control_Plane::instance();
-		if ( isset( $control_plane['maintenance'] ) && $control_plane['maintenance'] instanceof ASFW_Maintenance ) {
-			$control_plane['maintenance']->unschedule();
-		}
-	}
 }
 
 function asfw_normalize_migrated_mode( $value ) {
@@ -227,19 +129,20 @@ function asfw_normalize_migrated_mode( $value ) {
 	return $value;
 }
 
+/** @return bool Whether migration is complete or no migration is needed. */
 function asfw_maybe_migrate_legacy_settings( $force = false ) {
 	$migration_option = 'asfw_migration_completed';
-	if ( ! $force && get_option( $migration_option ) ) {
-		return;
+	if ( get_option( $migration_option ) ) {
+		return true;
 	}
 
 	$legacy_secret = get_option( 'altcha_secret', null );
 	if ( null === $legacy_secret ) {
 		if ( $force ) {
-			update_option( $migration_option, ASFW_VERSION );
+			return asfw_persist_initial_option( $migration_option, ASFW_VERSION );
 		}
 
-		return;
+		return true;
 	}
 
 	$option_map = array(
@@ -297,7 +200,7 @@ function asfw_maybe_migrate_legacy_settings( $force = false ) {
 
 	foreach ( $option_map as $legacy_option => $new_option ) {
 		$legacy_value = get_option( $legacy_option, null );
-		if ( null === $legacy_value ) {
+		if ( null === $legacy_value || null !== get_option( $new_option, null ) ) {
 			continue;
 		}
 
@@ -305,8 +208,10 @@ function asfw_maybe_migrate_legacy_settings( $force = false ) {
 			$legacy_value = asfw_normalize_migrated_mode( $legacy_value );
 		}
 
-		update_option( $new_option, $legacy_value );
+		if ( ! asfw_persist_initial_option( $new_option, $legacy_value ) ) {
+			return false;
+		}
 	}
 
-	update_option( $migration_option, ASFW_VERSION );
+	return asfw_persist_initial_option( $migration_option, ASFW_VERSION );
 }

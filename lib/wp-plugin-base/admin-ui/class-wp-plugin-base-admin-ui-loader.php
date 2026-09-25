@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Runtime class prefixes vary by consumer; managed filenames remain stable.
 /**
  * Admin UI loader for managed app conventions.
  *
@@ -10,13 +10,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'WP_Plugin_Base_Admin_UI_Loader' ) ) {
+if ( ! class_exists( 'ASFW_WP_Plugin_Base_Admin_UI_Loader' ) ) {
 	/**
 	 * Registers and renders a standard admin application shell.
 	 *
 	 * @since NEXT
 	 */
-	class WP_Plugin_Base_Admin_UI_Loader {
+	class ASFW_WP_Plugin_Base_Admin_UI_Loader {
 		/**
 		 * Page definitions keyed by hook suffix.
 		 *
@@ -135,13 +135,31 @@ if ( ! class_exists( 'WP_Plugin_Base_Admin_UI_Loader' ) ) {
 				);
 			}
 
+			$style_dependencies = array( 'wp-components' );
+			if ( file_exists( $asset_base . '/index.css' ) ) {
+				$component_style_handle = $config['style_handle'] . '-components';
+				wp_enqueue_style(
+					$component_style_handle,
+					plugins_url( 'assets/admin-ui/index.css', dirname( __DIR__, 3 ) . '/anti-spam-for-wordpress.php' ),
+					$style_dependencies,
+					$asset_data['version']
+				);
+				if ( function_exists( 'wp_style_add_data' ) && file_exists( $asset_base . '/index-rtl.css' ) ) {
+					wp_style_add_data( $component_style_handle, 'rtl', 'replace' );
+				}
+				$style_dependencies[] = $component_style_handle;
+			}
+
 			if ( file_exists( $asset_base . '/style-index.css' ) ) {
 				wp_enqueue_style(
 					$config['style_handle'],
 					$style_url,
-					array( 'wp-components' ),
+					$style_dependencies,
 					$asset_data['version']
 				);
+				if ( function_exists( 'wp_style_add_data' ) && file_exists( $asset_base . '/style-index-rtl.css' ) ) {
+					wp_style_add_data( $config['style_handle'], 'rtl', 'replace' );
+				}
 			}
 
 			wp_add_inline_script(
@@ -153,7 +171,7 @@ if ( ! class_exists( 'WP_Plugin_Base_Admin_UI_Loader' ) ) {
 						'rootId'                => $config['root_id'],
 						'pluginName'            => $config['plugin_name'],
 						'experimentalDataViews' => ! empty( $config['experimental_dataviews'] ),
-						'operations'            => class_exists( 'WP_Plugin_Base_REST_Operations_Registry' ) ? WP_Plugin_Base_REST_Operations_Registry::summary() : array(),
+						'operations'            => class_exists( 'ASFW_WP_Plugin_Base_REST_Operations_Registry' ) ? ASFW_WP_Plugin_Base_REST_Operations_Registry::summary() : array(),
 					)
 				),
 				'before'

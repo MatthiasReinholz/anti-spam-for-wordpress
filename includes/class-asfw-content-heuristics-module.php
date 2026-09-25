@@ -49,7 +49,7 @@ class ASFW_Content_Heuristics_Module {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- This is read-only heuristic analysis after verification.
 		foreach ( (array) $_POST as $key => $value ) {
 			$key = (string) $key;
-			if ( false !== strpos( $key, 'asfw' ) ) {
+			if ( false !== strpos( $key, 'asfw' ) || asfw_field_is_credential( $key ) ) {
 				continue;
 			}
 
@@ -67,12 +67,23 @@ class ASFW_Content_Heuristics_Module {
 	}
 
 	public function analyze_submission( $context = null ) {
-		$context    = sanitize_key( (string) $context );
-		$terms      = $this->get_heuristic_terms();
-		$candidates = $this->collect_candidate_text();
-		$score      = 0;
-		$reasons    = array();
-		$matches    = array();
+		$context           = ASFW_Feature_Registry::normalize_context( $context );
+		$terms             = $this->get_heuristic_terms();
+		$candidates        = $this->collect_candidate_text();
+		$score             = 0;
+		$reasons           = array();
+		$matches           = array();
+		$disposable_emails = array();
+		if ( $this->disposable_module instanceof ASFW_Disposable_Email_Module && $this->disposable_module->is_enabled( $context ) ) {
+			$email_candidates  = array_filter(
+				$candidates,
+				static function ( $field_name ) {
+					return false !== strpos( (string) $field_name, 'email' );
+				},
+				ARRAY_FILTER_USE_KEY
+			);
+			$disposable_emails = $this->disposable_module->find_disposable_emails( $email_candidates );
+		}
 
 		foreach ( $candidates as $field_name => $value ) {
 			$normalized = strtolower( $value );
@@ -101,15 +112,9 @@ class ASFW_Content_Heuristics_Module {
 				}
 			}
 
-			if (
-					false !== strpos( $field_name, 'email' ) &&
-					$this->disposable_module instanceof ASFW_Disposable_Email_Module &&
-					$this->disposable_module->is_enabled( $context )
-				) {
-				if ( $this->disposable_module->is_disposable_email( $value ) ) {
-					$score    += 2;
-					$reasons[] = 'disposable_email:' . $field_name;
-				}
+			if ( isset( $disposable_emails[ $field_name ] ) ) {
+				$score    += 2;
+				$reasons[] = 'disposable_email:' . $field_name;
 			}
 		}
 
@@ -123,7 +128,7 @@ class ASFW_Content_Heuristics_Module {
 	}
 
 	public function inspect_submission( $success, $result, $context, $field_name, $resolved_context = null ) {
-		$event_context = '' !== sanitize_key( (string) $resolved_context ) ? sanitize_key( (string) $resolved_context ) : sanitize_key( (string) $context );
+		$event_context = ASFW_Feature_Registry::normalize_context( '' !== trim( (string) $resolved_context ) ? $resolved_context : $context );
 
 		if ( ! $success || ! $this->is_enabled( $event_context ) ) {
 			return;

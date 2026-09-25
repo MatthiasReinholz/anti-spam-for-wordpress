@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-WP_Plugin_Base_Admin_UI_Loader::register_page(
+ASFW_WP_Plugin_Base_Admin_UI_Loader::register_page(
 	array(
 		'page_title'             => 'Anti Spam for WordPress',
 		'menu_title'             => 'Anti Spam for WordPress',

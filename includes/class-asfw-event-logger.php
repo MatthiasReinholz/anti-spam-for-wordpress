@@ -42,7 +42,7 @@ class ASFW_Event_Logger {
 	}
 
 	protected function normalize_context( $context ) {
-		return sanitize_key( (string) $context );
+		return ASFW_Feature_Registry::normalize_context( $context );
 	}
 
 	protected function maybe_hash_user( $user_id ) {
@@ -100,7 +100,7 @@ class ASFW_Event_Logger {
 			'challenge_issued',
 			array(
 				'decision' => 'issued',
-				'context'  => sanitize_key( (string) $context ),
+				'context'  => ASFW_Feature_Registry::normalize_context( $context ),
 				'feature'  => 'core',
 				'ip_hash'  => $this->get_actor_hash(),
 				'details'  => array(
@@ -113,7 +113,7 @@ class ASFW_Event_Logger {
 	}
 
 	public function log_verify_result( $success, $result, $context, $field_name, $resolved_context = null ) {
-		$event_context = '' !== $this->normalize_context( $resolved_context ) ? $this->normalize_context( $resolved_context ) : $this->normalize_context( $context );
+		$event_context = $this->normalize_context( '' !== trim( (string) $resolved_context ) ? $resolved_context : $context );
 		if ( ! $this->should_log( $event_context ) ) {
 			return;
 		}
@@ -150,7 +150,7 @@ class ASFW_Event_Logger {
 			'rate_limited',
 			array(
 				'decision' => 'blocked',
-				'context'  => sanitize_key( (string) $context ),
+				'context'  => ASFW_Feature_Registry::normalize_context( $context ),
 				'feature'  => 'core',
 				'ip_hash'  => $this->get_actor_hash(),
 				'details'  => array(

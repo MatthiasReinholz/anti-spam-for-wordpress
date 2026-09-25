@@ -23,6 +23,22 @@ add_action(
 			)
 		);
 
+		register_rest_route( // nosemgrep: wp-rest-permission-callback-true-string -- Public per-visitor math challenge, guarded by aggregate issuance quotas.
+			'anti-spam-for-wordpress/v1',
+			'math-challenge',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => 'asfw_generate_math_challenge_endpoint',
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'context' => array(
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
 			register_rest_route( // nosemgrep: wp-rest-permission-callback-true-string -- Public signed delay token.
 				'anti-spam-for-wordpress/v1',
 				'submit-delay-token',
@@ -108,23 +124,41 @@ function asfw_generate_submit_delay_token_endpoint( WP_REST_Request $request ) {
 		);
 	}
 
-	$rate_limit_context = 'submit-delay-token:' . $context;
-	$rate_limited       = $plugin->is_rate_limited( 'challenge', $rate_limit_context );
-	if ( $rate_limited instanceof WP_Error ) {
-		return $rate_limited;
-	}
 	$delay_ms = intval( $plugin->get_feature_submit_delay_ms(), 10 );
 	if ( ! in_array( (string) $delay_ms, array( '1000', '2500', '5000' ), true ) ) {
 		$delay_ms = 2500;
 	}
 
 	$token = $plugin->issue_submit_delay_token( $context, $delay_ms );
-	$plugin->increment_rate_limit( 'challenge', $rate_limit_context );
+	if ( $token instanceof WP_Error ) {
+		return $token;
+	}
 	$token['delay_ms'] = $delay_ms;
 
 	$response = new WP_REST_Response( $token );
 	$response->set_headers( array( 'Cache-Control' => 'no-cache, no-store, max-age=0' ) );
 
+	return $response;
+}
+
+function asfw_generate_math_challenge_endpoint( WP_REST_Request $request ) {
+	if ( 'same_site' !== asfw_classify_challenge_request_origin( $request ) ) {
+		return new WP_Error( 'asfw_cross_site_math_forbidden', __( 'Math challenge requests must be same-site.', 'anti-spam-for-wordpress' ), array( 'status' => 403 ) );
+	}
+	$context = ASFW_Feature_Registry::normalize_context( $request->get_param( 'context' ) );
+	if ( ! asfw_is_context_guard_supported( $context ) || ! ASFW_Feature_Registry::is_enabled( 'math_challenge', $context ) ) {
+		return new WP_Error( 'asfw_math_inactive', __( 'Math challenge is not enabled for this context.', 'anti-spam-for-wordpress' ), array( 'status' => 403 ) );
+	}
+	$plugin = asfw_plugin_instance();
+	if ( ! $plugin instanceof AntiSpamForWordPressPlugin ) {
+		return new WP_Error( 'asfw_unavailable', __( 'Anti-spam service is unavailable.', 'anti-spam-for-wordpress' ), array( 'status' => 503 ) );
+	}
+	$challenge = $plugin->issue_math_challenge( $context );
+	if ( $challenge instanceof WP_Error ) {
+		return $challenge;
+	}
+	$response = new WP_REST_Response( $challenge );
+	$response->set_headers( array( 'Cache-Control' => 'no-cache, no-store, max-age=0' ) );
 	return $response;
 }
 

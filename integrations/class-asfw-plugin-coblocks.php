@@ -14,9 +14,34 @@ if ( asfw_plugin_active( 'coblocks' ) ) {
 
 		private const RECAPTCHA_DUMMY_TOKEN = 'asfw_dummy_token';
 
+		private static $original_token;
+		private static $intercepting = false;
+
+		private static function is_enabled() {
+			$plugin = asfw_plugin_instance();
+			return $plugin instanceof AntiSpamForWordPressPlugin
+				&& ! $plugin->is_kill_switch_enabled()
+				&& 'captcha' === $plugin->get_integration_coblocks();
+		}
+
+		public static function cleanup(): void {
+			remove_filter( 'pre_http_request', array( self::class, 'verify' ) );
+			remove_filter( 'pre_option_coblocks_google_recaptcha_site_key', '__return_true' );
+			remove_filter( 'pre_option_coblocks_google_recaptcha_secret_key', '__return_true' );
+			if ( self::$intercepting ) {
+				if ( null === self::$original_token ) {
+					unset( $_POST['g-recaptcha-token'] );
+				} else {
+					$_POST['g-recaptcha-token'] = self::$original_token;
+				}
+			}
+			self::$intercepting   = false;
+			self::$original_token = null;
+		}
+
 		public static function render_block( $block_content, array $block, WP_Block $instance ): string {
 			$block_content = (string) $block_content;
-			if ( 'coblocks/form' !== $block['blockName'] ) {
+			if ( 'coblocks/form' !== ( $block['blockName'] ?? '' ) || ! self::is_enabled() ) {
 				return $block_content;
 			}
 
@@ -36,9 +61,7 @@ if ( asfw_plugin_active( 'coblocks' ) ) {
 		public static function render_block_data( $parsed_block, array $source_block, $parent_block = null ): array {
 			unset( $source_block, $parent_block );
 
-			static $filters_added;
-
-			if ( $filters_added ) {
+			if ( ! self::is_enabled() ) {
 				return $parsed_block;
 			}
 
@@ -57,13 +80,19 @@ if ( asfw_plugin_active( 'coblocks' ) ) {
 			}
 
 			add_action( 'coblocks_before_form_submit', array( 'ASFW_Plugin_Coblocks', 'before_form_submit' ), 10, 2 );
-			$filters_added = true;
 
 			return $parsed_block;
 		}
 
 		public static function before_form_submit( array $post, array $atts ): void {
 			unset( $post, $atts );
+			if ( ! self::is_enabled() || self::$intercepting ) {
+				return;
+			}
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Store only for byte-for-byte restoration to the provider, which validates it; never output or trust this token.
+			self::$original_token = $_POST['g-recaptcha-token'] ?? null;
+			self::$intercepting   = true;
+			add_action( 'shutdown', array( self::class, 'cleanup' ) );
 
 			add_filter( 'pre_option_coblocks_google_recaptcha_site_key', '__return_true' );
 			add_filter( 'pre_option_coblocks_google_recaptcha_secret_key', '__return_true' );
@@ -76,29 +105,19 @@ if ( asfw_plugin_active( 'coblocks' ) ) {
 		public static function verify( $response, array $parsed_args, string $url ) {
 			if (
 				CoBlocks_Form::GCAPTCHA_VERIFY_URL !== $url ||
-				self::RECAPTCHA_DUMMY_TOKEN !== $parsed_args['body']['response']
+				! is_array( $parsed_args['body'] ?? null ) ||
+				self::RECAPTCHA_DUMMY_TOKEN !== ( $parsed_args['body']['response'] ?? null )
 			) {
 				return $response;
 			}
 
-			remove_filter( 'pre_http_request', array( 'ASFW_Plugin_Coblocks', 'verify' ) );
-
-			$plugin = AntiSpamForWordPressPlugin::$instance;
-			$mode   = $plugin->get_integration_coblocks();
-			if ( ! empty( $mode ) && 'captcha' === $mode ) {
-				if ( asfw_verify_posted_widget( 'coblocks' ) === false ) {
-					return array(
-						'body'     => '{"success":false}',
-						'response' => array(
-							'code'    => 200,
-							'message' => 'OK',
-						),
-					);
-				}
+			self::cleanup();
+			if ( ! self::is_enabled() ) {
+				return $response;
 			}
-
+			$verified = asfw_verify_posted_widget( 'coblocks' );
 			return array(
-				'body'     => '{"success":true}',
+				'body'     => wp_json_encode( array( 'success' => true === $verified ) ),
 				'response' => array(
 					'code'    => 200,
 					'message' => 'OK',

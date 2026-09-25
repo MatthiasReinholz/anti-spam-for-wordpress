@@ -203,7 +203,7 @@ final class ASFW_Privacy_Policy_Text {
 			__( 'To distinguish regular users from automated submissions, the plugin processes the visitor %s to create a local, server-side fingerprint.', 'anti-spam-for-wordpress' ),
 			$identity
 		);
-		$parts[] = __( 'The plugin issues signed proof-of-work challenges and guard tokens that can include timestamps, request context, challenge identifiers, signatures, and short-lived verification state stored in WordPress transients.', 'anti-spam-for-wordpress' );
+		$parts[] = __( 'The plugin issues signed proof-of-work challenges and guard tokens that can include timestamps, request context, challenge identifiers, and signatures. Short-lived verification and rate-limit state is stored in private WordPress database options with expiration times; scheduled maintenance removes expired records. Uninstalling the plugin also removes legacy transient records.', 'anti-spam-for-wordpress' );
 
 		if ( ! empty( $flags['trusted_proxies'] ) ) {
 			$parts[] = __( 'When a request comes through a configured trusted proxy, forwarded client IP headers may be used to identify the visitor IP address for anti-spam checks.', 'anti-spam-for-wordpress' );

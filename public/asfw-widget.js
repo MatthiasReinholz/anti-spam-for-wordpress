@@ -15,10 +15,21 @@ const ASFW_DEFAULT_STRINGS = {
 };
 
 const ASFW_TEXT_ENCODER = new TextEncoder();
+const ASFW_FORM_SUBMISSIONS = new WeakMap();
+const ASFW_REQUEST_TIMEOUT_MS = 10000;
 
-function asfwSleep(ms) {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, ms);
+function asfwSleep(ms, signal) {
+  return new Promise((resolve, reject) => {
+    const cancel = () => {
+      window.clearTimeout(timer);
+      reject(new DOMException('Verification canceled.', 'AbortError'));
+    };
+    const timer = window.setTimeout(() => {
+      signal?.removeEventListener('abort', cancel);
+      resolve();
+    }, ms);
+    signal?.addEventListener('abort', cancel, { once: true });
+    if (signal?.aborted) cancel();
   });
 }
 
@@ -44,7 +55,7 @@ function asfwSetOptionalDataAttribute(element, name, value) {
 
 class ASFWWidgetElement extends HTMLElement {
   static get observedAttributes() {
-    return ['appearance', 'auto', 'challengeurl', 'data-asfw-challengeurl', 'data-asfw-min-submit-time', 'data-asfw-privacy-new-tab', 'data-asfw-privacy-url', 'delay', 'floating', 'hidefooter', 'hidelogo', 'layout', 'name', 'strings'];
+    return ['appearance', 'auto', 'challengeurl', 'data-asfw-challengeurl', 'data-asfw-field', 'data-asfw-lazy', 'data-asfw-min-submit-time', 'data-asfw-privacy-new-tab', 'data-asfw-privacy-url', 'delay', 'floating', 'hidefooter', 'hidelogo', 'layout', 'name', 'strings'];
   }
 
   constructor() {
@@ -52,16 +63,23 @@ class ASFWWidgetElement extends HTMLElement {
     this._challenge = null;
     this._challengeIssuedAt = 0;
     this._challengeUrl = '';
+    this._challengePromise = null;
+    this._challengeController = null;
+    this._prefetchStarted = false;
     this._form = null;
     this._verifyPromise = null;
     this._verificationGeneration = 0;
-    this._allowNextSubmit = false;
+    this._controller = null;
     this._autoStarted = false;
     this._state = 'idle';
 
     this._boundClick = this.handleClick.bind(this);
     this._boundSubmit = this.handleSubmit.bind(this);
     this._boundInteract = this.handleInteractiveTrigger.bind(this);
+    this._boundRenew = () => {
+      this.reset();
+      this.refresh();
+    };
   }
 
   connectedCallback() {
@@ -75,33 +93,47 @@ class ASFWWidgetElement extends HTMLElement {
   }
 
   disconnectedCallback() {
+    this.clearVerification(true);
     this.detachFormListeners();
   }
 
-  attributeChangedCallback() {
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (this._configuring) {
+      if (oldValue !== newValue && ['name', 'data-asfw-field', 'delay', 'data-asfw-min-submit-time'].includes(name)) this._configurationChanged = true;
+      return;
+    }
     if (!this.isConnected || !this._rendered) {
       return;
     }
 
+    if (oldValue !== newValue && ['name', 'data-asfw-field', 'delay', 'data-asfw-min-submit-time'].includes(name)) {
+      this.clearVerification(true);
+    }
     this.refresh();
   }
 
   configure(attrs = {}) {
-    Object.entries(attrs).forEach(([key, value]) => {
-      if (key === 'strings' && typeof value === 'object' && value !== null) {
-        this.setAttribute('strings', JSON.stringify(value));
-        return;
+    this._configuring = true;
+    try {
+      Object.entries(attrs).forEach(([key, value]) => {
+        if (key === 'strings' && typeof value === 'object' && value !== null) {
+          this.setAttribute('strings', JSON.stringify(value));
+          return;
+        }
+        if (value === false || value === null || value === undefined || value === '') {
+          this.removeAttribute(key);
+          return;
+        }
+        this.setAttribute(key, String(value));
+      });
+    } finally {
+      this._configuring = false;
+      if (this._rendered && this.isConnected) {
+        if (this._configurationChanged) this.clearVerification(true);
+        this.refresh();
       }
-
-      if (value === false || value === null || value === undefined || value === '') {
-        this.removeAttribute(key);
-        return;
-      }
-
-      this.setAttribute(key, String(value));
-    });
-
-    this.refresh();
+      this._configurationChanged = false;
+    }
   }
 
   getState() {
@@ -248,6 +280,11 @@ class ASFWWidgetElement extends HTMLElement {
     if (this.getAutoMode() === 'onload' && !this._autoStarted) {
       this._autoStarted = true;
       void this.startVerification();
+    } else if (this.getAutoMode() !== 'onload' && this.getAttribute('data-asfw-lazy') === '0' && !this._prefetchStarted) {
+      // Eager loading prepares data without solving or marking a manual widget
+      // verified. A failed prefetch is retried only on explicit verification.
+      this._prefetchStarted = true;
+      void this.ensureChallenge(this._verificationGeneration).catch(() => {});
     }
   }
 
@@ -268,6 +305,7 @@ class ASFWWidgetElement extends HTMLElement {
     this._form.addEventListener('focusin', this._boundInteract, true);
     this._form.addEventListener('pointerdown', this._boundInteract, true);
     this._form.addEventListener('keydown', this._boundInteract, true);
+    this._form.addEventListener('asfw:renew', this._boundRenew);
   }
 
   detachFormListeners() {
@@ -279,6 +317,8 @@ class ASFWWidgetElement extends HTMLElement {
     this._form.removeEventListener('focusin', this._boundInteract, true);
     this._form.removeEventListener('pointerdown', this._boundInteract, true);
     this._form.removeEventListener('keydown', this._boundInteract, true);
+    this._form.removeEventListener('asfw:renew', this._boundRenew);
+    ASFW_FORM_SUBMISSIONS.delete(this._form);
     this._form = null;
   }
 
@@ -368,13 +408,20 @@ class ASFWWidgetElement extends HTMLElement {
 
   clearVerification(clearChallenge = false) {
     this._verificationGeneration += 1;
+    this._controller?.abort();
+    this._controller = null;
+    this._challengeController?.abort();
+    this._challengeController = null;
+    this._challengePromise = null;
     this._verifyPromise = null;
-    this._valueInput.value = '';
+    if (this._form) ASFW_FORM_SUBMISSIONS.delete(this._form);
+    if (this._valueInput) this._valueInput.value = '';
     if (clearChallenge) {
       this._challenge = null;
       this._challengeIssuedAt = 0;
+      this._prefetchStarted = false;
     }
-    this._autoStarted = this.getAutoMode() === 'onload' && this._autoStarted;
+    this._autoStarted = false;
     this.setState('idle');
   }
 
@@ -382,6 +429,7 @@ class ASFWWidgetElement extends HTMLElement {
     const strings = this.getStrings();
 
     this._state = state;
+    if (!this._shell) return;
     this._shell.dataset.state = state;
     this._button.disabled = state === 'verifying';
 
@@ -428,61 +476,51 @@ class ASFWWidgetElement extends HTMLElement {
   }
 
   async handleSubmit(event) {
-    if (this._allowNextSubmit) {
-      this._allowNextSubmit = false;
-      return;
+    const form = this._form;
+    if (!form || event.defaultPrevented) return;
+    const widgets = [...form.querySelectorAll('asfw-widget')].filter(widget => widget._form === form);
+    for (const widget of widgets) {
+      if (widget.isChallengeExpired()) widget.clearVerification(true);
     }
-
-    if (this.isChallengeExpired()) {
-      this.clearVerification(true);
-    }
-
-    if (this._state === 'verified' && this._valueInput.value !== '') {
-      return;
-    }
-
-    if (this._state === 'verifying') {
-      event.preventDefault();
-      event.stopPropagation();
-      this.setState('error', this.getStrings().waitAlert);
-      this._button.focus();
-      return;
-    }
-
-    if (this.getAutoMode() !== 'onsubmit') {
-      event.preventDefault();
-      event.stopPropagation();
-      this.setState('error', this.getStrings().required);
-      this._button.focus();
-      return;
-    }
+    const pending = widgets.filter(widget => widget._state !== 'verified' || !widget._valueInput.value);
+    if (!pending.length) return;
 
     event.preventDefault();
-    event.stopPropagation();
-
-    const submitter = typeof event.submitter !== 'undefined' ? event.submitter : null;
-    const verified = await this.startVerification();
-    if (!verified || !this._form) {
-      this._button.focus();
+    event.stopImmediatePropagation();
+    if (ASFW_FORM_SUBMISSIONS.has(form)) return;
+    const manual = pending.find(widget => widget.getAutoMode() !== 'onsubmit');
+    if (manual) {
+      if (manual._state !== 'verifying') manual.setState('error', manual.getStrings().required);
+      manual._button.focus();
       return;
     }
 
-    this._allowNextSubmit = true;
+    // One continuation per form, including when it contains several widgets.
+    const attempt = { widgets, generations: widgets.map(widget => widget._verificationGeneration) };
+    const submitter = event.submitter || null;
+    ASFW_FORM_SUBMISSIONS.set(form, attempt);
     try {
-      if (typeof this._form.requestSubmit === 'function') {
-        this._form.requestSubmit(submitter || undefined);
-      } else if (submitter && typeof submitter.click === 'function') {
-        submitter.click();
-      } else {
-        HTMLFormElement.prototype.submit.call(this._form);
+      const results = await Promise.all(pending.map(widget => widget.startVerification()));
+      if (ASFW_FORM_SUBMISSIONS.get(form) !== attempt || !form.isConnected ||
+          widgets.some((widget, index) => widget._form !== form || !widget.isConnected ||
+            widget._verificationGeneration !== attempt.generations[index])) return;
+      if (results.some(result => !result) || widgets.some(widget => widget.isChallengeExpired())) {
+        pending.find(widget => widget._state !== 'verified')?._button.focus();
+        return;
       }
-    } catch (error) {
-      this._allowNextSubmit = false;
-      throw error;
+      // No bypass flag: the re-entered event must still pass every current guard.
+      // requestSubmit can return without a submit event when native validation fails.
+      if (typeof form.requestSubmit === 'function') {
+        form.requestSubmit(submitter?.form === form ? submitter : undefined);
+      } else if (submitter?.form === form && typeof submitter.click === 'function') {
+        submitter.click();
+      }
+    } finally {
+      if (ASFW_FORM_SUBMISSIONS.get(form) === attempt) ASFW_FORM_SUBMISSIONS.delete(form);
     }
   }
 
-  async fetchChallenge() {
+  async fetchChallenge(signal) {
     const challengeUrl = this.getChallengeUrl();
     if (!challengeUrl) {
       throw new Error('Missing challenge URL.');
@@ -494,6 +532,7 @@ class ASFWWidgetElement extends HTMLElement {
         Accept: 'application/json',
       },
       cache: 'no-store',
+      signal,
     });
 
     if (!response.ok) {
@@ -530,14 +569,30 @@ class ASFWWidgetElement extends HTMLElement {
       return this._challenge;
     }
 
-    const challenge = await this.fetchChallenge();
-    if (generation !== this._verificationGeneration) return null;
-    this._challenge = challenge;
-    this._challengeIssuedAt = Date.now();
-    return this._challenge;
+    if (this._challengePromise) return this._challengePromise;
+
+    const controller = new AbortController();
+    this._challengeController = controller;
+    this._challengePromise = (async () => {
+      const timeout = window.setTimeout(() => controller.abort(), ASFW_REQUEST_TIMEOUT_MS);
+      try {
+        const challenge = await this.fetchChallenge(controller.signal);
+        if (generation !== this._verificationGeneration) return null;
+        this._challenge = challenge;
+        this._challengeIssuedAt = Date.now();
+        return challenge;
+      } finally {
+        window.clearTimeout(timeout);
+        if (this._challengeController === controller) {
+          this._challengePromise = null;
+          this._challengeController = null;
+        }
+      }
+    })();
+    return this._challengePromise;
   }
 
-  async solveChallenge(challenge, generation) {
+  async solveChallenge(challenge, generation, signal) {
     for (let number = 0; number <= challenge.maxnumber; number += 1) {
       if (generation !== this._verificationGeneration) return null;
       if (await asfwSha256Hex(`${challenge.salt}${number}`) === challenge.challenge) {
@@ -545,7 +600,7 @@ class ASFWWidgetElement extends HTMLElement {
       }
 
       if (number > 0 && number % 250 === 0) {
-        await asfwSleep(0);
+        await asfwSleep(0, signal);
       }
     }
 
@@ -553,6 +608,7 @@ class ASFWWidgetElement extends HTMLElement {
   }
 
   async startVerification() {
+    if (!this.isConnected || !this._rendered) return false;
     if (this._verifyPromise) {
       return this._verifyPromise;
     }
@@ -563,6 +619,8 @@ class ASFWWidgetElement extends HTMLElement {
     }
 
     const generation = this._verificationGeneration;
+    const controller = new AbortController();
+    this._controller = controller;
     this._verifyPromise = (async () => {
       try {
         this.setState('verifying');
@@ -574,25 +632,26 @@ class ASFWWidgetElement extends HTMLElement {
         if (generation !== this._verificationGeneration) return false;
         const challenge = await this.ensureChallenge(generation);
         if (generation !== this._verificationGeneration) return false;
-        const number = await this.solveChallenge(challenge, generation);
+        const number = await this.solveChallenge(challenge, generation, controller.signal);
         if (generation !== this._verificationGeneration) return false;
         if (number === null) {
           throw new Error('Challenge could not be solved.');
         }
 
         if (this.getDelayMs() > 0) {
-          await asfwSleep(this.getDelayMs());
+          await asfwSleep(this.getDelayMs(), controller.signal);
         }
 
         const minSubmitTimeMs = this.getMinSubmitTimeMs();
         if (minSubmitTimeMs > 0 && this._challengeIssuedAt > 0) {
           const remainingMs = minSubmitTimeMs - (Date.now() - this._challengeIssuedAt);
           if (remainingMs > 0) {
-            await asfwSleep(remainingMs);
+            await asfwSleep(remainingMs, controller.signal);
           }
         }
 
         if (generation !== this._verificationGeneration) return false;
+        if (this.isChallengeExpired()) throw new Error('Challenge expired during verification.');
         this._valueInput.value = asfwBase64Encode(JSON.stringify({
           algorithm: challenge.algorithm,
           challenge: challenge.challenge,
@@ -611,7 +670,10 @@ class ASFWWidgetElement extends HTMLElement {
         this.setState('error', this.getStrings().error);
         return false;
       } finally {
-        if (generation === this._verificationGeneration) this._verifyPromise = null;
+        if (generation === this._verificationGeneration) {
+          this._verifyPromise = null;
+          this._controller = null;
+        }
       }
     })();
 

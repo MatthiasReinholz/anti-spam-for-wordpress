@@ -108,6 +108,7 @@ final class WpPluginBaseSettingsRegistryTest extends AsfwPluginTestCase
 	public function test_seed_defaults_migrates_legacy_bunny_values_into_feature_options(): void
 	{
 		delete_option(AntiSpamForWordPressPlugin::$option_feature_bunny_shield_enabled);
+		delete_option('asfw_feature_bunny_shield_mode');
 		delete_option(AntiSpamForWordPressPlugin::$option_feature_bunny_shield_api_key);
 		delete_option(AntiSpamForWordPressPlugin::$option_feature_bunny_shield_zone_id);
 		delete_option(AntiSpamForWordPressPlugin::$option_feature_bunny_shield_access_list_id);

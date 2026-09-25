@@ -10,17 +10,19 @@ The plugin serves a local proof-of-work challenge through the WordPress REST API
 
 ## Operational Notes
 
-The challenge endpoint must not be cached:
+The public verification endpoints must not be cached:
 
 - `/wp-json/anti-spam-for-wordpress/v1/challenge`
+- `/wp-json/anti-spam-for-wordpress/v1/math-challenge`
+- `/wp-json/anti-spam-for-wordpress/v1/submit-delay-token`
 
-The endpoint remains intentionally public so browsers can fetch challenges without authentication, but it is still rate-limited and marked with a no-cache response header. Requests classified as explicit cross-site are rejected with HTTP 403.
+These endpoints remain intentionally public so browsers can fetch challenges without authentication, and share an atomic per-IP issuance limit across contexts and User Agents. Responses carry no-cache headers. Requests classified as explicit cross-site are rejected with HTTP 403.
 
-If you run a CDN, edge cache, or page cache, configure a bypass rule for that path.
+If you run a CDN, edge cache, or page cache, configure bypass rules for all three paths.
 
 If your site sends Content Security Policy headers, allow the domain serving this plugin's scripts in `script-src` and permit the widget styles in `style-src`.
 
-If your site is behind a CDN, load balancer, or another reverse proxy, add the proxy IPs or CIDR ranges to the **Trusted proxies** setting so the plugin can safely read forwarded client IP headers. For shared NAT environments, switch **Visitor binding** to **IP address + User Agent** to reduce false collisions in replay protection and rate limiting.
+If your site is behind a reverse proxy, configure its IPs/CIDRs in **Trusted proxies** and select the one **Trusted proxy header** that it overwrites. The default is `X-Forwarded-For`; select `CF-Connecting-IP` explicitly for a suitable Cloudflare configuration. Competing headers are ignored. **Visitor binding** controls proof binding; issuance and failure quotas always apply per client IP.
 
 The default settings are intentionally conservative:
 
@@ -37,7 +39,7 @@ If you place the widget manually with `[anti_spam_widget]` while the **Custom HT
 
 Proof-of-work protection for native WordPress comment forms is enabled by default under **Protection Placements -> Comments**. It applies to anonymous and logged-in browser submissions, including wpDiscuz forms when they use the WordPress fallback policy.
 
-Direct programmatic calls to `wp_new_comment()` and authenticated REST, XML-RPC, or AJAX clients are not forced through a browser-only challenge. Anonymous remote comment submissions remain protected. Signed form-context fields identify which currently enabled comment policy applies; they are not authorization credentials, and stale form markup falls back to the current WordPress comments policy.
+Direct programmatic calls to `wp_new_comment()` and authenticated REST, XML-RPC, or AJAX clients are not forced through a browser-only challenge. Anonymous remote comment submissions remain protected. Actual wpDiscuz server dispatch selects its configured policy for main and inline submissions, including reviews. Missing, altered, or stale signed fields cannot select a weaker native-comment policy. Signed context fields bind rendered controls and are not authorization credentials.
 
 ## Security matrix
 
@@ -84,7 +86,7 @@ Review the generated text before adding it to a privacy policy. It is operationa
 
 ## Shortcode
 
-Use `[anti_spam_widget]` when automatic placement is not available in custom form markup.
+Use `[anti_spam_widget]` when automatic placement is not available in custom form markup. Your handler must call `asfw_verify_posted_widget( 'custom:contact', 'asfw' )` before sending, storing, or changing anything. Match the shortcode context and field name exactly, and separately check nonces, field validity, and required permissions. See the [complete custom form example](docs/development.md#custom-form-enforcement).
 
 ```text
 [anti_spam_widget mode="captcha" context="custom:contact" name="asfw" layout="extended" appearance="light"]
@@ -162,10 +164,11 @@ Requires WordPress 6.4 or newer and PHP 8.0 or newer.
 
 ## Uninstalling
 
-Uninstalling the plugin removes Anti Spam for WordPress options, transient challenge/rate-limit state, scheduled maintenance hooks, and the local event table for each site in a multisite network. Export event data before uninstalling if you need to keep it.
+Uninstalling the plugin removes Anti Spam for WordPress options, atomic security state and legacy transients, scheduled maintenance and initialization hooks, and the local event table for each site in a multisite network. Export event data before uninstalling if you need to keep it.
 
 ## Development
 
+See [docs/development.md](docs/development.md) for architecture, extension contracts, custom form enforcement, AJAX lifecycle, and test coverage.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch model, CI expectations, and release process.
 See [docs/admin-settings.md](docs/admin-settings.md) for the admin settings, shortcode, REST route, and agent reference.
 
@@ -176,6 +179,7 @@ Release preparation and release publishing can be driven from GitHub Actions thr
 This plugin requires the WordPress REST API. If you are using any plugin that disables or filters the REST API, allow these routes:
 
 - `/anti-spam-for-wordpress/v1/challenge`
+- `/anti-spam-for-wordpress/v1/math-challenge` when Math challenge is enabled
 - `/anti-spam-for-wordpress/v1/submit-delay-token` when Submit delay is enabled
 - `/anti-spam-for-wordpress/v1/admin/settings` for authenticated administrators
 - `/anti-spam-for-wordpress/v1/admin/events` for authenticated administrators
@@ -219,7 +223,7 @@ apply_filters('asfw_widget_tag_name', string $tag_name): string
 apply_filters('asfw_challenge_url', string $challenge_url, string|null $context): string
 ```
 
-**`asfw_integrations`** — Override the list of active integration identifiers.
+**`asfw_integrations`** — Legacy filter for placement mode values (`captcha`, `shortcode`, and disabled values). It does not contain integration identifiers; use `asfw_register_integrations` to register adapters.
 
 ```php
 apply_filters('asfw_integrations', array $integrations): array
@@ -267,13 +271,15 @@ apply_filters('asfw_trusted_proxies', array $trusted_proxies): array
 apply_filters('asfw_client_ip', string $client_ip, string $remote_addr, string $source_header): string
 ```
 
-**`asfw_client_binding_components`** — Override the normalized components used to build the replay/rate-limit fingerprint.
+**`asfw_client_binding_components`** — Override the normalized components used to bind proofs to a visitor. Aggregate rate limits remain per client IP.
 
 ```php
 apply_filters('asfw_client_binding_components', array $components, string $binding_strategy): array
 ```
 
 ### Actions
+
+**`asfw_register_integrations`** — Register uniquely named adapter instances before loading. Register this action from an MU plugin or another bootstrap loaded before this plugin; see the [extension contract](docs/development.md#context-and-extension-contracts).
 
 **`asfw_rate_limited`** — Fires when challenge or verification throttling blocks a request.
 

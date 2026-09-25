@@ -24,6 +24,15 @@ final class ContextGuardsTest extends AsfwPluginTestCase
         $this->assertStringNotContainsString('delay_ms=', $html);
     }
 
+    public function test_log_mode_math_markup_does_not_require_an_answer(): void
+    {
+        update_option('asfw_feature_math_challenge_mode', 'log');
+        $this->assertStringNotContainsString(' required', $this->plugin()->render_math_challenge_fields('wordpress:login'));
+        update_option('asfw_feature_math_challenge_mode', 'block');
+        update_option('asfw_feature_math_challenge_enabled', 1);
+        $this->assertStringContainsString(' required', $this->plugin()->render_math_challenge_fields('wordpress:login'));
+    }
+
     public function test_math_challenge_blocks_when_missing_in_block_mode(): void
     {
         update_option('asfw_feature_math_challenge_enabled', 1);
@@ -88,9 +97,12 @@ final class ContextGuardsTest extends AsfwPluginTestCase
         update_option(AntiSpamForWordPressPlugin::$option_feature_submit_delay_ms, '2500');
 
         $token = $this->plugin()->issue_submit_delay_token('wordpress:login', 2500);
-        $state = get_transient($this->plugin()->get_submit_delay_transient_key($token['token_id']));
+        $store = new ASFW_Atomic_State_Store();
+        $key = $this->plugin()->get_submit_delay_transient_key($token['token_id']);
+        $snapshot = $store->read($key);
+        $state = $snapshot['value'];
         $state['issued_at'] = (int) round(microtime(true) * 1000) - 3000;
-        set_transient($this->plugin()->get_submit_delay_transient_key($token['token_id']), $state, 600);
+        $store->replace($key, $snapshot, $state);
 
         $_POST[$this->plugin()->get_submit_delay_token_field_name()] = $token['token_id'];
         $_POST[$this->plugin()->get_submit_delay_signature_field_name()] = $token['signature'];
@@ -122,9 +134,12 @@ final class ContextGuardsTest extends AsfwPluginTestCase
         $this->assertInstanceOf(WP_Error::class, $firstResult);
         $this->assertSame('asfw_submit_delay_too_fast', $firstResult->get_error_code());
 
-        $delayState = get_transient($this->plugin()->get_submit_delay_transient_key($token['token_id']));
+        $store = new ASFW_Atomic_State_Store();
+        $key = $this->plugin()->get_submit_delay_transient_key($token['token_id']);
+        $snapshot = $store->read($key);
+        $delayState = $snapshot['value'];
         $delayState['issued_at'] = (int) round(microtime(true) * 1000) - 3000;
-        set_transient($this->plugin()->get_submit_delay_transient_key($token['token_id']), $delayState, 600);
+        $store->replace($key, $snapshot, $delayState);
 
         $secondResult = asfw_validate_context_guards('wordpress:login');
         $this->assertTrue($secondResult);
@@ -158,9 +173,12 @@ final class ContextGuardsTest extends AsfwPluginTestCase
         update_option(AntiSpamForWordPressPlugin::$option_feature_submit_delay_ms, '5000');
 
         $token = $this->plugin()->issue_submit_delay_token('wordpress:login', 5000);
-        $state = get_transient($this->plugin()->get_submit_delay_transient_key($token['token_id']));
+        $store = new ASFW_Atomic_State_Store();
+        $key = $this->plugin()->get_submit_delay_transient_key($token['token_id']);
+        $snapshot = $store->read($key);
+        $state = $snapshot['value'];
         $state['issued_at'] = (int) round(microtime(true) * 1000) - 3000;
-        set_transient($this->plugin()->get_submit_delay_transient_key($token['token_id']), $state, 600);
+        $store->replace($key, $snapshot, $state);
 
         update_option(AntiSpamForWordPressPlugin::$option_feature_submit_delay_ms, '1000');
         $_POST[$this->plugin()->get_submit_delay_token_field_name()] = $token['token_id'];
@@ -172,23 +190,23 @@ final class ContextGuardsTest extends AsfwPluginTestCase
         $this->assertSame('asfw_submit_delay_too_fast', $result->get_error_code());
     }
 
-    public function test_math_challenge_validation_rejects_when_challenge_lock_is_already_held(): void
+    public function test_math_challenge_validation_rejects_replay(): void
     {
         update_option('asfw_feature_math_challenge_enabled', 1);
         update_option('asfw_feature_math_challenge_mode', 'block');
         update_option('asfw_feature_math_challenge_scope_mode', 'all');
 
         $challenge = $this->plugin()->issue_math_challenge('wordpress:login');
-        add_option($this->plugin()->get_challenge_lock_key('math_' . $challenge['challenge_id']), (string) (time() + 30), '', false);
 
         $_POST[$this->plugin()->get_math_challenge_id_field_name()] = $challenge['challenge_id'];
         $_POST[$this->plugin()->get_math_challenge_signature_field_name()] = $challenge['signature'];
         $_POST[$this->plugin()->get_math_challenge_answer_field_name()] = (string) ($challenge['left'] + $challenge['right']);
 
+        $this->assertTrue(asfw_validate_context_guards('wordpress:login'));
         $result = asfw_validate_context_guards('wordpress:login');
 
         $this->assertInstanceOf(WP_Error::class, $result);
-        $this->assertSame('asfw_math_replay_locked', $result->get_error_code());
+        $this->assertSame('asfw_math_unknown', $result->get_error_code());
     }
 
     public function test_math_challenge_invalid_answer_keeps_state_available_for_retry(): void
@@ -212,7 +230,7 @@ final class ContextGuardsTest extends AsfwPluginTestCase
         $this->assertTrue($secondResult);
     }
 
-    public function test_submit_delay_validation_rejects_when_token_lock_is_already_held(): void
+    public function test_submit_delay_validation_rejects_replay(): void
     {
         update_option('asfw_feature_submit_delay_enabled', 1);
         update_option('asfw_feature_submit_delay_mode', 'block');
@@ -220,13 +238,19 @@ final class ContextGuardsTest extends AsfwPluginTestCase
         update_option(AntiSpamForWordPressPlugin::$option_feature_submit_delay_ms, '2500');
 
         $token = $this->plugin()->issue_submit_delay_token('wordpress:login', 2500);
-        add_option($this->plugin()->get_challenge_lock_key('submit_delay_' . $token['token_id']), (string) (time() + 30), '', false);
+        $store = new ASFW_Atomic_State_Store();
+        $key = $this->plugin()->get_submit_delay_transient_key($token['token_id']);
+        $snapshot = $store->read($key);
+        $state = $snapshot['value'];
+        $state['issued_at'] -= 3000;
+        $store->replace($key, $snapshot, $state);
         $_POST[$this->plugin()->get_submit_delay_token_field_name()] = $token['token_id'];
         $_POST[$this->plugin()->get_submit_delay_signature_field_name()] = $token['signature'];
 
+        $this->assertTrue(asfw_validate_context_guards('wordpress:login'));
         $result = asfw_validate_context_guards('wordpress:login');
 
         $this->assertInstanceOf(WP_Error::class, $result);
-        $this->assertSame('asfw_submit_delay_replay_locked', $result->get_error_code());
+        $this->assertSame('asfw_submit_delay_unknown', $result->get_error_code());
     }
 }

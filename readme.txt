@@ -80,25 +80,30 @@ Requires WordPress 6.4 or newer and PHP 8.0 or newer.
 
 = Uninstalling =
 
-Uninstalling the plugin removes Anti Spam for WordPress options, transient challenge/rate-limit state, scheduled maintenance hooks, and the local event table for each site in a multisite network. Export event data before uninstalling if you need to keep it.
+Uninstalling the plugin removes Anti Spam for WordPress options, atomic security state and legacy transients, scheduled maintenance and initialization hooks, and the local event table for each site in a multisite network. Export event data before uninstalling if you need to keep it.
 
 = REST API =
 
 This plugin requires the WordPress REST API. If you use a plugin that disables or filters the REST API, allow these routes:
 
 * `/anti-spam-for-wordpress/v1/challenge`
+* `/anti-spam-for-wordpress/v1/math-challenge` when Math challenge is enabled
 * `/anti-spam-for-wordpress/v1/submit-delay-token` when Submit delay is enabled
 * `/anti-spam-for-wordpress/v1/admin/settings` for authenticated administrators
 * `/anti-spam-for-wordpress/v1/admin/events` for authenticated administrators
 * `/anti-spam-for-wordpress/v1/admin/analytics` for authenticated administrators
 
-If you use a CDN or edge cache, bypass caching for `/wp-json/anti-spam-for-wordpress/v1/challenge` and `/wp-json/anti-spam-for-wordpress/v1/submit-delay-token` (when submit-delay is enabled).
+If you use a CDN or edge cache, bypass caching for `/wp-json/anti-spam-for-wordpress/v1/challenge`, `/wp-json/anti-spam-for-wordpress/v1/math-challenge` (when Math challenge is enabled), and `/wp-json/anti-spam-for-wordpress/v1/submit-delay-token` (when Submit delay is enabled).
 
-The challenge endpoint stays public so the widget can fetch challenges without authentication, and the plugin sends a no-cache response header for the challenge response. Requests classified as explicit cross-site are rejected with HTTP 403.
+These three challenge endpoints stay public so the widget can fetch visitor-specific verification without authentication, and the plugin sends no-cache response headers for them. Requests classified as explicit cross-site are rejected with HTTP 403.
 
 If your site sends Content Security Policy headers, allow the domain serving the plugin scripts in `script-src` and permit the widget styles in `style-src`.
 
 If your site is behind a CDN, load balancer, or another reverse proxy, add the proxy IPs or CIDR ranges to the Trusted proxies setting so the plugin can safely read forwarded client IP headers.
+
+= Disposable Domain Updates =
+
+Disposable-email checks use a bundled domain list. If you explicitly refresh it or enable background refresh, the server downloads the plain-text list from `raw.githubusercontent.com/disposable/disposable-email-domains/master/domains.txt`. No visitor email addresses or form contents are sent to the list provider; matching happens locally. The provider receives the server's IP address and normal HTTP metadata, including the site URL and WordPress version in WordPress's default user agent. No account or API key is required. See the [source project and license](https://github.com/disposable/disposable-email-domains) and [GitHub privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
 
 = Privacy Policy Text =
 
@@ -164,6 +169,10 @@ Widgets first rendered after the page head still receive the complete runtime; t
 
 * Plugin: https://github.com/MatthiasReinholz/anti-spam-for-wordpress
 
+Custom form handlers must call `asfw_verify_posted_widget( 'custom:contact', 'asfw' )` before sending mail, saving data, or other side effects. The context and field name must match the shortcode. Separately validate fields, check a WordPress nonce, and enforce any required authorization. See the repository development guide for a complete handler and AJAX completion example.
+
+Follow the REST API section above for route allowlists and cache exclusions. Configure one trusted proxy header explicitly. Issuance limits apply per IP across contexts and User Agents.
+
 == Frequently Asked Questions ==
 
 = Which languages does the widget support? =
@@ -178,11 +187,11 @@ The shortcode's `language="fr_FR"` attribute overrides the widget text when that
 
 = The widget shows an error or never loads =
 
-The plugin requires the WordPress REST API. Make sure no security plugin is blocking the `/wp-json/anti-spam-for-wordpress/v1/challenge` endpoint. Check the browser console for network errors.
+The plugin requires the WordPress REST API. Follow the REST API allowlist above, including the math and submit-delay routes when those features are enabled. Check the browser console for network errors.
 
 = I use a CDN or page cache and challenges fail =
 
-Each challenge must be unique. Add a cache bypass rule for `/wp-json/anti-spam-for-wordpress/v1/challenge` in your CDN or caching plugin.
+Each challenge must be unique. Apply the full cache-bypass list in the REST API section above to your CDN or caching plugin.
 
 = The widget is blocked by Content Security Policy (CSP) headers =
 
@@ -190,7 +199,7 @@ If your site sends strict CSP headers, ensure that `script-src` allows the domai
 
 = Users behind a shared IP or proxy are being blocked =
 
-The plugin uses client fingerprinting to prevent challenge replay. Users behind a shared NAT gateway or corporate proxy may share an IP, which can cause false lockouts under heavy rate limiting. Add your reverse proxies to the Trusted proxies setting and consider switching Visitor binding to "IP address + User Agent" to reduce collisions. Lower the rate limit thresholds or disable rate limiting if this is still a problem.
+Users behind a shared NAT gateway or corporate proxy may share an IP and its request quota. Configure your reverse proxies and their forwarded-client-IP header so the plugin identifies visitors correctly. If legitimate visitors still exhaust the quota, increase its limits to suit the site's traffic. Changing Visitor binding does not split quotas: limits remain shared per IP across contexts and User Agents. Setting a limit to zero disables that quota and removes its abuse protection.
 
 = I use the shortcode manually and the widget disappeared =
 
@@ -207,6 +216,8 @@ Instead of asking the user to solve a visual puzzle, the widget asks the browser
 = Does comment protection affect integrations that create comments through code? =
 
 Native browser comment forms are protected by default, including logged-in submissions. Direct `wp_new_comment()` calls and authenticated REST, XML-RPC, or AJAX clients are not forced through a browser challenge. Anonymous remote comment submissions remain protected. You can disable the native Comments placement from the plugin settings if needed.
+
+Native WooCommerce product reviews also use the Comments protection. WooCommerce login protection covers account, checkout, and embedded login forms. WooCommerce registration protection covers the account registration form; checkout account creation and programmatic customer creation use their own validation and do not require an unrendered widget.
 
 == Screenshots ==
 

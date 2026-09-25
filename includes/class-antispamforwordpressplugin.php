@@ -199,8 +199,10 @@ class AntiSpamForWordPressPlugin {
 			'for'   => array(),
 		),
 		'p'           => array(
-			'class' => array(),
-			'id'    => array(),
+			'class'                        => array(),
+			'id'                           => array(),
+			'data-asfw-math-challenge-url' => array(),
+			'data-asfw-math-mode'          => array(),
 		),
 		'span'        => array(
 			'aria-live'                        => array(),
@@ -760,7 +762,7 @@ class AntiSpamForWordPressPlugin {
 	/**
 	 * Validate a proof-of-work solution against the stored challenge state.
 	 *
-	 * Checks algorithm, expiration, transient state, client fingerprint,
+	 * Checks algorithm, expiration, atomic state, client fingerprint,
 	 * minimum submit time, replay protection, HMAC signature, and hash correctness.
 	 *
 	 * @param string      $payload          Base64-encoded JSON payload.
@@ -819,7 +821,7 @@ class AntiSpamForWordPressPlugin {
 	/**
 	 * Generate a new proof-of-work challenge.
 	 *
-	 * Creates a SHA-256 challenge with HMAC signature, stores state in a transient,
+	 * Creates a SHA-256 challenge with HMAC signature, stores state atomically in the database,
 	 * and enforces rate limits. Difficulty ranges: low (25k-50k), medium (100k-200k),
 	 * high (300k-600k) iterations.
 	 *

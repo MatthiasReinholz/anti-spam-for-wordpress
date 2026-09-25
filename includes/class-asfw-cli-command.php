@@ -86,10 +86,17 @@ class ASFW_CLI_Command {
 	public function status( array $args, array $assoc_args ) {
 		unset( $args, $assoc_args );
 
+		$events = $this->store->count_events();
+		$error  = $this->store->get_last_read_error();
+		if ( is_wp_error( $error ) ) {
+			$this->cli_error( $error->get_error_message() );
+			return $error;
+		}
+
 		$status = array(
 			'store'    => array(
 				'table'          => $this->store->get_table_name(),
-				'events'         => $this->store->count_events(),
+				'events'         => $events,
 				'retention_days' => $this->store->get_retention_days(),
 			),
 			'features' => $this->get_feature_status_rows(),
@@ -129,7 +136,12 @@ class ASFW_CLI_Command {
 						'status' => isset( $assoc_args['status'] ) ? $assoc_args['status'] : '',
 					)
 				);
-					$this->cli_log( wp_json_encode( $events ) );
+				$error  = $this->store->get_last_read_error();
+				if ( is_wp_error( $error ) ) {
+					$this->cli_error( $error->get_error_message() );
+					return $error;
+				}
+				$this->cli_log( wp_json_encode( $events ) );
 				return $events;
 
 			case 'prune':
@@ -139,6 +151,10 @@ class ASFW_CLI_Command {
 
 				$days   = isset( $assoc_args['older-than'] ) ? intval( $assoc_args['older-than'], 10 ) : ( isset( $assoc_args['days'] ) ? intval( $assoc_args['days'], 10 ) : $this->store->get_retention_days() );
 				$pruned = $this->store->prune_older_than( $days );
+				if ( is_wp_error( $pruned ) ) {
+					$this->cli_error( $pruned->get_error_message() );
+					return $pruned;
+				}
 				$this->cli_success( sprintf( 'Pruned %d events older than %d days.', $pruned, $days ) );
 				return $pruned;
 
@@ -150,11 +166,19 @@ class ASFW_CLI_Command {
 				if ( isset( $assoc_args['older-than'] ) ) {
 					$days   = intval( $assoc_args['older-than'], 10 );
 					$pruned = $this->store->prune_older_than( $days );
+					if ( is_wp_error( $pruned ) ) {
+						$this->cli_error( $pruned->get_error_message() );
+						return $pruned;
+					}
 					$this->cli_success( sprintf( 'Pruned %d events older than %d days.', $pruned, $days ) );
 					return $pruned;
 				}
 
 				$deleted = $this->store->purge_all();
+				if ( is_wp_error( $deleted ) ) {
+					$this->cli_error( $deleted->get_error_message() );
+					return $deleted;
+				}
 				$this->cli_success( sprintf( 'Deleted %d events.', $deleted ) );
 				return $deleted;
 
@@ -181,6 +205,11 @@ class ASFW_CLI_Command {
 				}
 
 				$domains = $this->disposable_module->refresh_from_source( true );
+				$error   = $this->disposable_module->get_last_refresh_error();
+				if ( is_wp_error( $error ) ) {
+					$this->cli_error( $error->get_error_message() );
+					return $error;
+				}
 				$this->cli_success( sprintf( 'Refreshed %d disposable domains.', count( $domains ) ) );
 				return $domains;
 
@@ -217,6 +246,10 @@ class ASFW_CLI_Command {
 					$this->cli_error( 'Refusing to run maintenance without --yes.' );
 				}
 				$summary = $this->maintenance->run();
+				if ( is_wp_error( $summary ) ) {
+					$this->cli_error( $summary->get_error_message() );
+					return $summary;
+				}
 				$this->cli_log( wp_json_encode( $summary ) );
 				return $summary;
 

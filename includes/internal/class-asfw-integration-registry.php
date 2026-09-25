@@ -12,7 +12,11 @@ class ASFW_Integration_Registry {
 	private $integrations = array();
 
 	public function register( ASFW_Integration_Adapter $integration ) {
-		$this->integrations[ $this->integration_id( $integration ) ] = $integration;
+		$id = trim( (string) $this->integration_id( $integration ) );
+		if ( '' === $id || isset( $this->integrations[ $id ] ) ) {
+			throw new InvalidArgumentException( 'Integration IDs must be nonempty and unique.' );
+		}
+		$this->integrations[ $id ] = $integration;
 
 		return $this;
 	}
