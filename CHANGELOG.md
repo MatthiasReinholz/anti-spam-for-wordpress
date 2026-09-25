@@ -4,6 +4,12 @@ All notable changes to this project should be documented in this file.
 
 The format follows a simple Keep a Changelog-style layout with one section per released version and concise bullet points for user-visible changes.
 
+## [0.10.2] - 2026-09-25
+
+- Fix admin settings errors from custom fields using closures, callable arrays or invokable renderers while preserving built-in field types.
+- Add an operator upgrade checklist covering supported platforms, proxy headers, shared-IP quotas, legacy Bunny settings, cached forms and recovery without deleting configuration.
+- Clarify extension hooks and field metadata, and record eight successful historical-package upgrades across the minimum and current tested WordPress versions.
+
 ## [0.10.1] - 2026-09-25
 
 - Verify missing false, zero and empty settings are persisted before reporting a successful save; preserve literal-false extension values.

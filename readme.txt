@@ -234,10 +234,9 @@ Native WooCommerce product reviews also use the Comments protection. WooCommerce
 == Changelog ==
 
 = 0.10.2 =
-* Add - Add a practical upgrade checklist for older installations, including proxy, quota, Bunny and recovery requirements.
-* Fix - Fix admin settings compatibility with callable custom-field renderers.
-* Update - Clarify settings extension hooks and document verified historical upgrade behavior.
-
+* Fix - Support callable custom-field renderers in admin settings without errors or warnings, preserving built-in field types.
+* Add - Provide an [upgrade checklist](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/blob/0.10.2/docs/upgrading.md) for older installations, including platform, proxy, quota, Bunny, cache and recovery requirements.
+* Update - Clarify settings extension hooks and record eight successful historical-package upgrade checks.
 
 = 0.10.1 =
 * Fix - Verify insertion of missing empty or disabled settings before reporting a successful save.

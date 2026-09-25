@@ -1,6 +1,6 @@
 # Updating an existing installation
 
-Version 0.10.1 preserves existing settings and event data. Updating from 0.10.0 does not introduce a new database schema or reset configuration. Sites skipping older releases need the checks below: the supported platform, client-IP handling, challenge limits and some legacy settings have changed over the project's lifetime.
+Version 0.10.2 preserves existing settings and event data. Updating from 0.10.0 or 0.10.1 does not introduce a new database schema or reset configuration. Sites skipping older releases need the checks below: the supported platform, client-IP handling, challenge limits and some legacy settings have changed over the project's lifetime.
 
 ## Before updating
 
