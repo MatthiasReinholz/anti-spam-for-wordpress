@@ -162,6 +162,8 @@ Requires WordPress 6.4 or newer and PHP 8.0 or newer.
 3. Activate the plugin through the Plugins menu in WordPress.
 4. Review the settings and enable the integrations you need. Protection for native WordPress comments is enabled by default and can be disabled under **Protection Placements**.
 
+For an existing installation, follow the [upgrade checklist](docs/upgrading.md) before replacing the plugin. Upgrades across 0.10 require particular attention to proxy-header selection, shared-IP quotas and refreshing open forms. Keep configuration by updating in place; do not uninstall as an update step.
+
 ## Uninstalling
 
 Uninstalling the plugin removes Anti Spam for WordPress options, atomic security state and legacy transients, scheduled maintenance and initialization hooks, and the local event table for each site in a multisite network. Export event data before uninstalling if you need to keep it.
@@ -229,7 +231,7 @@ apply_filters('asfw_challenge_url', string $challenge_url, string|null $context)
 apply_filters('asfw_integrations', array $integrations): array
 ```
 
-**`asfw_plugin_active`** — Override plugin detection for integration availability checks.
+**`asfw_plugin_active`** — Supply plugin detection for unknown or custom integration identifiers. Built-in identifiers use their explicit detection rules and do not invoke this filter.
 
 ```php
 apply_filters('asfw_plugin_active', bool $active, string $plugin_name): bool
@@ -317,7 +319,7 @@ do_action('asfw_bunny_synced', string $ip, string $reason, array $state, array $
 do_action('asfw_bunny_sync_failed', string $ip, string $reason, array $state, WP_Error $error, array $failure)
 ```
 
-**`asfw_settings_integrations`** — Fires inside the settings page to allow adding custom integration fields.
+**`asfw_settings_integrations`** — Legacy hook fired during integration-field registration. It does not inject controls into the React settings page. New controls must use the schema filters and field metadata described in the [settings extension example](docs/development.md#settings-field-example).
 
 ```php
 do_action('asfw_settings_integrations')

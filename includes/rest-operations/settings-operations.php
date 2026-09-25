@@ -40,7 +40,7 @@ if ( ! function_exists( 'asfw_rest_normalize_field_type' ) ) {
 	 * @return string
 	 */
 	function asfw_rest_normalize_field_type( array $field ) {
-		$callback = isset( $field['callback'] ) ? (string) $field['callback'] : '';
+		$callback = isset( $field['callback'] ) && is_string( $field['callback'] ) ? $field['callback'] : '';
 		$args     = isset( $field['args'] ) && is_array( $field['args'] ) ? $field['args'] : array();
 		$type     = isset( $args['type'] ) ? (string) $args['type'] : 'text';
 

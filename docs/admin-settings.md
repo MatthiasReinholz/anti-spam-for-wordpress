@@ -2,6 +2,8 @@
 
 This document is the operator and agent reference for the Anti Spam for WordPress admin app.
 
+Before updating an existing site, follow the [upgrade checklist](upgrading.md), including proxy-header and shared-IP quota checks when crossing the 0.10 release boundary.
+
 ## Navigation
 
 The admin app is registered under `Settings -> Anti Spam for WordPress`.
