@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.9.0
-Stable tag: 0.9.0
+Version: 0.10.0
+Stable tag: 0.10.0
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 7.1
@@ -228,6 +228,18 @@ Native WooCommerce product reviews also use the Comments protection. WooCommerce
 5. Floating UI example
 
 == Changelog ==
+
+= 0.10.0 =
+* Fix - Prevent concurrent proof reuse and rate-limit races with atomic verification state and a shared per-IP issuance quota.
+* Fix - Bind native WordPress and WooCommerce authentication to trusted handlers while preserving checkout and programmatic registration.
+* Fix - Renew consumed proofs after form requests, discard stale browser responses, and honor lazy loading and dynamic field names.
+* Fix - Recover failed initialization, migrations and event schemas while preserving existing multisite settings.
+* Fix - Report admin save and database read failures accurately, retain unsaved edits, and handle timeouts and pagination safely.
+* Fix - Make Bunny revocation retryable and reject excessive remote lists before mutation; preserve valid disposable-email feeds on refresh failure.
+* Fix - Prevent shared runtime conflicts with other plugins through isolated foundation REST and admin classes.
+* Fix - Support Forminator's one-argument rendering hook and custom settings sections.
+* Tweak - Strengthen nested event redaction, credential exclusion and trusted-proxy handling; document data processing and upgrade behavior.
+* Dev - Adopt verified wp-plugin-base 1.9.0, update dependencies, expand concurrency and browser regressions, and improve packaging and maintenance guidance.
 
 = 0.9.0 =
 * New - Add bundled widget translations for 15 languages and 38 regional locales, selected automatically from the site language.

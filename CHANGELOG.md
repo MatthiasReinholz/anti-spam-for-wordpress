@@ -4,6 +4,20 @@ All notable changes to this project should be documented in this file.
 
 The format follows a simple Keep a Changelog-style layout with one section per released version and concise bullet points for user-visible changes.
 
+## [0.10.0] - 2026-09-25
+
+- Prevent concurrent proof reuse and quota races with atomic database state and a shared per-IP issuance limit.
+- Bind authentication and comment protection to trusted WordPress and provider handlers while preserving checkout and programmatic account creation.
+- Repair consumed-proof renewal, stale browser requests, lazy loading and dynamic widget fields across provider integrations.
+- Recover failed initialization, legacy migrations and event schemas; preserve multisite configuration and clean up owned state on uninstall.
+- Report failed admin saves and event reads, retain drafts for retry, and validate pagination before querying.
+- Bound remote feed and Bunny list processing, preserve previously valid feeds, and make revocation and cleanup idempotent and retryable.
+- Isolate REST and admin runtime classes using provenance-verified wp-plugin-base 1.9.0.
+- Improve event redaction, credential exclusion, proxy handling, Forminator compatibility and custom settings sections.
+- Refresh dependencies, translations and maintenance documentation; expand real WordPress, concurrency, browser and failure-path regression coverage.
+
+Upgrade notes: outstanding verification tokens need a fresh attempt after upgrading. A quota of zero remains unlimited. Regular WordPress cron is required for background initialization and expired-state cleanup. Bunny coordination covers one WordPress network.
+
 ## [0.9.0] - 2026-09-12
 
 - Added bundled widget translations for 15 languages, including regional variants, Brazilian Portuguese, and both Norwegian written forms.
