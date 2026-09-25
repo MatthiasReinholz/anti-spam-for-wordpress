@@ -8,41 +8,12 @@ if ( ! class_exists( 'ASFW_Options', false ) ) {
 	class ASFW_Options {
 
 		private function get_feature_or_legacy_option_value( $feature_option, $legacy_option, $default_value = '', $type = 'string' ) {
-			$feature_value = get_option( $feature_option, null );
-			$legacy_value  = '' !== $legacy_option ? get_option( $legacy_option, null ) : null;
-
-			if ( ! $this->option_matches_default( $feature_value, $default_value, $type ) ) {
-				return $feature_value;
+			unset( $type );
+			$value = get_option( $feature_option, null );
+			if ( null !== $value ) {
+				return $value;
 			}
-
-			if ( ! $this->option_matches_default( $legacy_value, $default_value, $type ) ) {
-				return $legacy_value;
-			}
-
-			if ( null !== $feature_value ) {
-				return $feature_value;
-			}
-
-			if ( null !== $legacy_value ) {
-				return $legacy_value;
-			}
-
-			return $default_value;
-		}
-
-		private function option_matches_default( $value, $default_value, $type = 'string' ) {
-			if ( null === $value ) {
-				return true;
-			}
-
-			switch ( $type ) {
-				case 'bool':
-					return (bool) $value === (bool) $default_value;
-				case 'int':
-					return intval( $value, 10 ) === intval( $default_value, 10 );
-				default:
-					return trim( (string) $value ) === trim( (string) $default_value );
-			}
+			return '' !== $legacy_option ? get_option( $legacy_option, $default_value ) : $default_value;
 		}
 
 		public function get_complexity() {
@@ -230,14 +201,6 @@ if ( ! class_exists( 'ASFW_Options', false ) ) {
 		public function get_bunny_dedupe_window() {
 			$feature_ttl_minutes = get_option( AntiSpamForWordPressPlugin::$option_feature_bunny_shield_ttl_minutes, null );
 			$legacy_ttl_seconds  = get_option( AntiSpamForWordPressPlugin::$option_bunny_dedupe_window, null );
-
-			if ( ! $this->option_matches_default( $feature_ttl_minutes, '60', 'int' ) ) {
-				return max( 60, intval( $feature_ttl_minutes, 10 ) * 60 );
-			}
-
-			if ( ! $this->option_matches_default( $legacy_ttl_seconds, '3600', 'int' ) ) {
-				return max( 60, intval( $legacy_ttl_seconds, 10 ) );
-			}
 
 			if ( null !== $feature_ttl_minutes && '' !== trim( (string) $feature_ttl_minutes ) ) {
 				return max( 60, intval( $feature_ttl_minutes, 10 ) * 60 );

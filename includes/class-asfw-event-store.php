@@ -112,13 +112,73 @@ class ASFW_Event_Store {
 		}
 
 		if ( ! function_exists( 'dbDelta' ) ) {
-			return false;
+			return $this->schema_error();
 		}
 
 		dbDelta( $this->get_schema_sql() );
+		if ( ! $this->schema_is_complete() ) {
+			return $this->schema_error();
+		}
 		update_option( self::OPTION_DB_VERSION, (string) self::DB_VERSION );
 
 		return true;
+	}
+
+	private function schema_error() {
+		return new WP_Error( 'asfw_schema_unavailable', __( 'The event database could not be initialized. Please retry maintenance.', 'anti-spam-for-wordpress' ) );
+	}
+
+	/** Verify persisted columns and indexes, rather than trusting attempted DDL. */
+	private function schema_is_complete() {
+		$wpdb = $this->get_wpdb();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Schema metadata must be read after dbDelta, without caching.
+		$columns = $wpdb->get_results( $wpdb->prepare( 'SHOW COLUMNS FROM %i', $this->get_table_name() ), ARRAY_A );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Verify indexes actually exist after migration.
+		$indexes = $wpdb->get_results( $wpdb->prepare( 'SHOW INDEX FROM %i', $this->get_table_name() ), ARRAY_A );
+		if ( ! is_array( $columns ) || ! is_array( $indexes ) ) {
+			return false;
+		}
+		$expected = array(
+			'id'         => 'bigint unsigned',
+			'created_at' => 'datetime',
+			'event_type' => 'varchar(32)',
+			'context'    => 'varchar(128)',
+			'feature'    => 'varchar(64)',
+			'decision'   => 'varchar(16)',
+			'ip_hash'    => 'char(64)',
+			'email_hash' => 'char(64)',
+			'details'    => 'longtext',
+		);
+		$not_null = array( 'id', 'created_at', 'event_type', 'context', 'feature', 'decision' );
+		foreach ( $columns as $column ) {
+			$field = $column['Field'];
+			$type  = preg_replace( '/bigint\(\d+\)/', 'bigint', strtolower( $column['Type'] ) );
+			if ( ! isset( $expected[ $field ] ) || $expected[ $field ] !== $type ) {
+				continue;
+			}
+			if ( in_array( $field, $not_null, true ) && 'NO' !== ( $column['Null'] ?? '' ) ) {
+				continue;
+			}
+			if ( 'id' === $field && false === strpos( strtolower( $column['Extra'] ?? '' ), 'auto_increment' ) ) {
+				continue;
+			}
+			unset( $expected[ $field ] );
+		}
+		$required_indexes = array(
+			'PRIMARY'    => 'id',
+			'created_at' => 'created_at',
+			'event_type' => 'event_type',
+			'context'    => 'context',
+			'feature'    => 'feature',
+		);
+		foreach ( $indexes as $index ) {
+			if ( 1 === (int) $index['Seq_in_index'] && isset( $required_indexes[ $index['Key_name'] ] ) && $required_indexes[ $index['Key_name'] ] === $index['Column_name'] ) {
+				if ( 'PRIMARY' !== $index['Key_name'] || 0 === (int) $index['Non_unique'] ) {
+					unset( $required_indexes[ $index['Key_name'] ] );
+				}
+			}
+		}
+		return empty( $expected ) && empty( $required_indexes );
 	}
 
 	public function install() {
@@ -213,14 +273,9 @@ class ASFW_Event_Store {
 	}
 
 	protected function normalize_event_row( array $row ) {
-		$details = isset( $row['details'] ) ? $row['details'] : array();
-		if ( is_array( $details ) || is_object( $details ) ) {
-			$details = asfw_sanitize_event_details( $details );
-			$details = wp_json_encode( $details );
-		} elseif ( '' !== trim( (string) $details ) ) {
-			$details = (string) $details;
-		} else {
-			$details = '{}';
+		$details = wp_json_encode( asfw_sanitize_event_details( $row['details'] ?? array() ) );
+		if ( false === $details || strlen( $details ) > 65535 ) {
+			$details = '{"_truncated":true}';
 		}
 
 		$normalized = array(
@@ -231,7 +286,7 @@ class ASFW_Event_Store {
 			'decision'   => $this->normalize_string( $this->get_row_value( $row, array( 'decision', 'event_status', 'status' ), '' ), 16 ),
 			'ip_hash'    => $this->normalize_nullable_string( $this->get_row_value( $row, array( 'ip_hash', 'actor_hash' ), '' ), 64 ),
 			'email_hash' => $this->normalize_nullable_string( $this->get_row_value( $row, array( 'email_hash' ), '' ), 64 ),
-			'details'    => $this->normalize_string( $details, 65535 ),
+			'details'    => $details,
 		);
 
 		return $normalized;
@@ -430,7 +485,9 @@ class ASFW_Event_Store {
 
 	public function record_event( $event_type, array $row = array() ) {
 		$wpdb = $this->get_wpdb();
-		$this->install();
+		if ( is_wp_error( $this->install() ) ) {
+			return false;
+		}
 
 		$normalized = $this->normalize_event_row(
 			array_merge(
@@ -670,15 +727,22 @@ class ASFW_Event_Store {
 		return array();
 	}
 
+	private function deletion_result( $result ) {
+		return false === $result ? new WP_Error( 'asfw_event_delete_failed', __( 'Event cleanup failed. Please retry.', 'anti-spam-for-wordpress' ) ) : (int) $result;
+	}
+
 	public function prune_older_than( $days ) {
-		$wpdb = $this->get_wpdb();
-		$this->install();
+		$wpdb      = $this->get_wpdb();
+		$installed = $this->install();
+		if ( is_wp_error( $installed ) ) {
+			return $installed;
+		}
 
 		$days   = max( 1, intval( $days, 10 ) );
 		$cutoff = gmdate( 'Y-m-d H:i:s', time() - ( $days * 86400 ) );
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_prune_events' ) ) {
-			return (int) $wpdb->asfw_prune_events( $this->get_table_name(), $cutoff );
+			return $this->deletion_result( $wpdb->asfw_prune_events( $this->get_table_name(), $cutoff ) );
 		}
 
 		if ( is_object( $wpdb ) && method_exists( $wpdb, 'query' ) && method_exists( $wpdb, 'prepare' ) ) {
@@ -689,27 +753,30 @@ class ASFW_Event_Store {
 			$sql = $wpdb->prepare( $query, $cutoff );
 
 			// phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and $sql is prepared above.
-			return (int) $wpdb->query( $sql );
+			return $this->deletion_result( $wpdb->query( $sql ) );
 		}
 
-		return 0;
+		return $this->deletion_result( false );
 	}
 
 	public function purge_all() {
-		$wpdb = $this->get_wpdb();
-		$this->install();
-
-		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_purge_events' ) ) {
-			return (int) $wpdb->asfw_purge_events( $this->get_table_name() );
+		$wpdb      = $this->get_wpdb();
+		$installed = $this->install();
+		if ( is_wp_error( $installed ) ) {
+			return $installed;
 		}
 
-		if ( is_object( $wpdb ) && method_exists( $wpdb, 'query' ) ) {
+		if ( is_object( $wpdb ) && method_exists( $wpdb, 'asfw_purge_events' ) ) {
+			return $this->deletion_result( $wpdb->asfw_purge_events( $this->get_table_name() ) );
+		}
+
+		if ( is_object( $wpdb ) && method_exists( $wpdb, 'query' ) && method_exists( $wpdb, 'prepare' ) ) {
 			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnsupportedIdentifierPlaceholder -- Minimum supported WordPress is 6.4, which supports %i.
 			$sql = $wpdb->prepare( 'DELETE FROM %i', $this->get_table_name() );
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Event logs are stored in a plugin-owned custom table and $sql is prepared above.
-			return (int) $wpdb->query( $sql );
+			return $this->deletion_result( $wpdb->query( $sql ) );
 		}
 
-		return 0;
+		return $this->deletion_result( false );
 	}
 }

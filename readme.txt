@@ -164,6 +164,10 @@ Widgets first rendered after the page head still receive the complete runtime; t
 
 * Plugin: https://github.com/MatthiasReinholz/anti-spam-for-wordpress
 
+Custom form handlers must call `asfw_verify_posted_widget( 'custom:contact', 'asfw' )` before sending mail, saving data, or other side effects. The context and field name must match the shortcode. Separately validate fields, check a WordPress nonce, and enforce any required authorization. See the repository development guide for a complete handler and AJAX completion example.
+
+Exclude `/wp-json/anti-spam-for-wordpress/v1/challenge`, `/math-challenge`, and `/submit-delay-token` (under the same namespace) from all caching. Configure one trusted proxy header explicitly. Issuance limits apply per IP across contexts and User Agents.
+
 == Frequently Asked Questions ==
 
 = Which languages does the widget support? =

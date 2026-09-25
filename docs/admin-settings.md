@@ -41,7 +41,7 @@ Appearance and layout are independent: either layout can use the Light or Dark p
 
 ## Shortcode
 
-Use `[anti_spam_widget]` when automatic placement is not available in custom form markup.
+Use `[anti_spam_widget]` when automatic placement is not available in custom form markup. Rendering alone does not protect a custom handler: call `asfw_verify_posted_widget( 'custom:contact', 'asfw' )` before side effects, with separate nonce, field-validation, and permission checks. See the [complete example](development.md#custom-form-enforcement).
 
 ```text
 [anti_spam_widget mode="captcha" context="custom:contact" name="asfw" layout="extended" appearance="light"]
@@ -61,10 +61,13 @@ Supported attributes:
 Security plugins that restrict the REST API must allow these routes:
 
 - `/wp-json/anti-spam-for-wordpress/v1/challenge`
+- `/wp-json/anti-spam-for-wordpress/v1/math-challenge` when Math challenge is enabled
 - `/wp-json/anti-spam-for-wordpress/v1/submit-delay-token` when Submit delay is enabled
 - `/wp-json/anti-spam-for-wordpress/v1/admin/settings` for authenticated administrators
 - `/wp-json/anti-spam-for-wordpress/v1/admin/events` for authenticated administrators
 - `/wp-json/anti-spam-for-wordpress/v1/admin/analytics` for authenticated administrators
+
+Exclude all public verification routes from caching. Cached page markup contains placeholders for math/delay state; the browser fetches per-visitor values. All issuance shares a per-IP quota. Configure the one trusted proxy header explicitly when using a reverse proxy.
 
 The admin routes are registered through the managed REST operations pack and require `manage_options`.
 

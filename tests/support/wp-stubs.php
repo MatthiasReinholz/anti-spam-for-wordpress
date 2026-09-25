@@ -5,6 +5,8 @@ if (!defined('ARRAY_A')) {
     define('ARRAY_A', 'ARRAY_A');
 }
 
+$GLOBALS['asfw_test_atomic_rows'] = array();
+$GLOBALS['asfw_test_action_stack'] = array();
 $GLOBALS['asfw_test_hooks'] = $GLOBALS['asfw_test_hooks'] ?? array();
 $GLOBALS['asfw_test_options'] = $GLOBALS['asfw_test_options'] ?? array();
 $GLOBALS['asfw_test_transients'] = $GLOBALS['asfw_test_transients'] ?? array();
@@ -35,7 +37,7 @@ if (!defined('DAY_IN_SECONDS')) {
 
 function wp_doing_ajax()
 {
-    return defined('DOING_AJAX') && DOING_AJAX;
+    return (defined('DOING_AJAX') && DOING_AJAX) || !empty($GLOBALS['asfw_test_doing_ajax']);
 }
 
 function __($text, $domain = null)
@@ -371,16 +373,32 @@ function remove_filter($hook_name, $callback, $priority = 10)
 
 function do_action($hook_name, ...$args)
 {
-    if (empty($GLOBALS['asfw_test_hooks'][$hook_name])) {
-        return;
-    }
-
-    foreach ($GLOBALS['asfw_test_hooks'][$hook_name] as $callbacks) {
-        foreach ($callbacks as $callback_config) {
-            $callback_args = array_slice($args, 0, $callback_config['accepted_args']);
-            call_user_func_array($callback_config['callback'], $callback_args);
+    $GLOBALS['asfw_test_action_stack'][] = $hook_name;
+    try {
+        foreach ($GLOBALS['asfw_test_hooks'][$hook_name] ?? array() as $callbacks) {
+            foreach ($callbacks as $callback_config) {
+                $callback_args = array_slice($args, 0, $callback_config['accepted_args']);
+                call_user_func_array($callback_config['callback'], $callback_args);
+            }
         }
+    } finally {
+        array_pop($GLOBALS['asfw_test_action_stack']);
     }
+}
+
+function doing_action($hook_name = null)
+{
+    return null === $hook_name ? !empty($GLOBALS['asfw_test_action_stack']) : in_array($hook_name, $GLOBALS['asfw_test_action_stack'], true);
+}
+
+function wp_cache_delete($key, $group = '')
+{
+    return true;
+}
+
+function wp_safe_remote_get($url, $args = array())
+{
+    return wp_remote_get($url, $args);
 }
 
 function apply_filters($hook_name, $value, ...$args)
@@ -457,9 +475,13 @@ function register_deactivation_hook($file, $callback)
 function dbDelta($queries)
 {
     $GLOBALS['asfw_test_dbdelta_queries'][] = $queries;
+    if ($GLOBALS['asfw_test_schema_failure'] ?? false) { return array(); }
 
     if (preg_match('/CREATE TABLE\s+([^\s(]+)/i', (string) $queries, $matches)) {
         $table = trim($matches[1], '`');
+        preg_match_all('/^\s*(\w+) (bigint\(20\) unsigned|datetime|varchar\(\d+\)|char\(\d+\)|longtext) (NULL|NOT NULL)/mi', (string) $queries, $cols, PREG_SET_ORDER);
+        $GLOBALS['asfw_test_schema'][$table]['columns'] = array_map(static fn($col) => array('Field' => $col[1], 'Type' => $col[2], 'Null' => $col[3] === 'NULL' ? 'YES' : 'NO', 'Extra' => $col[1] === 'id' ? 'auto_increment' : ''), $cols);
+        $GLOBALS['asfw_test_schema'][$table]['indexes'] = array_map(static fn($key) => array('Key_name' => $key, 'Column_name' => $key === 'PRIMARY' ? 'id' : $key, 'Seq_in_index' => 1, 'Non_unique' => $key === 'PRIMARY' ? 0 : 1), array('PRIMARY', 'created_at', 'event_type', 'context', 'feature'));
         if (!isset($GLOBALS['asfw_test_db_tables'][$table])) {
             $GLOBALS['asfw_test_db_tables'][$table] = array();
         }
@@ -470,7 +492,8 @@ function dbDelta($queries)
 
 function wp_next_scheduled($hook, $args = array())
 {
-    return isset($GLOBALS['asfw_test_cron_events'][$hook]) ? $GLOBALS['asfw_test_cron_events'][$hook]['timestamp'] : false;
+    $event = $GLOBALS['asfw_test_cron_events'][$hook] ?? null;
+    return $event && ($event['args'] ?? array()) === $args ? $event['timestamp'] : false;
 }
 
 function wp_schedule_event($timestamp, $recurrence, $hook, $args = array(), $wp_error = false)
@@ -485,6 +508,14 @@ function wp_schedule_event($timestamp, $recurrence, $hook, $args = array(), $wp_
 }
 
 function wp_clear_scheduled_hook($hook, $args = array())
+{
+    if (false === wp_next_scheduled($hook, $args)) { return 0; }
+    unset($GLOBALS['asfw_test_cron_events'][$hook]);
+
+    return 1;
+}
+
+function wp_unschedule_hook($hook)
 {
     unset($GLOBALS['asfw_test_cron_events'][$hook]);
 
@@ -824,6 +855,11 @@ function asfw_test_reset_state(array $options = array(), ?array $active_plugins 
     $GLOBALS['asfw_test_locale'] = 'en_US';
     $GLOBALS['asfw_test_locale_stack'] = array();
 
+    $GLOBALS['asfw_test_atomic_rows'] = array();
+    $GLOBALS['asfw_test_atomic_before_query'] = null;
+    $GLOBALS['asfw_test_atomic_failure'] = false;
+    $GLOBALS['asfw_test_action_stack'] = array();
+    $GLOBALS['wpdb']->last_error = '';
     $GLOBALS['asfw_test_options'] = array();
     $GLOBALS['asfw_test_transients'] = array();
     $GLOBALS['asfw_test_http_requests'] = array();
@@ -843,11 +879,23 @@ function asfw_test_reset_state(array $options = array(), ?array $active_plugins 
     $GLOBALS['asfw_test_db_fetch_args'] = array();
     $GLOBALS['asfw_test_db_queries'] = array();
     $GLOBALS['asfw_test_dbdelta_queries'] = array();
+    $GLOBALS['asfw_test_schema'] = array();
+    $GLOBALS['asfw_test_schema_failure'] = false;
+    $GLOBALS['asfw_test_event_delete_failure'] = false;
+    $GLOBALS['asfw_test_multisite'] = false;
+    $GLOBALS['asfw_test_blog_id'] = 1;
+    $GLOBALS['asfw_test_blog_stack'] = array();
+    $GLOBALS['asfw_test_blog_state'] = array();
+    $GLOBALS['asfw_test_sites'] = array(1);
+    $GLOBALS['asfw_test_sites_queries'] = array();
+    $GLOBALS['wpdb']->prefix = 'wp_';
+    $GLOBALS['wpdb']->options = 'wp_options';
     $GLOBALS['asfw_test_cron_events'] = array();
     $GLOBALS['asfw_test_rest_routes'] = array();
     $GLOBALS['asfw_test_privacy_policy_content'] = array();
     $GLOBALS['asfw_test_user_logged_in'] = false;
     $GLOBALS['asfw_native_comment_submission_posts'] = array();
+    $GLOBALS['asfw_test_doing_ajax'] = false;
 
     foreach (array(
         'REMOTE_ADDR',
@@ -1046,6 +1094,33 @@ class wpdb
     public $prefix = 'wp_';
     public $options = 'wp_options';
     public $insert_id = 0;
+    public $last_error = '';
+
+    public function get_blog_prefix($blog_id)
+    {
+        return (int) $blog_id > 1 ? 'wp_' . (int) $blog_id . '_' : 'wp_';
+    }
+
+    public function get_var($query)
+    {
+        $this->last_error = '';
+        if ($GLOBALS['asfw_test_atomic_failure'] ?? false) {
+            $this->last_error = 'Injected database failure';
+            return null;
+        }
+        if (preg_match("/SELECT option_value FROM `([^`]+)` WHERE option_name = '([^']+)'/", $query, $matches)) {
+            return $GLOBALS['asfw_test_atomic_rows'][$matches[1]][$matches[2]] ?? null;
+        }
+        return null;
+    }
+
+    public function get_results($query, $output = ARRAY_A)
+    {
+        if (preg_match('/SHOW (COLUMNS|INDEX) FROM `([^`]+)`/', $query, $match)) {
+            return $GLOBALS['asfw_test_schema'][$match[2]][$match[1] === 'COLUMNS' ? 'columns' : 'indexes'] ?? array();
+        }
+        return array();
+    }
 
     public function get_charset_collate()
     {
@@ -1206,6 +1281,59 @@ class wpdb
     {
         $query = (string) $query;
         $GLOBALS['asfw_test_db_queries'][] = $query;
+        $this->last_error = '';
+        if (str_contains($query, 'asfw_state_') || str_contains($query, 'SUBSTRING_INDEX(option_value')) {
+            if (is_callable($GLOBALS['asfw_test_atomic_before_query'] ?? null)) {
+                ($GLOBALS['asfw_test_atomic_before_query'])($query);
+            }
+            if ($GLOBALS['asfw_test_atomic_failure'] ?? false) {
+                $this->last_error = 'Injected database failure';
+                return false;
+            }
+            // Only emulate the prepared SQL used by the atomic store, including
+            // affected-row counts and byte-for-byte compare-and-swap conditions.
+            preg_match('/(?:INTO|FROM|UPDATE) `([^`]+)`/', $query, $tableMatch);
+            $table = $tableMatch[1];
+            $GLOBALS['asfw_test_atomic_rows'][$table] = $GLOBALS['asfw_test_atomic_rows'][$table] ?? array();
+            $rows =& $GLOBALS['asfw_test_atomic_rows'][$table];
+            preg_match_all("/'((?:\\\\.|[^'\\\\])*)'/s", $query, $quoted);
+            $values = array_map('stripslashes', $quoted[1]);
+            if (str_starts_with($query, 'INSERT IGNORE')) {
+                if (isset($rows[$values[0]])) {
+                    return 0;
+                }
+                $rows[$values[0]] = $values[1];
+                return 1;
+            }
+            if (str_starts_with($query, 'UPDATE')) {
+                if (($rows[$values[1]] ?? null) !== $values[2]) {
+                    return 0;
+                }
+                $rows[$values[1]] = $values[0];
+                return 1;
+            }
+            if (str_contains($query, 'BINARY option_value')) {
+                if (($rows[$values[0]] ?? null) !== $values[1]) {
+                    return 0;
+                }
+                unset($rows[$values[0]]);
+                return 1;
+            }
+            if (preg_match('/<= ([0-9]+) LIMIT ([0-9]+)/', $query, $expiry)) {
+                $deleted = 0;
+                foreach ($rows as $key => $value) {
+                    if ((int) explode('|', $value, 2)[0] <= (int) $expiry[1]) {
+                        unset($rows[$key]);
+                        if (++$deleted >= (int) $expiry[2]) {
+                            break;
+                        }
+                    }
+                }
+                return $deleted;
+            }
+            return 0;
+        }
+
 
         if (preg_match('/DROP TABLE IF EXISTS\s+([^\s;]+)/i', $query, $matches)) {
             unset($GLOBALS['asfw_test_db_tables'][trim($matches[1], '`')]);
@@ -1214,7 +1342,7 @@ class wpdb
         }
 
         if (preg_match('/DELETE FROM\s+([^\s]+)\s+WHERE option_name LIKE \'([^\']*)\'/i', $query, $matches)) {
-            $pattern = str_replace(array('\\_', '\\%'), array('_', '%'), $matches[2]);
+            $pattern = str_replace(array('\\_', '\\%'), array('_', '%'), stripslashes($matches[2]));
             $regex = '/^' . str_replace('%', '.*', preg_quote($pattern, '/')) . '$/';
             $deleted = 0;
             foreach (array_keys($GLOBALS['asfw_test_options']) as $optionName) {
@@ -1236,10 +1364,14 @@ class wpdb
             $args = $args[0];
         }
 
-        foreach ($args as $arg) {
-            $replacement = is_int($arg) ? (string) $arg : "'" . addslashes((string) $arg) . "'";
-            $query = preg_replace('/%[sd]/', $replacement, (string) $query, 1);
-        }
+        $index = 0;
+        $query = preg_replace_callback('/%[sdi]/', static function ($matches) use ($args, &$index) {
+            $arg = $args[$index++];
+            if ($matches[0] === '%i') {
+                return '`' . str_replace('`', '``', (string) $arg) . '`';
+            }
+            return $matches[0] === '%d' ? (string) (int) $arg : "'" . addslashes((string) $arg) . "'";
+        }, (string) $query);
 
         return (string) $query;
     }
@@ -1313,6 +1445,7 @@ class wpdb
 
     public function asfw_prune_events($table, $cutoff)
     {
+        if ($GLOBALS['asfw_test_event_delete_failure'] ?? false) { return false; }
         $this->ensure_table($table);
         $kept = array();
         $deleted = 0;
@@ -1333,6 +1466,7 @@ class wpdb
 
     public function asfw_purge_events($table)
     {
+        if ($GLOBALS['asfw_test_event_delete_failure'] ?? false) { return false; }
         $this->ensure_table($table);
         $deleted = count($GLOBALS['asfw_test_db_tables'][$table]);
         $GLOBALS['asfw_test_db_tables'][$table] = array();
@@ -1383,4 +1517,40 @@ if (!class_exists('WP_CLI', false)) {
             throw new RuntimeException((string) $message);
         }
     }
+}
+
+function is_multisite() { return $GLOBALS['asfw_test_multisite'] ?? false; }
+function get_current_blog_id() { return $GLOBALS['asfw_test_blog_id'] ?? 1; }
+function get_current_network_id() { return 1; }
+function get_main_site_id($network_id = null) { return 1; }
+function get_network_option($network, $name, $default = false) { return $GLOBALS['asfw_test_network_options'][$network][$name] ?? $default; }
+function get_sites($args = array()) {
+    $GLOBALS['asfw_test_sites_queries'][] = $args;
+    return array_slice($GLOBALS['asfw_test_sites'] ?? array(1), $args['offset'] ?? 0, $args['number'] ?? 100);
+}
+function asfw_test_select_blog($id) {
+    $current = get_current_blog_id();
+    $GLOBALS['asfw_test_blog_state'][$current] = array($GLOBALS['asfw_test_options'], $GLOBALS['asfw_test_cron_events']);
+    $GLOBALS['asfw_test_blog_id'] = $id;
+    list($GLOBALS['asfw_test_options'], $GLOBALS['asfw_test_cron_events']) = $GLOBALS['asfw_test_blog_state'][$id] ?? array(array(), array());
+    $GLOBALS['wpdb']->prefix = $GLOBALS['wpdb']->get_blog_prefix($id);
+    $GLOBALS['wpdb']->options = $GLOBALS['wpdb']->prefix . 'options';
+}
+function switch_to_blog($id) {
+    $GLOBALS['asfw_test_blog_stack'][] = get_current_blog_id();
+    asfw_test_select_blog((int) $id);
+    return true;
+}
+function restore_current_blog() {
+    if (empty($GLOBALS['asfw_test_blog_stack'])) { return false; }
+    asfw_test_select_blog(array_pop($GLOBALS['asfw_test_blog_stack']));
+    return true;
+}
+function wp_schedule_single_event($timestamp, $hook, $args = array()) {
+    $GLOBALS['asfw_test_cron_events'][$hook] = array('timestamp' => $timestamp, 'args' => $args);
+    return true;
+}
+
+function wp_check_invalid_utf8($value, $strip = false) {
+    return $strip ? iconv('UTF-8', 'UTF-8//IGNORE', (string) $value) : (string) $value;
 }

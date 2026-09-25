@@ -1,0 +1,27 @@
+name: WordPress integration
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wordpress-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wordpress-integration:
+    name: WordPress integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+      - name: Exercise real WordPress, database concurrency, Redis, and multisite
+        run: bash scripts/test-wordpress-integration.sh

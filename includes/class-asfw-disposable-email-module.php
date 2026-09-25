@@ -273,7 +273,7 @@ class ASFW_Disposable_Email_Module {
 							$domain = strtolower( trim( (string) $domain ) );
 							$domain = preg_replace( '/^https?:\/\//', '', $domain );
 							$domain = trim( $domain, " \t\n\r\0\x0B./" );
-							return preg_match( '/^[a-z0-9.-]+\.[a-z]{2,}$/', $domain ) ? $domain : '';
+							return preg_match( '/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,63}|xn--[a-z0-9-]{2,59})$/', $domain ) ? $domain : '';
 						},
 						$domains
 					)
@@ -298,7 +298,7 @@ class ASFW_Disposable_Email_Module {
 					array_map(
 						static function ( $domain ) {
 							$domain = strtolower( trim( (string) $domain ) );
-							return preg_match( '/^[a-z0-9.-]+\.[a-z]{2,}$/', $domain ) ? $domain : '';
+							return preg_match( '/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,63}|xn--[a-z0-9-]{2,59})$/', $domain ) ? $domain : '';
 						},
 						$domains
 					)
@@ -311,45 +311,81 @@ class ASFW_Disposable_Email_Module {
 		return $domains;
 	}
 
+	/** Validate the complete feed before allowing it to replace the last good list. */
+	protected function parse_remote_domains( $body, array $current ) {
+		if ( '' === trim( $body ) || strlen( $body ) > 8 * 1024 * 1024 ) {
+			return new WP_Error( 'asfw_disposable_invalid_size', 'Empty or oversized domain feed.' );
+		}
+
+		$domains = array();
+		foreach ( preg_split( '/[\r\n]+/', $body ) as $line ) {
+			$line = strtolower( trim( $line ) );
+			if ( '' === $line || '#' === substr( $line, 0, 1 ) ) {
+				continue;
+			}
+			if ( strlen( $line ) > 253 || ! preg_match( '/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,63}|xn--[a-z0-9-]{2,59})$/', $line ) ) {
+				return new WP_Error( 'asfw_disposable_invalid_domain', 'Malformed domain feed.' );
+			}
+			$domains[ $line ] = true;
+		}
+
+		$domains = array_keys( $domains );
+		if ( empty( $domains ) ) {
+			return new WP_Error( 'asfw_disposable_empty_feed', 'The domain feed contains no domains.' );
+		}
+
+		$minimum_ratio = max( 0.0, min( 1.0, (float) apply_filters( 'asfw_disposable_email_minimum_refresh_ratio', 0.5 ) ) );
+		if ( count( $domains ) < count( $current ) * $minimum_ratio ) {
+			return new WP_Error( 'asfw_disposable_feed_reduced', 'The domain feed unexpectedly lost more than the permitted proportion of entries.' );
+		}
+
+		return $domains;
+	}
+
+	private $last_refresh_error;
+
+	public function get_last_refresh_error() {
+		return $this->last_refresh_error;
+	}
+
 	public function refresh_from_source( $force_remote = false ) {
-		$domains               = $this->get_bundled_domains();
-		$source                = 'bundled';
-		$remote_attempted      = false;
-		$remote_refresh_failed = false;
+		$domains = $this->get_domains();
+		$source  = 'bundled';
+		$error   = null;
 
-		$remote_url = trim(
-			(string) apply_filters(
-				'asfw_disposable_email_remote_url',
-				self::DEFAULT_REMOTE_URL
-			)
-		);
-
-		if ( $force_remote && function_exists( 'wp_remote_get' ) && false !== filter_var( $remote_url, FILTER_VALIDATE_URL ) ) {
-			$remote_attempted = true;
-			$response         = wp_remote_get(
-				$remote_url,
-				array(
-					'timeout' => 5,
-				)
-			);
-
-			if ( ! is_wp_error( $response ) && 200 === intval( wp_remote_retrieve_response_code( $response ), 10 ) ) {
-				$body = trim( (string) wp_remote_retrieve_body( $response ) );
-				if ( '' !== $body ) {
-					$remote_domains = preg_split( '/[\r\n]+/', $body, -1, PREG_SPLIT_NO_EMPTY );
-					if ( is_array( $remote_domains ) ) {
-						$domains = $remote_domains;
+		if ( $force_remote ) {
+			$remote_url = trim( (string) apply_filters( 'asfw_disposable_email_remote_url', self::DEFAULT_REMOTE_URL ) );
+			if ( 'https' !== wp_parse_url( $remote_url, PHP_URL_SCHEME ) ) {
+				$error = new WP_Error( 'asfw_disposable_invalid_source', 'Domain feeds require a valid HTTPS source.' );
+			} else {
+				$response = wp_safe_remote_get(
+					$remote_url,
+					array(
+						'timeout'             => 5,
+						'redirection'         => 0,
+						'limit_response_size' => 8 * 1024 * 1024 + 1,
+					)
+				);
+				if ( is_wp_error( $response ) ) {
+					$error = $response;
+				} elseif ( 200 !== intval( wp_remote_retrieve_response_code( $response ), 10 ) ) {
+					$error = new WP_Error( 'asfw_disposable_http_error', 'The domain feed request failed.' );
+				} else {
+					$candidate = $this->parse_remote_domains( (string) wp_remote_retrieve_body( $response ), $domains );
+					if ( is_wp_error( $candidate ) ) {
+						$error = $candidate;
+					} else {
+						$domains = $candidate;
 						$source  = 'remote';
 					}
 				}
-			} else {
-				$remote_refresh_failed = true;
 			}
+		} else {
+			$domains = $this->get_bundled_domains();
 		}
 
-		if ( $remote_attempted && $remote_refresh_failed ) {
-			$domains = $this->get_domains();
-		} else {
+		$this->last_refresh_error = $error;
+		if ( ! is_wp_error( $error ) ) {
 			$domains = $this->set_domains( $domains );
 			update_option( self::OPTION_LAST_REFRESH, gmdate( 'Y-m-d H:i:s' ) );
 		}
@@ -357,12 +393,13 @@ class ASFW_Disposable_Email_Module {
 		$this->store->record_event(
 			'disposable_list_refreshed',
 			array(
-				'decision' => ( $remote_attempted && $remote_refresh_failed ) ? 'failed' : 'complete',
+				'decision' => is_wp_error( $error ) ? 'failed' : 'complete',
 				'context'  => 'disposable-email',
 				'feature'  => 'disposable-email',
 				'details'  => array(
-					'count'  => count( $domains ),
-					'source' => ( $remote_attempted && $remote_refresh_failed ) ? 'remote_failed' : $source,
+					'count'      => count( $domains ),
+					'source'     => is_wp_error( $error ) ? 'remote_failed' : $source,
+					'error_code' => is_wp_error( $error ) ? $error->get_error_code() : '',
 				),
 			)
 		);
@@ -403,6 +440,7 @@ class ASFW_Disposable_Email_Module {
 	}
 
 	public function maybe_refresh() {
+		$this->last_refresh_error = null;
 		if ( ! $this->is_background_enabled() ) {
 			return count( $this->get_domains() );
 		}

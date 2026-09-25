@@ -67,7 +67,7 @@ class ASFW_Content_Heuristics_Module {
 	}
 
 	public function analyze_submission( $context = null ) {
-		$context    = sanitize_key( (string) $context );
+		$context    = ASFW_Feature_Registry::normalize_context( $context );
 		$terms      = $this->get_heuristic_terms();
 		$candidates = $this->collect_candidate_text();
 		$score      = 0;
@@ -123,7 +123,7 @@ class ASFW_Content_Heuristics_Module {
 	}
 
 	public function inspect_submission( $success, $result, $context, $field_name, $resolved_context = null ) {
-		$event_context = '' !== sanitize_key( (string) $resolved_context ) ? sanitize_key( (string) $resolved_context ) : sanitize_key( (string) $context );
+		$event_context = ASFW_Feature_Registry::normalize_context( '' !== trim( (string) $resolved_context ) ? $resolved_context : $context );
 
 		if ( ! $success || ! $this->is_enabled( $event_context ) ) {
 			return;

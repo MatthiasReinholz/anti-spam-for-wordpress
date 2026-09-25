@@ -85,6 +85,7 @@ final class MaintenanceAndModulesTest extends AsfwPluginTestCase
 
 		update_option('asfw_feature_disposable_email_background_enabled', 1);
 		delete_option(ASFW_Disposable_Email_Module::OPTION_LAST_REFRESH);
+        $GLOBALS['asfw_test_http_responses'][] = array('response' => array('code' => 200), 'body' => implode("\n", ASFW_Control_Plane::disposable_module()->get_domains()));
 
         $summary = ASFW_Control_Plane::maintenance()->run();
 

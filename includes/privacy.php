@@ -11,53 +11,92 @@ function asfw_hash_value( $value, $purpose = 'generic' ) {
 	return hash_hmac( 'sha256', $purpose . '|' . $normalized, $secret );
 }
 
-function asfw_sanitize_event_detail_value( $value, $path = array() ) {
-	if ( is_array( $value ) ) {
+/** Bound work as well as output for extension-provided, potentially recursive details. */
+function asfw_sanitize_event_detail_value( $value, $path = array(), &$budget = null ) {
+	if ( null === $budget ) {
+		$budget = 200;
+	}
+	if ( --$budget < 0 || count( $path ) > 8 ) {
+		return '[truncated]';
+	}
+	if ( is_array( $value ) || is_object( $value ) ) {
 		$sanitized = array();
-		foreach ( $value as $key => $child_value ) {
-			$sanitized[ $key ] = asfw_sanitize_event_detail_value( $child_value, array_merge( $path, array( (string) $key ) ) );
+		foreach ( (array) $value as $key => $child_value ) {
+			if ( $budget <= 0 ) {
+				$sanitized['_truncated'] = true;
+				break;
+			}
+			if ( strlen( (string) $key ) > 8192 ) {
+				$sanitized['_truncated'] = true;
+				--$budget;
+				continue;
+			}
+			// Identity can occur in extension-supplied keys as well as values.
+			$safe_key               = asfw_private_detail_text( (string) $key, array( 'key' ) );
+			$sanitized[ $safe_key ] = asfw_sanitize_event_detail_value( $child_value, array_merge( $path, array( (string) $key ) ), $budget );
 		}
-
 		return $sanitized;
 	}
-
-	if ( is_object( $value ) ) {
-		return asfw_sanitize_event_detail_value( (array) $value, $path );
+	if ( ( is_int( $value ) || is_float( $value ) ) && asfw_event_detail_path_is_sensitive( $path ) ) {
+		return asfw_private_detail_text( (string) $value, $path );
 	}
-
 	if ( is_bool( $value ) || is_int( $value ) || is_float( $value ) || null === $value ) {
 		return $value;
 	}
+	return asfw_private_detail_text( (string) $value, $path );
+}
 
-	$text = trim( (string) $value );
+function asfw_event_detail_path_is_sensitive( array $path ) {
+	$joined_path = strtolower( implode( '.', $path ) );
+	foreach ( array( 'email', 'ip', 'user_agent', 'useragent', 'ua', 'address', 'phone', 'token', 'secret', 'salt', 'signature', 'challenge_id', 'payload', 'fingerprint' ) as $needle ) {
+		if ( false !== strpos( $joined_path, $needle ) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function asfw_private_detail_text( $text, array $path ) {
+	// Do not scan or retain arbitrarily large extension-provided strings.
+	if ( strlen( $text ) > 8192 ) {
+		return '[truncated]';
+	}
+	$text = trim( $text );
 	if ( '' === $text ) {
 		return '';
 	}
-
-	$joined_path = strtolower( implode( '.', $path ) );
-	$sensitive   = array( 'email', 'ip', 'user_agent', 'useragent', 'ua', 'address', 'phone', 'token', 'secret', 'salt', 'signature', 'challenge_id', 'payload', 'fingerprint' );
-	foreach ( $sensitive as $needle ) {
-		if ( false !== strpos( $joined_path, $needle ) ) {
-			return asfw_hash_value( $text, $joined_path );
-		}
+	if ( asfw_event_detail_path_is_sensitive( $path ) ) {
+		return asfw_hash_value( $text, strtolower( implode( '.', $path ) ) );
 	}
-
 	if ( preg_match( '/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i', $text ) ) {
 		return asfw_hash_value( $text, 'email' );
 	}
-
 	if ( preg_match( '/\b(?:\d{1,3}\.){3}\d{1,3}\b/', $text ) ) {
 		return asfw_hash_value( $text, 'ip' );
 	}
-
-	if ( strlen( $text ) > 500 ) {
-		$text = substr( $text, 0, 500 );
+	preg_match_all( '/[0-9a-f]*:[0-9a-f:.]+/i', $text, $candidates );
+	foreach ( $candidates[0] as $candidate ) {
+		if ( filter_var( rtrim( $candidate, '.' ), FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+			return asfw_hash_value( $text, 'ip' );
+		}
 	}
-
-	return $text;
+	// wp_check_invalid_utf8 avoids cutting a multi-byte character in half.
+	return wp_check_invalid_utf8( substr( $text, 0, 500 ), true );
 }
 
 function asfw_sanitize_event_details( $details ) {
+	if ( is_string( $details ) ) {
+		if ( strlen( $details ) > 65535 ) {
+			return array( '_truncated' => true );
+		}
+		$decoded = json_decode( $details, true, 16 );
+		$trimmed = ltrim( $details );
+		if ( JSON_ERROR_NONE !== json_last_error() && ( JSON_ERROR_DEPTH === json_last_error() || str_starts_with( $trimmed, '{' ) || str_starts_with( $trimmed, '[' ) ) ) {
+			// Failed structured input must not fall back to unsanitized serialized secrets.
+			return array( '_truncated' => true );
+		}
+		$details = is_array( $decoded ) ? $decoded : array( 'message' => $details );
+	}
 	return asfw_sanitize_event_detail_value( $details );
 }
 

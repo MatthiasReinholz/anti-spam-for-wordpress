@@ -4,8 +4,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-register_activation_hook( ASFW_FILE, 'asfw_seed_control_plane_defaults' );
-
 final class ASFW_Settings_Schema {
 
 	public static function get_sections() {
@@ -196,18 +194,31 @@ final class ASFW_Settings_Schema {
 					'asfw_settings_visitor_binding_field',
 					AntiSpamForWordPressPlugin::$option_visitor_binding,
 					__( 'Visitor binding', 'anti-spam-for-wordpress' ),
-					__( 'Choose how challenges and rate limits identify a visitor. IP + User Agent reduces collisions on shared IPs but is more sensitive to browser changes.', 'anti-spam-for-wordpress' ),
+					__( 'Choose how challenges bind to a visitor. Issuance limits always apply to the client IP across contexts and User Agents.', 'anti-spam-for-wordpress' ),
 					array(
 						'ip'    => __( 'IP address', 'anti-spam-for-wordpress' ),
 						'ip_ua' => __( 'IP address + User Agent', 'anti-spam-for-wordpress' ),
 					),
 					'ip'
 				),
+				self::select_field(
+					'asfw_settings_trusted_proxy_header_field',
+					'asfw_trusted_proxy_header',
+					__( 'Trusted proxy header', 'anti-spam-for-wordpress' ),
+					__( 'Select the one header your trusted proxy overwrites. Other forwarding headers are ignored.', 'anti-spam-for-wordpress' ),
+					array(
+						'HTTP_X_FORWARDED_FOR'  => 'X-Forwarded-For',
+						'HTTP_FORWARDED'        => 'Forwarded',
+						'HTTP_CF_CONNECTING_IP' => 'CF-Connecting-IP',
+						'HTTP_X_REAL_IP'        => 'X-Real-IP',
+					),
+					'HTTP_X_FORWARDED_FOR'
+				),
 				self::text_field(
 					'asfw_settings_trusted_proxies_field',
 					AntiSpamForWordPressPlugin::$option_trusted_proxies,
 					__( 'Trusted proxies', 'anti-spam-for-wordpress' ),
-					__( 'Optional comma-separated IPs or CIDR ranges for reverse proxies. When a request comes from one of these proxies, the plugin will trust forwarded client IP headers.', 'anti-spam-for-wordpress' ),
+					__( 'Optional comma-separated IPs or CIDR ranges for reverse proxies. Only the selected client IP header is trusted when a request comes from one of these proxies.', 'anti-spam-for-wordpress' ),
 					'asfw_sanitize_trusted_proxies_option',
 					'text'
 				),
@@ -667,6 +678,7 @@ final class ASFW_Settings_Schema {
 			AntiSpamForWordPressPlugin::$option_feature_submit_delay_ms => 'asfw_security_settings_section',
 			AntiSpamForWordPressPlugin::$option_visitor_binding => 'asfw_security_settings_section',
 			AntiSpamForWordPressPlugin::$option_trusted_proxies => 'asfw_security_settings_section',
+			'asfw_trusted_proxy_header'                    => 'asfw_security_settings_section',
 			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_enabled => 'asfw_bunny_settings_section',
 			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_api_key => 'asfw_bunny_settings_section',
 			AntiSpamForWordPressPlugin::$option_feature_bunny_shield_zone_id => 'asfw_bunny_settings_section',

@@ -25,6 +25,7 @@ class ASFW_Integration_Loader {
 			$registry->register( $adapter );
 		}
 
+		do_action( 'asfw_register_integrations', $registry );
 		return $registry;
 	}
 

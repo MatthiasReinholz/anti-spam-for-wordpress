@@ -77,10 +77,11 @@ class ASFW_Bunny_Shield_Client {
 		}
 
 		$args = array(
-			'method'      => strtoupper( (string) $method ),
-			'timeout'     => 5,
-			'redirection' => 0,
-			'headers'     => array(
+			'method'              => strtoupper( (string) $method ),
+			'timeout'             => 5,
+			'redirection'         => 0,
+			'limit_response_size' => 8 * 1024 * 1024 + 1,
+			'headers'             => array(
 				'AccessKey'    => $api_key,
 				'Accept'       => 'application/json',
 				'Content-Type' => 'application/json',
@@ -99,9 +100,9 @@ class ASFW_Bunny_Shield_Client {
 
 		$status_code = function_exists( 'wp_remote_retrieve_response_code' ) ? intval( wp_remote_retrieve_response_code( $response ), 10 ) : 0;
 		$raw_body    = function_exists( 'wp_remote_retrieve_body' ) ? (string) wp_remote_retrieve_body( $response ) : '';
-			$decoded = $this->decode_body( $raw_body );
+		$decoded     = $this->decode_body( $raw_body );
 
-		if ( $status_code < 200 || $status_code >= 300 ) {
+		if ( $status_code < 200 || $status_code >= 300 || ( is_array( $decoded ) && isset( $decoded['error']['success'] ) && false === $decoded['error']['success'] ) ) {
 			$message = __( 'Bunny Shield request failed.', 'anti-spam-for-wordpress' );
 			if ( is_array( $decoded ) && isset( $decoded['error']['message'] ) && is_string( $decoded['error']['message'] ) ) {
 				$message = $decoded['error']['message'];
@@ -118,7 +119,7 @@ class ASFW_Bunny_Shield_Client {
 			);
 		}
 
-		if ( ! is_array( $decoded ) ) {
+		if ( ! is_array( $decoded ) || strlen( $raw_body ) > 8 * 1024 * 1024 ) {
 			return new WP_Error(
 				'asfw_bunny_invalid_response',
 				__( 'Bunny Shield returned an invalid response body.', 'anti-spam-for-wordpress' ),
@@ -158,56 +159,70 @@ class ASFW_Bunny_Shield_Client {
 
 	public function add_entry( string $list_id, string $ip, string $action, int $ttl_minutes, string $description ) {
 		unset( $action, $ttl_minutes, $description );
-		$list_id = max( 0, intval( $list_id, 10 ) );
-		if ( $list_id <= 0 ) {
-			return new WP_Error( 'asfw_bunny_missing_list_id', __( 'Bunny access list ID is missing.', 'anti-spam-for-wordpress' ) );
-		}
-
-		$current = $this->get_access_list( $list_id );
-		if ( is_wp_error( $current ) ) {
-			return $current;
-		}
-
-		$payload = isset( $current['body']['data'] ) && is_array( $current['body']['data'] ) ? $current['body']['data'] : ( isset( $current['body'] ) && is_array( $current['body'] ) ? $current['body'] : array() );
-		$content = isset( $payload['content'] ) ? (string) $payload['content'] : '';
-		$entries = preg_split( '/[\r\n,]+/', trim( $content ), -1, PREG_SPLIT_NO_EMPTY );
-		if ( ! is_array( $entries ) ) {
-			$entries = array();
-		}
-		$entries[] = trim( $ip );
-		$entries   = array_values( array_unique( array_filter( $entries ) ) );
-
-		return $this->update_access_list( $list_id, implode( "\n", $entries ), null, isset( $payload['name'] ) ? (string) $payload['name'] : '' );
+		return $this->mutate_entry( $list_id, $ip, true );
 	}
 
 	public function remove_entry( string $list_id, string $entry_id ) {
-		$list_id = max( 0, intval( $list_id, 10 ) );
-		$ip      = trim( (string) $entry_id );
+		return $this->mutate_entry( $list_id, $entry_id, false );
+	}
+
+	/** Legacy entry helpers use the same lease as the control-plane module. */
+	protected function mutate_entry( $list_id, $ip, $adding ) {
+		$list_id  = max( 0, intval( $list_id, 10 ) );
+		$identity = new ASFW_Client_Identity();
+		$ip       = $identity->normalize_ip( $ip );
 		if ( $list_id <= 0 || '' === $ip ) {
-			return new WP_Error( 'asfw_bunny_invalid_remove_args', __( 'Invalid Bunny revoke request.', 'anti-spam-for-wordpress' ) );
+			return new WP_Error( 'asfw_bunny_invalid_entry', __( 'Invalid Bunny access list entry.', 'anti-spam-for-wordpress' ) );
 		}
-
-		$current = $this->get_access_list( $list_id );
-		if ( is_wp_error( $current ) ) {
-			return $current;
+		$store = new ASFW_Atomic_State_Store( is_multisite() && function_exists( 'get_main_site_id' ) ? get_main_site_id() : null );
+		$key   = 'bunny:zone:' . $this->get_shield_zone_id() . ':mutation';
+		$lease = $store->acquire_lease( $key, 60 );
+		if ( is_wp_error( $lease ) ) {
+			return $lease;
 		}
-
-		$payload = isset( $current['body']['data'] ) && is_array( $current['body']['data'] ) ? $current['body']['data'] : ( isset( $current['body'] ) && is_array( $current['body'] ) ? $current['body'] : array() );
-		$content = isset( $payload['content'] ) ? (string) $payload['content'] : '';
-		$entries = preg_split( '/[\r\n,]+/', trim( $content ), -1, PREG_SPLIT_NO_EMPTY );
-		if ( ! is_array( $entries ) ) {
+		if ( ! is_array( $lease ) ) {
+			return new WP_Error( 'asfw_bunny_busy', __( 'Bunny Shield synchronization is busy. Please try again.', 'anti-spam-for-wordpress' ) );
+		}
+		try {
+			$current = $this->get_access_list( $list_id );
+			if ( is_wp_error( $current ) ) {
+				return $current;
+			}
+			$payload = isset( $current['body']['data'] ) && is_array( $current['body']['data'] ) ? $current['body']['data'] : $current['body'];
+			if ( ! isset( $payload['id'], $payload['content'] ) || $list_id !== $payload['id'] || ! is_string( $payload['content'] )
+				|| ( isset( $payload['type'] ) && ! in_array( $payload['type'], array( 0, '0' ), true ) ) ) {
+				return new WP_Error( 'asfw_bunny_invalid_response', __( 'Bunny Shield returned an invalid access list.', 'anti-spam-for-wordpress' ) );
+			}
 			$entries = array();
-		}
-		$entries = array_values(
-			array_filter(
-				$entries,
-				static function ( $entry ) use ( $ip ) {
-					return trim( (string) $entry ) !== $ip;
+			foreach ( preg_split( '/[\r\n,]+/', trim( $payload['content'] ), -1, PREG_SPLIT_NO_EMPTY ) as $entry ) {
+				$entry = $identity->normalize_ip( $entry );
+				if ( '' === $entry ) {
+					return new WP_Error( 'asfw_bunny_invalid_response', __( 'Bunny Shield returned an invalid access list.', 'anti-spam-for-wordpress' ) );
 				}
-			)
-		);
-
-		return $this->update_access_list( $list_id, implode( "\n", $entries ), null, isset( $payload['name'] ) ? (string) $payload['name'] : '' );
+				if ( $adding || $entry !== $ip ) {
+					$entries[ $entry ] = true;
+				}
+			}
+			if ( $adding ) {
+				$entries[ $ip ] = true;
+			}
+			$owner = $store->read( $key );
+			if ( ! is_array( $owner ) || $owner['expires_at'] <= time() + 6 || ! hash_equals( $lease['raw'], $owner['raw'] ) ) {
+				return new WP_Error( 'asfw_bunny_busy', __( 'Bunny Shield synchronization is busy. Please try again.', 'anti-spam-for-wordpress' ) );
+			}
+			$content = implode( "\n", array_keys( $entries ) );
+			$result  = $this->update_access_list( $list_id, $content );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+			$updated = isset( $result['body']['data'] ) && is_array( $result['body']['data'] ) ? $result['body']['data'] : $result['body'];
+			if ( ! isset( $updated['id'], $updated['content'] ) || $list_id !== $updated['id'] || $content !== $updated['content'] ) {
+				return new WP_Error( 'asfw_bunny_invalid_response', __( 'Bunny Shield returned an invalid access list.', 'anti-spam-for-wordpress' ) );
+			}
+			return $result;
+		} finally {
+			$store->release_lease( $key, $lease );
+		}
 	}
 
 	public function get_access_list( $list_id, $shield_zone_id = null ) {

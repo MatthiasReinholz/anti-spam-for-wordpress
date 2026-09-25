@@ -11,6 +11,7 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 		private $context_helper_service;
 		private $options_service;
 		private $rate_limiter_service;
+		private $leases = array();
 
 		private function client_identity_service() {
 			if ( ! $this->client_identity_service instanceof ASFW_Client_Identity ) {
@@ -98,24 +99,32 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 		}
 
 		public function acquire_challenge_lock( $challenge_id, $ttl = 30 ) {
-			$lock_key   = $this->get_challenge_lock_key( $challenge_id );
-			$expires_at = time() + max( 1, intval( $ttl, 10 ) );
-			if ( add_option( $lock_key, (string) $expires_at, '', false ) ) {
-				return true;
-			}
-
-			$existing_expires = intval( (string) get_option( $lock_key, '0' ), 10 );
-			if ( $existing_expires >= time() ) {
+			$store = new ASFW_Atomic_State_Store();
+			$key   = $this->get_challenge_lock_key( $challenge_id );
+			$lease = $store->acquire_lease( $key, $ttl );
+			if ( ! is_array( $lease ) ) {
 				return false;
 			}
-
-			delete_option( $lock_key );
-
-			return add_option( $lock_key, (string) $expires_at, '', false );
+			$this->leases[ $key ] = $lease;
+			return true;
 		}
 
 		public function release_challenge_lock( $challenge_id ) {
-			delete_option( $this->get_challenge_lock_key( $challenge_id ) );
+			$key = $this->get_challenge_lock_key( $challenge_id );
+			if ( isset( $this->leases[ $key ] ) ) {
+				$store = new ASFW_Atomic_State_Store();
+				$store->release_lease( $key, $this->leases[ $key ] );
+				unset( $this->leases[ $key ] );
+			}
+		}
+
+		private function persist_state( $key, array $state, $ttl ) {
+			$store   = new ASFW_Atomic_State_Store();
+			$created = $store->create( $key, $state, $ttl );
+			if ( true !== $created ) {
+				return $created instanceof WP_Error ? $created : new WP_Error( 'asfw_state_collision', __( 'Verification is temporarily unavailable.', 'anti-spam-for-wordpress' ), array( 'status' => 503 ) );
+			}
+			return true;
 		}
 
 		public function generate_challenge( $hmac_key = null, $complexity = null, $expires = null, $context = null, $count_against_rate_limit = true ) {
@@ -133,7 +142,7 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 
 			$context = $this->context_helper_service()->normalize_context( $context );
 			if ( $count_against_rate_limit ) {
-				$rate_limited = $this->rate_limiter_service()->is_rate_limited( 'challenge', $context );
+				$rate_limited = $this->rate_limiter_service()->reserve( 'challenge', $context );
 				if ( $rate_limited instanceof WP_Error ) {
 					return $rate_limited;
 				}
@@ -176,7 +185,7 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 			$challenge     = hash( 'sha256', $salt . $secret_number );
 			$signature     = hash_hmac( 'sha256', $challenge, $hmac_key );
 			$issued_at_ms  = (int) round( microtime( true ) * 1000 );
-			set_transient(
+			$persisted     = $this->persist_state(
 				$this->get_challenge_transient_key( $challenge_id ),
 				array(
 					'context'     => $context,
@@ -185,8 +194,8 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 				),
 				$transient_ttl
 			);
-			if ( $count_against_rate_limit ) {
-				$this->rate_limiter_service()->increment_rate_limit( 'challenge', $context );
+			if ( $persisted instanceof WP_Error ) {
+				return $persisted;
 			}
 
 			$challenge_data = array(
@@ -203,13 +212,17 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 		}
 
 		public function issue_math_challenge( $context ) {
+			$reservation = $this->rate_limiter_service()->reserve( 'challenge', $context );
+			if ( $reservation instanceof WP_Error ) {
+				return $reservation;
+			}
 			$left         = random_int( 2, 9 );
 			$right        = random_int( 2, 9 );
 			$challenge_id = sanitize_key( $this->random_secret() );
 			$issued_at_ms = (int) round( microtime( true ) * 1000 );
 			$ttl          = 600;
 
-			set_transient(
+			$persisted = $this->persist_state(
 				$this->get_math_challenge_transient_key( $challenge_id ),
 				array(
 					'context'     => $this->context_helper_service()->normalize_context( $context ),
@@ -220,7 +233,12 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 				$ttl
 			);
 
+			if ( $persisted instanceof WP_Error ) {
+				return $persisted;
+			}
+
 			return array(
+				'expires_at'   => time() + $ttl,
 				'challenge_id' => $challenge_id,
 				'signature'    => $this->sign_guard_token( 'math_challenge', $context, $challenge_id ),
 				'left'         => $left,
@@ -229,15 +247,14 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 		}
 
 		public function render_math_challenge_fields( $context ) {
-			$challenge = $this->issue_math_challenge( $context );
-			$field_id  = 'asfw_math_answer_' . substr( $challenge['challenge_id'], 0, 8 );
-			$html      = '<p class="asfw-math-challenge">';
-			$html     .= '<label for="' . esc_attr( $field_id ) . '">' . esc_html__( 'Security check', 'anti-spam-for-wordpress' ) . ': ' . esc_html( (string) $challenge['left'] ) . ' + ' . esc_html( (string) $challenge['right'] ) . ' = ?</label>';
-			$html     .= '<input type="text" class="input asfw-math-answer" inputmode="numeric" autocomplete="off" pattern="[0-9]*" required name="' . esc_attr( $this->get_math_challenge_answer_field_name() ) . '" id="' . esc_attr( $field_id ) . '" value="">';
-			$html     .= '<input type="hidden" name="' . esc_attr( $this->get_math_challenge_id_field_name() ) . '" value="' . esc_attr( $challenge['challenge_id'] ) . '">';
-			$html     .= '<input type="hidden" name="' . esc_attr( $this->get_math_challenge_signature_field_name() ) . '" value="' . esc_attr( $challenge['signature'] ) . '">';
+			$field_id  = 'asfw_math_answer_' . substr( $this->random_secret(), 0, 8 );
+			$token_url = add_query_arg( array( 'context' => $this->context_helper_service()->normalize_context( $context ) ), get_rest_url( null, '/anti-spam-for-wordpress/v1/math-challenge' ) );
+			$html      = '<p class="asfw-math-challenge" data-asfw-math-challenge-url="' . esc_url( $token_url ) . '" data-asfw-math-mode="' . esc_attr( ASFW_Feature_Registry::active_mode( 'math_challenge' ) ) . '">';
+			$html     .= '<label class="asfw-math-question" for="' . esc_attr( $field_id ) . '">' . esc_html__( 'Security check', 'anti-spam-for-wordpress' ) . '</label>';
+			$html     .= '<input type="text" class="input asfw-math-answer" inputmode="numeric" autocomplete="off" pattern="[0-9]*"' . ( 'block' === ASFW_Feature_Registry::active_mode( 'math_challenge' ) ? ' required' : '' ) . ' name="' . esc_attr( $this->get_math_challenge_answer_field_name() ) . '" id="' . esc_attr( $field_id ) . '" value="">';
+			$html     .= '<input type="hidden" name="' . esc_attr( $this->get_math_challenge_id_field_name() ) . '" value="">';
+			$html     .= '<input type="hidden" name="' . esc_attr( $this->get_math_challenge_signature_field_name() ) . '" value="">';
 			$html     .= '</p>';
-
 			return $html;
 		}
 
@@ -255,47 +272,50 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 				return new WP_Error( 'asfw_math_bad_signature', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
 			}
 
-			$lock_id = 'math_' . sanitize_key( (string) $challenge_id );
-			if ( ! $this->acquire_challenge_lock( $lock_id ) ) {
-				return new WP_Error( 'asfw_math_replay_locked', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+			$store    = new ASFW_Atomic_State_Store();
+			$key      = $this->get_math_challenge_transient_key( $challenge_id );
+			$snapshot = $store->read( $key );
+			if ( $snapshot instanceof WP_Error ) {
+				return $snapshot;
+			}
+			$state = is_array( $snapshot ) ? $snapshot['value'] : null;
+			if ( ! is_array( $state ) ) {
+				return new WP_Error( 'asfw_math_unknown', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
 			}
 
-			try {
-				$state = get_transient( $this->get_math_challenge_transient_key( $challenge_id ) );
-				if ( ! is_array( $state ) ) {
-					return new WP_Error( 'asfw_math_unknown', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-				}
-
-				if ( empty( $state['context'] ) || $this->context_helper_service()->normalize_context( $state['context'] ) !== $this->context_helper_service()->normalize_context( $context ) ) {
-					return new WP_Error( 'asfw_math_context_mismatch', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-				}
-
-				if ( empty( $state['fingerprint'] ) || ! hash_equals( (string) $state['fingerprint'], $this->client_identity_service()->get_client_fingerprint() ) ) {
-					return new WP_Error( 'asfw_math_client_mismatch', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-				}
-
-				if ( ! preg_match( '/^\d+$/', $answer ) ) {
-					return new WP_Error( 'asfw_math_invalid', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-				}
-
-				if ( ! isset( $state['answer'] ) || ! hash_equals( (string) $state['answer'], (string) intval( $answer, 10 ) ) ) {
-					return new WP_Error( 'asfw_math_incorrect', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-				}
-
-				delete_transient( $this->get_math_challenge_transient_key( $challenge_id ) );
-
-				return true;
-			} finally {
-				$this->release_challenge_lock( $lock_id );
+			if ( empty( $state['context'] ) || $this->context_helper_service()->normalize_context( $state['context'] ) !== $this->context_helper_service()->normalize_context( $context ) ) {
+				return new WP_Error( 'asfw_math_context_mismatch', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
 			}
+
+			if ( empty( $state['fingerprint'] ) || ! hash_equals( (string) $state['fingerprint'], $this->client_identity_service()->get_client_fingerprint() ) ) {
+				return new WP_Error( 'asfw_math_client_mismatch', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+			}
+
+			if ( ! preg_match( '/^\d+$/', $answer ) ) {
+				return new WP_Error( 'asfw_math_invalid', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+			}
+
+			if ( ! isset( $state['answer'] ) || ! hash_equals( (string) $state['answer'], (string) intval( $answer, 10 ) ) ) {
+				return new WP_Error( 'asfw_math_incorrect', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+			}
+
+			$consumed = $store->delete( $key, $snapshot );
+			if ( $consumed instanceof WP_Error ) {
+				return $consumed;
+			}
+			return $consumed ? true : new WP_Error( 'asfw_math_replay_locked', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
 		}
 
 		public function issue_submit_delay_token( $context, $delay_ms ) {
+			$reservation = $this->rate_limiter_service()->reserve( 'challenge', $context );
+			if ( $reservation instanceof WP_Error ) {
+				return $reservation;
+			}
 			$token_id     = sanitize_key( $this->random_secret() );
 			$issued_at_ms = (int) round( microtime( true ) * 1000 );
 			$ttl          = max( 60, (int) ceil( $delay_ms / 1000 ) + 600 );
 
-			set_transient(
+			$persisted = $this->persist_state(
 				$this->get_submit_delay_transient_key( $token_id ),
 				array(
 					'context'     => $this->context_helper_service()->normalize_context( $context ),
@@ -306,7 +326,12 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 				$ttl
 			);
 
+			if ( $persisted instanceof WP_Error ) {
+				return $persisted;
+			}
+
 			return array(
+				'expires_at'   => time() + $ttl,
 				'token_id'     => $token_id,
 				'signature'    => $this->sign_guard_token( 'submit_delay', $context, $token_id ),
 				'issued_at_ms' => $issued_at_ms,
@@ -339,46 +364,45 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 				return new WP_Error( 'asfw_submit_delay_bad_signature', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
 			}
 
-			$lock_id = 'submit_delay_' . sanitize_key( (string) $token_id );
-			if ( ! $this->acquire_challenge_lock( $lock_id ) ) {
-				return new WP_Error( 'asfw_submit_delay_replay_locked', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+			$store    = new ASFW_Atomic_State_Store();
+			$key      = $this->get_submit_delay_transient_key( $token_id );
+			$snapshot = $store->read( $key );
+			if ( $snapshot instanceof WP_Error ) {
+				return $snapshot;
+			}
+			$state = is_array( $snapshot ) ? $snapshot['value'] : null;
+			if ( ! is_array( $state ) ) {
+				return new WP_Error( 'asfw_submit_delay_unknown', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
 			}
 
-			try {
-				$state = get_transient( $this->get_submit_delay_transient_key( $token_id ) );
-				if ( ! is_array( $state ) ) {
-					return new WP_Error( 'asfw_submit_delay_unknown', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-				}
-
-				if ( empty( $state['context'] ) || $this->context_helper_service()->normalize_context( $state['context'] ) !== $this->context_helper_service()->normalize_context( $context ) ) {
-					return new WP_Error( 'asfw_submit_delay_context_mismatch', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-				}
-
-				if ( empty( $state['fingerprint'] ) || ! hash_equals( (string) $state['fingerprint'], $this->client_identity_service()->get_client_fingerprint() ) ) {
-					return new WP_Error( 'asfw_submit_delay_client_mismatch', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-				}
-
-				$issued_at_ms = isset( $state['issued_at'] ) ? intval( $state['issued_at'], 10 ) : 0;
-				if ( $issued_at_ms <= 0 ) {
-					return new WP_Error( 'asfw_submit_delay_missing_issued_at', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-				}
-
-				$issued_delay_ms = isset( $state['delay_ms'] ) ? intval( $state['delay_ms'], 10 ) : intval( $delay_ms, 10 );
-				if ( $issued_delay_ms <= 0 ) {
-					return new WP_Error( 'asfw_submit_delay_invalid_delay', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-				}
-
-				$elapsed_ms = (int) round( microtime( true ) * 1000 ) - $issued_at_ms;
-				if ( $elapsed_ms < $issued_delay_ms ) {
-					return new WP_Error( 'asfw_submit_delay_too_fast', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
-				}
-
-				delete_transient( $this->get_submit_delay_transient_key( $token_id ) );
-
-				return true;
-			} finally {
-				$this->release_challenge_lock( $lock_id );
+			if ( empty( $state['context'] ) || $this->context_helper_service()->normalize_context( $state['context'] ) !== $this->context_helper_service()->normalize_context( $context ) ) {
+				return new WP_Error( 'asfw_submit_delay_context_mismatch', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
 			}
+
+			if ( empty( $state['fingerprint'] ) || ! hash_equals( (string) $state['fingerprint'], $this->client_identity_service()->get_client_fingerprint() ) ) {
+				return new WP_Error( 'asfw_submit_delay_client_mismatch', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+			}
+
+			$issued_at_ms = isset( $state['issued_at'] ) ? intval( $state['issued_at'], 10 ) : 0;
+			if ( $issued_at_ms <= 0 ) {
+				return new WP_Error( 'asfw_submit_delay_missing_issued_at', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+			}
+
+			$issued_delay_ms = isset( $state['delay_ms'] ) ? intval( $state['delay_ms'], 10 ) : intval( $delay_ms, 10 );
+			if ( $issued_delay_ms <= 0 ) {
+				return new WP_Error( 'asfw_submit_delay_invalid_delay', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+			}
+
+			$elapsed_ms = (int) round( microtime( true ) * 1000 ) - $issued_at_ms;
+			if ( $elapsed_ms < $issued_delay_ms ) {
+				return new WP_Error( 'asfw_submit_delay_too_fast', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+			}
+
+			$consumed = $store->delete( $key, $snapshot );
+			if ( $consumed instanceof WP_Error ) {
+				return $consumed;
+			}
+			return $consumed ? true : new WP_Error( 'asfw_submit_delay_replay_locked', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
 		}
 	}
 }

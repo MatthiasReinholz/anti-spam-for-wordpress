@@ -19,6 +19,11 @@ before(async () => {
         challenge: createHash('sha256').update(salt + '2').digest('hex'), signature: 'fixture' }));
       return;
     }
+    if (url.pathname === '/jquery.js') {
+      res.setHeader('Content-Type', 'text/javascript');
+      res.end(fs.readFileSync(require.resolve('jquery/dist/jquery.min.js')));
+      return;
+    }
     if (url.pathname.startsWith('/public/')) {
       const filename = path.join(__dirname, '../../public', path.basename(url.pathname));
       res.setHeader('Content-Type', filename.endsWith('.css') ? 'text/css' : 'text/javascript');
@@ -30,7 +35,7 @@ before(async () => {
     res.end(`<!doctype html><html lang="en"><body><form>
       <input name="email"><asfw-widget name="proof" layout="extended" challengeurl="/challenge"
       data-asfw-privacy-url="/privacy"></asfw-widget><button type="submit">Submit</button></form>
-      <script type="module" src="/public/asfw-widget.js?ver=fixture"></script></body></html>`);
+      <script src="/jquery.js"></script><script src="/public/script.js"></script><script type="module" src="/public/asfw-widget.js?ver=fixture"></script></body></html>`);
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   origin = `http://127.0.0.1:${server.address().port}`;
@@ -282,7 +287,8 @@ print(json.dumps(catalogs))
     await widget.evaluate(widget => widget.setState('verifying'));
     assert.equal(await widget.locator('.asfw-status').textContent(), strings.verifying, locale);
     await page.locator('button[type="submit"]').click();
-    assert.equal(await widget.locator('.asfw-error').textContent(), strings.waitAlert, locale);
+    assert.equal(await widget.evaluate(el => el.getState()), 'verifying', locale);
+    await widget.evaluate(el => el.reset());
     await widget.locator('.asfw-control').click();
     await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
     assert.equal(await widget.locator('.asfw-status').textContent(), strings.verified, locale);
@@ -318,4 +324,477 @@ test('translation values stay text and malformed values retain English fallbacks
     await widget.evaluate((widget, invalid) => widget.setAttribute('strings', invalid), invalid);
     assert.equal(await widget.locator('.asfw-label').textContent(), "I'm not a robot");
   }
+});
+
+async function addGuards(page, options = {}) {
+  await page.evaluate(options => {
+    const form = document.querySelector('form');
+    if (options.delay !== false) {
+      const status = document.createElement('span');
+      status.className = 'asfw-submit-delay-status';
+      status.dataset.asfwSubmitDelayTokenUrl = '/delay';
+      status.dataset.asfwSubmitDelayMode = 'block';
+      form.append(status);
+    }
+    if (options.math) {
+      const math = document.createElement('div');
+      math.className = 'asfw-math-challenge';
+      math.dataset.asfwMathChallengeUrl = '/math';
+      math.dataset.asfwMathMode = 'block';
+      math.innerHTML = '<label class="asfw-math-question" for="answer">Security check</label><input id="answer" name="asfw_math_answer">';
+      form.append(math);
+    }
+  }, options);
+}
+
+async function guardRoutes(page, delayMs = 30) {
+  const counts = { delay: 0, math: 0 };
+  for (const kind of ['delay', 'math']) {
+    await page.route(`**/${kind}`, route => {
+      counts[kind] += 1;
+      const common = { signature: `signature-${counts[kind]}`, expires_at: Math.floor(Date.now() / 1000) + 600 };
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(kind === 'delay'
+        ? { ...common, token_id: `delay-${counts[kind]}`, issued_at_ms: Date.now(), delay_ms: delayMs }
+        : { ...common, challenge_id: `math-${counts[kind]}`, left: 2, right: 3 }) });
+    });
+  }
+  return counts;
+}
+
+async function guardsReady(page) {
+  await page.waitForFunction(() => {
+    const form = document.querySelector('form');
+    const delay = form.querySelector('.asfw-submit-delay-status');
+    const math = form.querySelector('.asfw-math-challenge');
+    return (!delay || !!form.querySelector('[name=asfw_submit_delay_token]')?.value) &&
+      (!math || !!form.querySelector('[name=asfw_math_challenge]')?.value) && !form.querySelector('button[type=submit]').disabled;
+  });
+}
+
+test('both production scripts initialize each guard once without observer feedback', async t => {
+  const page = await pageFor(t);
+  const counts = await guardRoutes(page, 80);
+  await page.evaluate(() => {
+    window.mutations = 0;
+    new MutationObserver(records => { window.mutations += records.length; }).observe(document.body, { childList: true, subtree: true });
+  });
+  await addGuards(page, { math: true });
+  await guardsReady(page);
+  await page.waitForTimeout(80);
+  assert.deepEqual(counts, { delay: 1, math: 1 });
+  assert.ok(await page.evaluate(() => window.mutations < 40));
+  assert.equal(await page.locator('.asfw-math-question').textContent(), '2 + 3 = ?');
+  assert.equal(await page.locator('.asfw-guard-retry').count(), 2);
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false })));
+  assert.deepEqual(counts, { delay: 1, math: 1 });
+});
+
+test('failed guards stop retrying, leave an accessible retry, and recover with one new request', async t => {
+  const page = await pageFor(t);
+  let requests = 0;
+  await page.route('**/delay', route => {
+    requests += 1;
+    return route.fulfill({ status: 503, body: '' });
+  });
+  await addGuards(page);
+  await page.getByRole('button', { name: 'Try again', exact: true }).last().waitFor({ state: 'visible' });
+  await page.waitForTimeout(100);
+  assert.equal(requests, 1);
+  assert.equal(await page.locator('form > button[type=submit]').isEnabled(), true);
+  await page.locator('asfw-widget').evaluate(el => el.startVerification());
+  await page.evaluate(() => {
+    window.submissions = 0;
+    document.querySelector('form').addEventListener('submit', event => { event.preventDefault(); window.submissions += 1; });
+    document.querySelector('form').requestSubmit();
+  });
+  assert.equal(await page.evaluate(() => window.submissions), 0);
+  assert.equal(await page.locator('.asfw-guard-retry').evaluate(el => document.activeElement === el), true);
+  const counts = await guardRoutes(page);
+  await page.locator('.asfw-guard-retry').click();
+  await guardsReady(page);
+  assert.equal(counts.delay, 1);
+});
+
+test('stalled guard fetch times out and explicit retry recovers', async t => {
+  const page = await pageFor(t);
+  await page.clock.install();
+  let held;
+  await page.route('**/delay', route => { held = route; });
+  await addGuards(page);
+  await page.waitForFunction(() => document.querySelector('.asfw-submit-delay-status')?.textContent.includes('Preparing'));
+  await page.clock.fastForward(10001);
+  await page.locator('.asfw-guard-retry').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('form > button[type=submit]').isEnabled(), true);
+  await held?.abort();
+  await guardRoutes(page, 1);
+  await page.locator('.asfw-guard-retry').click();
+  await page.waitForFunction(() => !!document.querySelector('[name=asfw_submit_delay_token]')?.value);
+  await page.clock.fastForward(10);
+  await guardsReady(page);
+});
+
+test('completion renews proof and guards after delayed serialization and coalesces native reset', async t => {
+  const page = await pageFor(t);
+  const counts = await guardRoutes(page);
+  await addGuards(page, { math: true });
+  await guardsReady(page);
+  await page.evaluate(() => {
+    window.submissions = [];
+    document.querySelector('asfw-widget').configure({ auto: 'onsubmit' });
+    const form = document.querySelector('form');
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      const before = [...new FormData(form).entries()];
+      setTimeout(() => {
+        window.submissions.push({ before, after: [...new FormData(form).entries()] });
+        form.reset();
+        form.dispatchEvent(new CustomEvent('asfw:submission-complete', { bubbles: true }));
+      }, 50);
+    });
+  });
+  for (let submission = 1; submission <= 2; submission += 1) {
+    await page.locator('form > button[type=submit]').click();
+    await page.waitForFunction(count => window.submissions.length === count, submission);
+    await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'idle');
+    await guardsReady(page);
+    const { before, after } = await page.evaluate(() => window.submissions.at(-1));
+    assert.deepEqual(after, before);
+    assert.ok(Object.fromEntries(before).proof);
+    assert.equal(Object.fromEntries(before).asfw_submit_delay_token, `delay-${submission}`);
+    assert.equal(Object.fromEntries(before).asfw_math_challenge, `math-${submission}`);
+  }
+  assert.deepEqual(counts, { delay: 3, math: 3 });
+});
+
+test('canceling native reset preserves proof and guard tokens', async t => {
+  const page = await pageFor(t);
+  const counts = await guardRoutes(page);
+  await addGuards(page);
+  await guardsReady(page);
+  await page.locator('asfw-widget').evaluate(el => el.startVerification());
+  const previous = await page.evaluate(() => [...new FormData(document.querySelector('form')).entries()]);
+  await page.evaluate(() => {
+    const form = document.querySelector('form');
+    form.addEventListener('reset', event => event.preventDefault(), { once: true });
+    form.reset();
+  });
+  await page.waitForTimeout(30);
+  assert.deepEqual(await page.evaluate(() => [...new FormData(document.querySelector('form')).entries()]), previous);
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.getState()), 'verified');
+  assert.equal(counts.delay, 1);
+});
+
+test('bfcache restoration renews all affected credentials', async t => {
+  const page = await pageFor(t);
+  const counts = await guardRoutes(page);
+  await addGuards(page);
+  await guardsReady(page);
+  await page.locator('asfw-widget').evaluate(el => el.startVerification());
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })));
+  await page.waitForFunction(() => document.querySelector('[name=asfw_submit_delay_token]').value === 'delay-2');
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.getState()), 'idle');
+  assert.equal(counts.delay, 2);
+});
+
+test('multiple widgets share one submit continuation and retain the original submitter', async t => {
+  const page = await pageFor(t);
+  await page.evaluate(() => {
+    const first = document.querySelector('asfw-widget');
+    first.configure({ auto: 'onsubmit' });
+    const second = document.createElement('asfw-widget');
+    second.configure({ name: 'second', challengeurl: '/challenge', auto: 'onsubmit', delay: '60' });
+    first.after(second);
+    window.submissions = [];
+    document.querySelector('form').addEventListener('submit', event => {
+      event.preventDefault();
+      window.submissions.push({ fields: Object.fromEntries(new FormData(event.target)), submitter: event.submitter.textContent });
+    });
+  });
+  await page.locator('form > button[type=submit]').click();
+  await page.locator('form > button[type=submit]').click();
+  await page.waitForFunction(() => window.submissions.length > 0);
+  await page.waitForTimeout(40);
+  const submissions = await page.evaluate(() => window.submissions);
+  assert.equal(submissions.length, 1);
+  assert.ok(submissions[0].fields.proof);
+  assert.ok(submissions[0].fields.second);
+  assert.equal(submissions[0].submitter, 'Submit');
+});
+
+test('native validation failure cannot leave a future submission bypass', async t => {
+  const page = await pageFor(t);
+  await page.evaluate(() => {
+    const widget = document.querySelector('asfw-widget');
+    widget.configure({ auto: 'onsubmit', delay: '100' });
+    const input = document.querySelector('[name=email]');
+    input.required = true;
+    input.value = 'present';
+    window.submissions = 0;
+    const form = document.querySelector('form');
+    form.addEventListener('submit', event => { event.preventDefault(); window.submissions += 1; });
+    form.requestSubmit();
+    input.value = '';
+  });
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
+  assert.equal(await page.evaluate(() => window.submissions), 0);
+  await page.locator('asfw-widget').evaluate(el => { el.reset(); el.configure({ auto: false }); });
+  await page.locator('[name=email]').fill('again');
+  await page.locator('form > button[type=submit]').click();
+  assert.equal(await page.evaluate(() => window.submissions), 0);
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.getState()), 'error');
+});
+
+test('moving a pending widget cannot submit either its previous or next form', async t => {
+  const page = await pageFor(t);
+  await page.evaluate(() => {
+    const widget = document.querySelector('asfw-widget');
+    widget.configure({ auto: 'onsubmit', delay: '100' });
+    const oldForm = widget.closest('form');
+    const nextForm = document.createElement('form');
+    nextForm.innerHTML = '<button type="submit">Next</button>';
+    document.body.append(nextForm);
+    window.submissions = 0;
+    [oldForm, nextForm].forEach(form => form.addEventListener('submit', event => { event.preventDefault(); window.submissions += 1; }));
+    oldForm.requestSubmit();
+    nextForm.prepend(widget);
+  });
+  await page.waitForTimeout(150);
+  assert.equal(await page.evaluate(() => window.submissions), 0);
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.getState()), 'idle');
+});
+
+test('disconnect aborts a pending guard and reconnection starts only one replacement', async t => {
+  const page = await pageFor(t);
+  let oldRoute;
+  await page.route('**/delay', route => { oldRoute = route; });
+  await addGuards(page);
+  await page.waitForFunction(() => document.querySelector('.asfw-submit-delay-status')?.textContent.includes('Preparing'));
+  await page.evaluate(() => { window.removedForm = document.querySelector('form'); window.removedForm.remove(); });
+  await page.waitForTimeout(10);
+  const counts = await guardRoutes(page);
+  await page.evaluate(() => document.body.prepend(window.removedForm));
+  await guardsReady(page);
+  await oldRoute?.fulfill({ status: 503, body: '' });
+  assert.equal(counts.delay, 1);
+  assert.equal(await page.locator('[name=asfw_submit_delay_token]').inputValue(), 'delay-1');
+  assert.equal(await page.locator('.asfw-guard-retry').count(), 1);
+});
+
+test('guard completion preserves buttons disabled by the provider', async t => {
+  const page = await pageFor(t);
+  await guardRoutes(page, 120);
+  await addGuards(page);
+  await page.waitForFunction(() => !!document.querySelector('[name=asfw_submit_delay_token]')?.value);
+  await page.evaluate(() => { document.querySelector('form > button[type=submit]').disabled = true; });
+  await page.waitForFunction(() => document.querySelector('.asfw-submit-delay-status').textContent === '');
+  assert.equal(await page.locator('form > button[type=submit]').isDisabled(), true);
+});
+
+test('CF7 wrapper completion and Gravity initial render affect only the intended form', async t => {
+  const page = await pageFor(t);
+  await page.evaluate(() => {
+    const form = document.querySelector('form');
+    const wrap = document.createElement('div');
+    wrap.className = 'wpcf7';
+    form.before(wrap); wrap.append(form);
+    form.id = 'gform_7';
+    const other = document.createElement('form');
+    other.innerHTML = '<asfw-widget name="other" challengeurl="/challenge"></asfw-widget>';
+    document.body.append(other);
+  });
+  await page.locator('asfw-widget').evaluateAll(elements => Promise.all(elements.map(el => el.startVerification())));
+  await page.evaluate(() => document.dispatchEvent(new CustomEvent('gform/post_render', { detail: { formId: 7 } })));
+  await page.waitForTimeout(20);
+  assert.deepEqual(await page.locator('asfw-widget').evaluateAll(elements => elements.map(el => el.getState())), ['verified', 'verified']);
+  await page.evaluate(() => document.querySelector('.wpcf7').dispatchEvent(new CustomEvent('wpcf7submit', { bubbles: true })));
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'idle');
+  assert.equal(await page.locator('asfw-widget').nth(1).evaluate(el => el.getState()), 'verified');
+});
+
+test('a proof expiring during the minimum delay is never published', async t => {
+  const page = await pageFor(t);
+  await page.clock.install();
+  await page.locator('asfw-widget').evaluate(el => el.configure({ delay: '2000' }));
+  await page.route('**/challenge', route => {
+    const salt = `expiring?expires=${Math.floor(Date.now() / 1000) + 1}`;
+    return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ algorithm: 'SHA-256', salt, maxnumber: 10,
+      challenge: createHash('sha256').update(salt + '2').digest('hex'), signature: 'fixture' }) });
+  });
+  await page.evaluate(() => { window.verification = document.querySelector('asfw-widget').startVerification(); });
+  await page.waitForFunction(() => !!document.querySelector('asfw-widget')._challenge);
+  await page.clock.fastForward(3000);
+  assert.equal(await page.evaluate(() => window.verification), false);
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.getState()), 'error');
+  assert.equal(await page.locator('input[name=proof]').inputValue(), '');
+});
+
+test('challenge request timeout is recoverable without a stale result', async t => {
+  const page = await pageFor(t);
+  await page.clock.install();
+  let held;
+  await page.route('**/challenge', route => { held = route; });
+  await page.evaluate(() => { window.verification = document.querySelector('asfw-widget').startVerification(); });
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verifying');
+  await page.clock.fastForward(10001);
+  assert.equal(await page.evaluate(() => window.verification), false);
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.getState()), 'error');
+  await held?.abort();
+  await page.unroute('**/challenge');
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.startVerification()), true);
+});
+
+for (const providerEvent of ['forminator:form:submit:complete', 'wpdiscuz_comment_post_complete', 'wpdiscuz_comment_post_failed']) {
+  test(`${providerEvent} handles real jQuery events for only the submitted form`, async t => {
+    const page = await pageFor(t);
+    await page.evaluate(() => {
+      const second = document.createElement('form');
+      second.innerHTML = '<asfw-widget name="second" challengeurl="/challenge"></asfw-widget>';
+      document.body.append(second);
+    });
+    await page.locator('asfw-widget').evaluateAll(elements => Promise.all(elements.map(el => el.startVerification())));
+    await page.evaluate(providerEvent => {
+      const form = document.querySelector('form');
+      if (providerEvent.startsWith('wpdiscuz_')) {
+        jQuery(document.body).trigger(providerEvent, [jQuery(form), new FormData(form), jQuery(form).find('button[type=submit]')]);
+      } else {
+        jQuery(form).trigger(providerEvent, [{ success: false }]);
+      }
+    }, providerEvent);
+    await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'idle');
+    assert.equal(await page.locator('asfw-widget').nth(1).evaluate(el => el.getState()), 'verified');
+  });
+}
+
+test('Gravity native and legacy render events coalesce after a submitted form', async t => {
+  const page = await pageFor(t);
+  const counts = await guardRoutes(page);
+  await addGuards(page);
+  await guardsReady(page);
+  await page.locator('asfw-widget').evaluate(el => el.startVerification());
+  await page.evaluate(() => {
+    const form = document.querySelector('form');
+    form.id = 'gform_9';
+    form.addEventListener('submit', event => event.preventDefault());
+    form.requestSubmit();
+    jQuery(document).trigger('gform_post_render', [9, 1]);
+    document.dispatchEvent(new CustomEvent('gform/post_render', { detail: { formId: 9 } }));
+  });
+  await page.waitForFunction(() => document.querySelector('[name=asfw_submit_delay_token]').value === 'delay-2');
+  assert.equal(counts.delay, 2);
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.getState()), 'idle');
+});
+
+test('guard replacement and URL changes discard previous responses', async t => {
+  const page = await pageFor(t);
+  let held;
+  await page.route('**/delay', route => { held = route; });
+  const counts = await guardRoutes(page);
+  await page.route('**/delay', route => { held = route; });
+  await page.route('**/new-delay', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify({
+    token_id: 'replacement', signature: 'new', issued_at_ms: Date.now(), delay_ms: 1, expires_at: Math.floor(Date.now() / 1000) + 600,
+  }) }));
+  await addGuards(page);
+  await page.waitForFunction(() => document.querySelector('.asfw-submit-delay-status')?.textContent.includes('Preparing'));
+  await page.evaluate(() => {
+    const oldStatus = document.querySelector('.asfw-submit-delay-status');
+    const nextStatus = oldStatus.cloneNode(false);
+    nextStatus.dataset.asfwSubmitDelayTokenUrl = '/new-delay';
+    oldStatus.replaceWith(nextStatus);
+  });
+  await guardsReady(page);
+  await held?.fulfill({ status: 503, body: '' });
+  assert.equal(await page.locator('[name=asfw_submit_delay_token]').inputValue(), 'replacement');
+  assert.equal(await page.locator('.asfw-guard-retry').count(), 1);
+  assert.equal(counts.delay, 0);
+});
+
+test('wpDiscuz inline native and jQuery clicks verify before serialization and renew after transport failure', async t => {
+  const page = await pageFor(t);
+  const counts = await guardRoutes(page);
+  await addGuards(page, { math: true });
+  await guardsReady(page);
+  let requests = 0;
+  await page.route('**/wpdiscuz', async route => {
+    requests += 1;
+    await new Promise(resolve => setTimeout(resolve, 40));
+    await route.fulfill({ status: requests === 1 ? 503 : 200, contentType: 'application/json', body: JSON.stringify({ success: requests !== 1 }) });
+  });
+  await page.evaluate(() => {
+    const form = document.querySelector('form');
+    form.className = 'wpd_inline_comm_form';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'wpd-inline-shortcode';
+    wrapper.id = 'wpd-inline-123';
+    form.before(wrapper); wrapper.append(form);
+    const button = form.querySelector('button[type=submit]');
+    button.className = 'wpd-inline-submit wpd_not_clicked';
+    form.querySelector('asfw-widget').configure({ auto: 'onsubmit', delay: '80' });
+    window.providerSubmissions = [];
+    // The vendor's actual delegated click, FormData and AJAX completion order.
+    jQuery(document.body).on('click.vendor', '.wpd-inline-submit.wpd_not_clicked', function (event) {
+      event.preventDefault();
+      const form = this.closest('form');
+      this.classList.remove('wpd_not_clicked');
+      const data = new FormData(form);
+      data.append('action', 'wpdAddInlineComment');
+      data.append('inline_form_id', '123');
+      window.providerSubmissions.push(Object.fromEntries(data));
+      jQuery.ajax({ type: 'POST', url: '/wpdiscuz', data, contentType: false, processData: false }).done(response => {
+        this.classList.add('wpd_not_clicked');
+        if (response.success) form.reset();
+      });
+    });
+  });
+  await page.locator('.wpd-inline-submit').click();
+  await page.waitForFunction(() => window.providerSubmissions.length === 1);
+  assert.ok(await page.evaluate(() => window.providerSubmissions[0].proof));
+  assert.equal(await page.locator('input[name=proof]').inputValue(), await page.evaluate(() => window.providerSubmissions[0].proof));
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'idle');
+  await guardsReady(page);
+  assert.equal(await page.locator('.wpd-inline-submit').evaluate(el => el.classList.contains('wpd_not_clicked')), true);
+  await page.evaluate(() => jQuery('.wpd-inline-submit').trigger('click'));
+  await page.waitForFunction(() => window.providerSubmissions.length === 2);
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'idle');
+  await guardsReady(page);
+  const submitted = await page.evaluate(() => window.providerSubmissions);
+  assert.ok(submitted[1].proof);
+  assert.equal(submitted[0].asfw_submit_delay_token, 'delay-1');
+  assert.equal(submitted[1].asfw_submit_delay_token, 'delay-2');
+  assert.equal(requests, 2);
+  assert.deepEqual(counts, { delay: 3, math: 3 });
+});
+
+test('wpDiscuz main delegated click honors manual mode and resumes automatic verification once', async t => {
+  const page = await pageFor(t);
+  await page.evaluate(() => {
+    const form = document.querySelector('form');
+    form.className = 'wpd_main_comm_form';
+    const button = form.querySelector('button[type=submit]');
+    button.type = 'button';
+    button.className = 'wc_comm_submit wpd_not_clicked';
+    window.providerSubmissions = [];
+    jQuery(document.body).on('click.vendor', '.wc_comm_submit.wpd_not_clicked', function () {
+      window.providerSubmissions.push(Object.fromEntries(new FormData(this.closest('form'))));
+    });
+  });
+  await page.locator('.wc_comm_submit').click();
+  assert.equal(await page.evaluate(() => window.providerSubmissions.length), 0);
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.getState()), 'error');
+  await page.locator('asfw-widget').evaluate(el => el.configure({ auto: 'onsubmit', delay: '80' }));
+  await page.evaluate(() => {
+    jQuery('.wc_comm_submit').trigger('click');
+    jQuery('.wc_comm_submit').trigger('click');
+  });
+  await page.waitForFunction(() => window.providerSubmissions.length === 1);
+  assert.ok(await page.evaluate(() => window.providerSubmissions[0].proof));
+});
+
+test('batch configuration starts one verification and initializes renamed metadata', async t => {
+  const page = await pageFor(t);
+  let challenges = 0;
+  await page.route('**/challenge', route => { challenges += 1; return route.continue(); });
+  await page.locator('asfw-widget').evaluate(el => el.configure({ auto: 'onload', delay: '10', name: 'renamed' }));
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
+  assert.equal(challenges, 1);
+  assert.ok(await page.locator('[name=renamed_started]').inputValue());
 });

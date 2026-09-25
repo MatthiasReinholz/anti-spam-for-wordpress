@@ -288,14 +288,27 @@ function asfw_resolve_signed_comment_context( $plugin ) {
 	return $context;
 }
 
+/** Identify actual provider dispatch; client-supplied fields cannot downgrade it. */
+function asfw_is_wpdiscuz_comment_request() {
+	foreach ( array( 'wp_ajax_', 'wp_ajax_nopriv_', 'wpdiscuz_', 'wpdiscuz_nopriv_' ) as $prefix ) {
+		foreach ( array( 'wpdAddComment', 'wpdAddInlineComment' ) as $action ) {
+			if ( doing_action( $prefix . $action ) ) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 add_action( 'pre_comment_on_post', 'asfw_mark_native_comment_submission', 10, 1 );
 
 add_filter(
 	'preprocess_comment',
 	function ( $comment ) {
-		$comment_post_id = isset( $comment['comment_post_ID'] ) ? (int) $comment['comment_post_ID'] : 0;
-		$native_request  = asfw_consume_native_comment_submission_marker( $comment_post_id );
-		if ( isset( $comment['comment_type'] ) && '' !== $comment['comment_type'] && 'comment' !== $comment['comment_type'] ) {
+		$comment_post_id  = isset( $comment['comment_post_ID'] ) ? (int) $comment['comment_post_ID'] : 0;
+		$native_request   = asfw_consume_native_comment_submission_marker( $comment_post_id );
+		$provider_request = asfw_is_wpdiscuz_comment_request();
+		if ( isset( $comment['comment_type'] ) && ! in_array( $comment['comment_type'], array( '', 'comment' ), true ) && ! ( $provider_request && 'review' === $comment['comment_type'] ) ) {
 			return $comment;
 		}
 		if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
@@ -304,22 +317,27 @@ add_filter(
 
 		$plugin         = asfw_plugin_instance();
 		$signed_context = $plugin instanceof AntiSpamForWordPressPlugin ? asfw_resolve_signed_comment_context( $plugin ) : '';
-
-		if ( ! $native_request && '' === $signed_context ) {
-			$remote_request = ( defined( 'REST_REQUEST' ) && REST_REQUEST )
-				|| ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST )
-				|| wp_doing_ajax();
-			if ( $remote_request && ! is_user_logged_in() ) {
-				$native_request = true;
-			} else {
-				return $comment;
-			}
+		$remote_request = ( defined( 'REST_REQUEST' ) && REST_REQUEST )
+			|| ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST )
+			|| wp_doing_ajax();
+		if ( ! $provider_request && $remote_request && ! is_user_logged_in() ) {
+			$native_request = true;
 		}
-		$guard_context = 'wpdiscuz:comments' === $signed_context ? 'wpdiscuz:comments' : 'WordPress:comments';
+
+		if ( ! $provider_request && ! $native_request && '' === $signed_context ) {
+			return $comment;
+		}
+		// A signed public widget context cannot override a known submission route.
+		$guard_context = ! $native_request && 'wpdiscuz:comments' === $signed_context ? 'wpdiscuz:comments' : 'WordPress:comments';
 		$mode          = $plugin instanceof AntiSpamForWordPressPlugin && 'wpdiscuz:comments' === $guard_context
 			? $plugin->get_integration_wpdiscuz()
 			: ( $plugin instanceof AntiSpamForWordPressPlugin ? $plugin->get_integration_wordpress_comments() : '' );
-		$guard_result  = asfw_validate_context_guards( $guard_context );
+		if ( $provider_request ) {
+			$provider_policy = asfw_wpdiscuz_comment_policy();
+			$guard_context   = $provider_policy['context'];
+			$mode            = $provider_policy['mode'];
+		}
+		$guard_result = asfw_validate_context_guards( $guard_context );
 		if ( $guard_result instanceof WP_Error ) {
 			wp_die( '<strong>' . esc_html__( 'Error', 'anti-spam-for-wordpress' ) . '</strong> : ' . esc_html__( 'Could not verify you are not a robot.', 'anti-spam-for-wordpress' ) );
 		}

@@ -211,13 +211,13 @@ final class VerificationFlowTest extends AsfwPluginTestCase
         $this->assertSame(0, $this->plugin()->get_rate_limit_state('challenge', 'generic')['count']);
     }
 
-    public function test_challenge_rate_limit_is_scoped_per_context(): void
+    public function test_challenge_rate_limit_is_shared_across_contexts(): void
     {
         $this->plugin()->generate_challenge(null, 'low', 300, 'wordpress:login', true);
         $this->plugin()->generate_challenge(null, 'low', 300, 'wordpress:comments', true);
 
-        $this->assertSame(1, $this->plugin()->get_rate_limit_state('challenge', 'wordpress:login')['count']);
-        $this->assertSame(1, $this->plugin()->get_rate_limit_state('challenge', 'wordpress:comments')['count']);
+        $this->assertSame(2, $this->plugin()->get_rate_limit_state('challenge', 'wordpress:login')['count']);
+        $this->assertSame(2, $this->plugin()->get_rate_limit_state('challenge', 'wordpress:comments')['count']);
     }
 
     public function test_random_secret_returns_64_hex_characters(): void
@@ -362,7 +362,7 @@ final class VerificationFlowTest extends AsfwPluginTestCase
         $this->assertSame('asfw_context_mismatch', $result->get_error_code());
     }
 
-    public function test_validate_request_context_resolution_failure_does_not_increment_generic_failure_bucket(): void
+    public function test_context_resolution_failure_counts_against_the_client_quota(): void
     {
         $_POST[$this->plugin()->get_context_field_name('asfw')] = '';
         $_POST[$this->plugin()->get_context_signature_field_name('asfw')] = '';
@@ -371,7 +371,7 @@ final class VerificationFlowTest extends AsfwPluginTestCase
 
         $this->assertInstanceOf(WP_Error::class, $result);
         $this->assertSame('asfw_missing_context', $result->get_error_code());
-        $this->assertSame(0, $this->plugin()->get_rate_limit_state('failure', 'generic')['count']);
+        $this->assertSame(1, $this->plugin()->get_rate_limit_state('failure', 'generic')['count']);
         $this->assertSame(1, $this->plugin()->get_rate_limit_state('failure', 'form:asfw')['count']);
     }
 
@@ -397,16 +397,23 @@ final class VerificationFlowTest extends AsfwPluginTestCase
         $this->assertSame('asfw_submitted_too_fast', $result->get_error_code());
     }
 
-    public function test_challenge_lock_blocks_concurrent_verification(): void
+    public function test_only_one_verifier_can_consume_the_same_valid_snapshot(): void
     {
         $challenge = $this->generateChallenge('contact-form-7');
-        $challengeId = $this->getChallengeId($challenge);
-
-        $this->assertNotSame('', $challengeId);
-        add_option($this->plugin()->get_challenge_lock_key($challengeId), (string) (time() + 30), '', false);
-
-        $result = $this->plugin()->validate_solution($this->solveChallenge($challenge), null, 'contact-form-7');
-
+        $payload = $this->solveChallenge($challenge);
+        $otherResult = null;
+        $GLOBALS['asfw_test_atomic_before_query'] = function ($query) use ($payload, &$otherResult) {
+            if (str_starts_with($query, 'DELETE FROM')) {
+                $GLOBALS['asfw_test_atomic_before_query'] = null;
+                $otherResult = $this->plugin()->validate_solution($payload, null, 'contact-form-7');
+            }
+        };
+        try {
+            $result = $this->plugin()->validate_solution($payload, null, 'contact-form-7');
+        } finally {
+            $GLOBALS['asfw_test_atomic_before_query'] = null;
+        }
+        $this->assertTrue($otherResult);
         $this->assertInstanceOf(WP_Error::class, $result);
         $this->assertSame('asfw_replay_locked', $result->get_error_code());
     }
@@ -454,6 +461,7 @@ final class VerificationFlowTest extends AsfwPluginTestCase
 
     public function test_trusted_proxy_configuration_rejects_spoofed_leftmost_forwarded_header_entries(): void
     {
+        update_option('asfw_trusted_proxy_header', 'HTTP_FORWARDED');
         update_option(AntiSpamForWordPressPlugin::$option_trusted_proxies, '10.0.0.1');
         $_SERVER['REMOTE_ADDR'] = '10.0.0.1';
         $_SERVER['HTTP_FORWARDED'] = 'for=203.0.113.200, for=198.51.100.25';
