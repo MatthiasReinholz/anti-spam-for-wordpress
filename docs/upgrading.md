@@ -1,6 +1,6 @@
 # Updating an existing installation
 
-Version 0.10.1 preserves existing settings and event data. Updating from 0.10.0 does not introduce a new database schema or reset configuration. Sites skipping older releases need the checks below: the supported platform, client-IP handling, challenge limits and some legacy settings have changed over the project's lifetime.
+Version 0.10.2 preserves existing settings and event data. Updating from 0.10.0 or 0.10.1 does not introduce a new database schema or reset configuration. Sites skipping older releases need the checks below: the supported platform, client-IP handling, challenge limits and some legacy settings have changed over the project's lifetime.
 
 ## Before updating
 
@@ -8,6 +8,7 @@ Version 0.10.1 preserves existing settings and event data. Updating from 0.10.0 
 2. Back up the database and plugin files, and test that the backup can be restored. Keep a copy of the currently installed plugin package.
 3. Try the update on a staging copy with the same theme, form plugins, proxy and cache configuration. Disable staging's automatic Bunny writes or use a dedicated test list so testing cannot change a production access list.
 4. Record the enabled placements and guards under **Settings → Anti Spam for WordPress**, including any custom form handlers or configuration scripts. Remain logged in to an administrator account during the production update, and keep hosting or command-line access available.
+5. If upgrading from 0.9.0 or earlier with Bunny behind a trusted proxy, turn **Automatic Bunny sync** off on the production site before updating. After the update, select and verify the correct forwarding header before restoring automatic remote writes. Do not rely only on an old dry-run setting when modern and legacy values conflict; review the Bunny section below.
 
 Current automated tests cover supported WordPress versions, storage behavior and integration contracts. They cannot establish compatibility with every historical installation, theme or commercial form-plugin version. Test the integrations your site actually uses.
 
