@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.10.1
-Stable tag: 0.10.1
+Version: 0.10.2
+Stable tag: 0.10.2
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 7.1
@@ -232,6 +232,12 @@ Native WooCommerce product reviews also use the Comments protection. WooCommerce
 5. Floating UI example
 
 == Changelog ==
+
+= 0.10.2 =
+* Add - Add a practical upgrade checklist for older installations, including proxy, quota, Bunny and recovery requirements.
+* Fix - Fix admin settings compatibility with callable custom-field renderers.
+* Update - Clarify settings extension hooks and document verified historical upgrade behavior.
+
 
 = 0.10.1 =
 * Fix - Verify insertion of missing empty or disabled settings before reporting a successful save.
