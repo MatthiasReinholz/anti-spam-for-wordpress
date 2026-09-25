@@ -10,6 +10,12 @@ class ASFW_Bunny_Shield_Client {
 
 	const BASE_URL = 'https://api.bunny.net';
 
+	const MAX_RESPONSE_BYTES = 8 * 1024 * 1024;
+
+	const MAX_JSON_DEPTH = 32;
+
+	const MAX_JSON_STRUCTURAL_TOKENS = 65536;
+
 	protected $api_key;
 
 	protected $shield_zone_id;
@@ -54,17 +60,75 @@ class ASFW_Bunny_Shield_Client {
 	}
 
 	protected function decode_body( $body ) {
-		$body = trim( (string) $body );
-		if ( '' === $body ) {
+		$body = (string) $body;
+		if ( ! $this->has_bounded_json_structure( $body ) ) {
 			return null;
 		}
 
-		$decoded = json_decode( $body, true );
+		$decoded = json_decode( $body, true, self::MAX_JSON_DEPTH + 1 );
 		if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
 			return $decoded;
 		}
 
 		return null;
+	}
+
+	/**
+	 * Bound allocations before decoding; PHP still validates the JSON syntax.
+	 *
+	 * A small response can expand into hundreds of thousands of PHP arrays.
+	 * Count containers and member/value separators, including duplicate keys,
+	 * while leaving large flat access-list strings within the byte allowance.
+	 */
+	protected function has_bounded_json_structure( $body ) {
+		$size = strlen( $body );
+		if ( 0 === $size || $size > self::MAX_RESPONSE_BYTES ) {
+			return false;
+		}
+		$offset = 0;
+		$depth  = 0;
+		$tokens = 0;
+		$quoted = false;
+		while ( $offset < $size ) {
+			if ( $quoted ) {
+				$offset += strcspn( $body, '"\\', $offset );
+				if ( $offset >= $size ) {
+					return false;
+				}
+				if ( '\\' === $body[ $offset ] ) {
+					// An escaped quote does not end the string. Invalid escapes are
+					// rejected by json_decode after the allocation budget is checked.
+					$offset += 2;
+				} else {
+					$quoted = false;
+					++$offset;
+				}
+				continue;
+			}
+			$offset += strcspn( $body, '"{}[],:', $offset );
+			if ( $offset >= $size ) {
+				break;
+			}
+			$character = $body[ $offset++ ];
+			if ( '"' === $character ) {
+				$quoted = true;
+			} elseif ( '{' === $character || '[' === $character ) {
+				++$tokens;
+				if ( ++$depth > self::MAX_JSON_DEPTH ) {
+					return false;
+				}
+			} elseif ( '}' === $character || ']' === $character ) {
+				if ( --$depth < 0 ) {
+					return false;
+				}
+			} else {
+				++$tokens;
+			}
+			if ( $tokens > self::MAX_JSON_STRUCTURAL_TOKENS ) {
+				return false;
+			}
+		}
+		return ! $quoted && 0 === $depth;
 	}
 
 	protected function request( $method, $path, array $body = array(), $shield_zone_id = null ) {
@@ -82,7 +146,7 @@ class ASFW_Bunny_Shield_Client {
 			'method'              => strtoupper( (string) $method ),
 			'timeout'             => 5,
 			'redirection'         => 0,
-			'limit_response_size' => 8 * 1024 * 1024 + 1,
+			'limit_response_size' => self::MAX_RESPONSE_BYTES + 1,
 			'headers'             => array(
 				'AccessKey'    => $api_key,
 				'Accept'       => 'application/json',
@@ -121,7 +185,7 @@ class ASFW_Bunny_Shield_Client {
 			);
 		}
 
-		if ( ! is_array( $decoded ) || strlen( $raw_body ) > 8 * 1024 * 1024 ) {
+		if ( ! is_array( $decoded ) ) {
 			return new WP_Error(
 				'asfw_bunny_invalid_response',
 				__( 'Bunny Shield returned an invalid response body.', 'anti-spam-for-wordpress' ),

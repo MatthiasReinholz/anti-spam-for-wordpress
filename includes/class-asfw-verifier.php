@@ -54,7 +54,10 @@ if ( ! class_exists( 'ASFW_Verifier', false ) ) {
 		}
 
 		public function decode_payload( $payload ) {
-			$payload = trim( (string) $payload );
+			if ( ! is_string( $payload ) ) {
+				return new WP_Error( 'asfw_invalid_payload_type', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+			}
+			$payload = trim( $payload );
 			if ( '' === $payload ) {
 				return new WP_Error( 'asfw_empty_payload', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
 			}
@@ -193,6 +196,12 @@ if ( ! class_exists( 'ASFW_Verifier', false ) ) {
 			$salt_params = array();
 			if ( ! empty( $salt_url['query'] ) ) {
 				parse_str( $salt_url['query'], $salt_params );
+			}
+
+			foreach ( array( 'context', 'challenge_id', 'expires' ) as $field ) {
+				if ( isset( $salt_params[ $field ] ) && ! is_string( $salt_params[ $field ] ) ) {
+					return new WP_Error( 'asfw_invalid_salt', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
+				}
 			}
 
 			$context      = isset( $salt_params['context'] ) ? $this->context_helper_service()->normalize_context( $salt_params['context'] ) : '';

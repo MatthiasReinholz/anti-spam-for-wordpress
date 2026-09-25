@@ -346,6 +346,54 @@ final class WpPluginBaseAdminUiOperationsTest extends AsfwPluginTestCase
         $this->assertSame($value, get_option($option));
     }
 
+    public static function missingSettingsValues(): array
+    {
+        return array(
+            'disabled built-in checkbox' => array('asfw_honeypot', false, 0),
+            'empty text' => array('asfw_footer_text', '', ''),
+            'literal false extension' => array('asfw_test_boolean_setting', false, false),
+        );
+    }
+
+    /** @dataProvider missingSettingsValues */
+    public function test_missing_settings_require_verified_insertion(string $option, $input, $expected): void
+    {
+        $extension = static function (array $definitions): array {
+            $definitions[] = array(
+                'option' => 'asfw_test_boolean_setting',
+                'sanitize_callback' => static function ($value): bool { return (bool) $value; },
+            );
+            return $definitions;
+        };
+        add_filter('asfw_settings_external_registered_settings', $extension);
+        try {
+            delete_option($option);
+            $missing = new stdClass();
+            $GLOBALS['asfw_test_option_write_failures'][$option] = true;
+            $request = new WP_REST_Request(array('values' => array($option => $input)));
+
+            $response = asfw_rest_operation_settings_update($request, array());
+
+            $this->assertInstanceOf(WP_Error::class, $response);
+            $this->assertSame('asfw_settings_save_failed', $response->get_error_code());
+            $this->assertSame(503, $response->get_error_data()['status']);
+            $this->assertSame($missing, get_option($option, $missing));
+
+            unset($GLOBALS['asfw_test_option_write_failures'][$option]);
+            $response = asfw_rest_operation_settings_update($request, array());
+            $this->assertIsArray($response);
+            $this->assertContains($option, $response['updated']);
+            $this->assertSame($expected, get_option($option, $missing));
+
+            $GLOBALS['asfw_test_option_write_failures'][$option] = true;
+            $this->assertIsArray(asfw_rest_operation_settings_update($request, array()));
+            $this->assertSame($expected, get_option($option, $missing));
+        } finally {
+            unset($GLOBALS['asfw_test_option_write_failures'][$option]);
+            remove_filter('asfw_settings_external_registered_settings', $extension);
+        }
+    }
+
     public function test_events_clamps_the_page_before_fetching_rows(): void
     {
         update_option('asfw_feature_event_logging_enabled', 1);

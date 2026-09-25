@@ -219,4 +219,81 @@ final class MaintenanceAndModulesTest extends AsfwPluginTestCase
         $this->assertSame(0, $summary['refreshed']['disposable_domains']);
         $this->assertSame($summary, $captured);
     }
+
+    public static function eventMaintenanceFailures(): array
+    {
+        return array('schema' => array('schema'), 'pruning' => array('pruning'));
+    }
+
+    /** @dataProvider eventMaintenanceFailures */
+    public function test_event_failure_cannot_prevent_bounded_security_state_cleanup(string $failure): void
+    {
+        $events = new class($failure) extends ASFW_Event_Store {
+            public $failure;
+            public $error;
+
+            public function __construct(string $failure)
+            {
+                $this->failure = $failure;
+                $this->error = new WP_Error('asfw_event_maintenance_failed', 'Event maintenance failed.');
+            }
+
+            public function maybe_upgrade_schema()
+            {
+                return $this->failure === 'schema' ? $this->error : false;
+            }
+
+            public function prune_older_than($days)
+            {
+                return $this->error;
+            }
+        };
+        $state = new ASFW_Atomic_State_Store();
+        $rows = &$GLOBALS['asfw_test_atomic_rows']['wp_options'];
+        for ($i = 0; $i < 1005; ++$i) {
+            $rows[$state->option_name('maintenance-expired-' . $i)] = (time() - 60) . '|fixture|{}';
+        }
+        $this->assertTrue($state->create('maintenance-live', array('keep' => true), 600));
+        update_option(ASFW_Maintenance::OPTION_LAST_RUN, 'previous successful run');
+        $completed = false;
+        $listener = static function () use (&$completed): void { $completed = true; };
+        add_action('asfw_maintenance_completed', $listener);
+        $maintenance = new ASFW_Maintenance($events);
+        try {
+            $this->assertSame($events->error, $maintenance->run());
+        } finally {
+            remove_action('asfw_maintenance_completed', $listener);
+        }
+
+        $this->assertCount(6, $rows, 'The bounded batch removes 1,000 expired rows despite event failures.');
+        $this->assertSame(array('keep' => true), $state->read('maintenance-live')['value']);
+        $this->assertNotFalse(wp_next_scheduled(ASFW_Maintenance::STATE_CLEANUP_HOOK));
+        $this->assertFalse($completed, 'Partial maintenance must not report successful completion.');
+        $this->assertSame('previous successful run', get_option(ASFW_Maintenance::OPTION_LAST_RUN));
+
+        wp_clear_scheduled_hook(ASFW_Maintenance::STATE_CLEANUP_HOOK);
+        $this->assertSame(5, $maintenance->cleanup_state());
+        $this->assertCount(1, $rows);
+        $this->assertFalse(wp_next_scheduled(ASFW_Maintenance::STATE_CLEANUP_HOOK));
+    }
+
+    public function test_security_state_cleanup_failure_does_not_report_success(): void
+    {
+        update_option(ASFW_Maintenance::OPTION_LAST_RUN, 'previous successful run');
+        $completed = false;
+        $listener = static function () use (&$completed): void { $completed = true; };
+        add_action('asfw_maintenance_completed', $listener);
+        $GLOBALS['asfw_test_atomic_failure'] = true;
+        try {
+            $result = ASFW_Control_Plane::maintenance()->run();
+        } finally {
+            $GLOBALS['asfw_test_atomic_failure'] = false;
+            remove_action('asfw_maintenance_completed', $listener);
+        }
+
+        $this->assertInstanceOf(WP_Error::class, $result);
+        $this->assertSame('asfw_state_unavailable', $result->get_error_code());
+        $this->assertFalse($completed);
+        $this->assertSame('previous successful run', get_option(ASFW_Maintenance::OPTION_LAST_RUN));
+    }
 }

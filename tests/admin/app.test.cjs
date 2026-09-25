@@ -123,6 +123,41 @@ test('an older page cannot replace a newly applied query, even if transport igno
   assert.equal(await page.evaluate(() => window.adminCalls.length), 3);
 });
 
+for (const [ignoreAbort, lateAfterRetry] of [[false, false], [true, false], [true, true]]) {
+  test(`read timeout settles and permits explicit retry (ignores abort: ${ignoreAbort}, late after retry: ${lateAfterRetry})`, async t => {
+    let firstRequest;
+    let reads = 0;
+    const page = await pageFor(t, 'settings', async page => {
+      await page.clock.install();
+      await page.addInitScript(value => { window.ignoreAdminAbort = value; }, ignoreAbort);
+      await page.route('**/api/**/settings', route => {
+        reads++;
+        if (reads === 1) { firstRequest = route; return; }
+        return json(route, settings('retry response'));
+      });
+    });
+    await waitCalls(page, 1);
+    await page.clock.fastForward(30001);
+    await page.getByText('The request timed out. Please try again.', { exact: false }).waitFor({ timeout: 3000 });
+    assert.equal(reads, 1, 'Timeout must not automatically retry the read.');
+    if (ignoreAbort && !lateAfterRetry) {
+      await json(firstRequest, settings('late response'));
+      await page.waitForTimeout(30);
+      assert.equal(await page.getByLabel('First setting', { exact: true }).count(), 0);
+      assert.equal(await page.getByRole('button', { name: 'Try again', exact: true }).count(), 1);
+    }
+    await page.getByRole('button', { name: 'Try again', exact: true }).click();
+    await page.getByLabel('First setting', { exact: true }).waitFor();
+    if (lateAfterRetry) {
+      await json(firstRequest, settings('late response'));
+      await page.waitForTimeout(30);
+    }
+    assert.equal(await page.getByLabel('First setting', { exact: true }).inputValue(), 'retry response');
+    assert.equal(reads, 2);
+    assert.deepEqual(await page.evaluate(() => window.adminFailures), []);
+  });
+}
+
 test('save merges normalized unchanged fields, retains newer edits, and sends one mutation', async t => {
   let pending;
   const page = await pageFor(t, 'settings', async page => {

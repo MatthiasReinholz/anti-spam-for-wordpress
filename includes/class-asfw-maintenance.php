@@ -52,6 +52,11 @@ class ASFW_Maintenance {
 	}
 
 	public function run() {
+		// Expired verification state must drain even when the separate event table fails.
+		$cleaned = $this->cleanup_state();
+		if ( is_wp_error( $cleaned ) ) {
+			return $cleaned;
+		}
 		$schema = $this->store->maybe_upgrade_schema();
 		if ( is_wp_error( $schema ) ) {
 			return $schema;
@@ -59,10 +64,6 @@ class ASFW_Maintenance {
 		$pruned = $this->store->prune_older_than( $this->store->get_retention_days() );
 		if ( is_wp_error( $pruned ) ) {
 			return $pruned;
-		}
-		$cleaned = $this->cleanup_state();
-		if ( is_wp_error( $cleaned ) ) {
-			return $cleaned;
 		}
 		$refreshed = array(
 			'disposable_domains' => 0,

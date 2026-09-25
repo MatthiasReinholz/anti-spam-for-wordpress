@@ -164,12 +164,12 @@ function asfw_get_posted_value( $key ) {
  */
 function asfw_get_posted_payload( $key ) {
 	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Integrations call this helper only while performing their own anti-spam verification checks.
-	if ( ! isset( $_POST[ $key ] ) ) {
+	if ( ! isset( $_POST[ $key ] ) || ! is_string( $_POST[ $key ] ) ) {
 		return '';
 	}
 
 	// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- The payload must be read verbatim before cryptographic validation.
-	return trim( (string) wp_unslash( $_POST[ $key ] ) );
+	return trim( wp_unslash( $_POST[ $key ] ) );
 }
 
 function asfw_render_widget_markup( $mode, $context = null, $name = null, $wrap = true, $language = null, $presentation_overrides = array() ) {
