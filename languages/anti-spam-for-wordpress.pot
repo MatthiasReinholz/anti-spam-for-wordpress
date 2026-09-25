@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-25T13:05:26+00:00\n"
+"POT-Creation-Date: 2026-09-25T14:10:24+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: anti-spam-for-wordpress\n"
@@ -114,8 +114,8 @@ msgstr ""
 
 #: includes/class-asfw-bunny-list-content.php:17
 #: includes/class-asfw-bunny-list-content.php:43
-#: includes/class-asfw-bunny-shield-client.php:196
-#: includes/class-asfw-bunny-shield-client.php:226
+#: includes/class-asfw-bunny-shield-client.php:260
+#: includes/class-asfw-bunny-shield-client.php:290
 #: includes/class-asfw-bunny-shield-module.php:227
 msgid "Bunny Shield returned an invalid access list."
 msgstr ""
@@ -124,29 +124,29 @@ msgstr ""
 msgid "Bunny Shield returned an access list that exceeds safe processing limits."
 msgstr ""
 
-#: includes/class-asfw-bunny-shield-client.php:73
+#: includes/class-asfw-bunny-shield-client.php:137
 msgid "Bunny API key is missing."
 msgstr ""
 
-#: includes/class-asfw-bunny-shield-client.php:78
-#: includes/class-asfw-bunny-shield-client.php:152
+#: includes/class-asfw-bunny-shield-client.php:142
+#: includes/class-asfw-bunny-shield-client.php:216
 msgid "Bunny Shield zone ID is missing."
 msgstr ""
 
-#: includes/class-asfw-bunny-shield-client.php:108
+#: includes/class-asfw-bunny-shield-client.php:172
 msgid "Bunny Shield request failed."
 msgstr ""
 
-#: includes/class-asfw-bunny-shield-client.php:127
+#: includes/class-asfw-bunny-shield-client.php:191
 msgid "Bunny Shield returned an invalid response body."
 msgstr ""
 
-#: includes/class-asfw-bunny-shield-client.php:177
+#: includes/class-asfw-bunny-shield-client.php:241
 msgid "Invalid Bunny access list entry."
 msgstr ""
 
-#: includes/class-asfw-bunny-shield-client.php:186
-#: includes/class-asfw-bunny-shield-client.php:218
+#: includes/class-asfw-bunny-shield-client.php:250
+#: includes/class-asfw-bunny-shield-client.php:282
 #: includes/class-asfw-bunny-shield-module.php:183
 #: includes/class-asfw-bunny-shield-module.php:208
 #: includes/class-asfw-bunny-shield-module.php:510
@@ -188,34 +188,36 @@ msgstr ""
 #: includes/class-asfw-challenge-manager.php:398
 #: includes/class-asfw-challenge-manager.php:405
 #: includes/class-asfw-integration-adapter-base.php:68
-#: includes/class-asfw-verifier.php:59
-#: includes/class-asfw-verifier.php:63
-#: includes/class-asfw-verifier.php:69
-#: includes/class-asfw-verifier.php:73
-#: includes/class-asfw-verifier.php:78
-#: includes/class-asfw-verifier.php:84
-#: includes/class-asfw-verifier.php:95
-#: includes/class-asfw-verifier.php:99
-#: includes/class-asfw-verifier.php:104
-#: includes/class-asfw-verifier.php:123
-#: includes/class-asfw-verifier.php:130
-#: includes/class-asfw-verifier.php:147
-#: includes/class-asfw-verifier.php:153
-#: includes/class-asfw-verifier.php:157
-#: includes/class-asfw-verifier.php:167
-#: includes/class-asfw-verifier.php:176
-#: includes/class-asfw-verifier.php:185
-#: includes/class-asfw-verifier.php:190
-#: includes/class-asfw-verifier.php:201
-#: includes/class-asfw-verifier.php:205
+#: includes/class-asfw-verifier.php:58
+#: includes/class-asfw-verifier.php:62
+#: includes/class-asfw-verifier.php:66
+#: includes/class-asfw-verifier.php:72
+#: includes/class-asfw-verifier.php:76
+#: includes/class-asfw-verifier.php:81
+#: includes/class-asfw-verifier.php:87
+#: includes/class-asfw-verifier.php:98
+#: includes/class-asfw-verifier.php:102
+#: includes/class-asfw-verifier.php:107
+#: includes/class-asfw-verifier.php:126
+#: includes/class-asfw-verifier.php:133
+#: includes/class-asfw-verifier.php:150
+#: includes/class-asfw-verifier.php:156
+#: includes/class-asfw-verifier.php:160
+#: includes/class-asfw-verifier.php:170
+#: includes/class-asfw-verifier.php:179
+#: includes/class-asfw-verifier.php:188
+#: includes/class-asfw-verifier.php:193
+#: includes/class-asfw-verifier.php:203
 #: includes/class-asfw-verifier.php:210
-#: includes/class-asfw-verifier.php:215
-#: includes/class-asfw-verifier.php:233
-#: includes/class-asfw-verifier.php:237
-#: includes/class-asfw-verifier.php:244
-#: includes/class-asfw-verifier.php:259
+#: includes/class-asfw-verifier.php:214
+#: includes/class-asfw-verifier.php:219
+#: includes/class-asfw-verifier.php:224
+#: includes/class-asfw-verifier.php:242
+#: includes/class-asfw-verifier.php:246
+#: includes/class-asfw-verifier.php:253
 #: includes/class-asfw-verifier.php:268
-#: includes/class-asfw-verifier.php:327
+#: includes/class-asfw-verifier.php:277
+#: includes/class-asfw-verifier.php:336
 #: integrations/elementor/class-elementor-form-antispamwidget-field.php:72
 #: integrations/formidable/class-antispamwidgetfieldtype.php:49
 msgid "Verification failed."
@@ -1151,7 +1153,7 @@ msgstr ""
 msgid "%s selected contexts"
 msgstr ""
 
-#: includes/class-asfw-verifier.php:221
+#: includes/class-asfw-verifier.php:230
 msgid "Verification expired."
 msgstr ""
 
@@ -1217,7 +1219,7 @@ msgstr ""
 msgid "Event store is unavailable."
 msgstr ""
 
-#: includes/rest-operations/settings-operations.php:420
+#: includes/rest-operations/settings-operations.php:427
 msgid "Some settings could not be saved. Your edits are retained; retry saving after checking the database connection."
 msgstr ""
 

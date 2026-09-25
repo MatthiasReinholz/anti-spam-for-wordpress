@@ -82,3 +82,22 @@ The refreshed child admin graph passes clean installation, build, lint, all 13 t
 At the foundation maintenance checkpoint, there were zero open dependency advisories, all nine update handlers reported no available changes, and 38 superseded pull requests were closed. These are dated maintenance observations, not guarantees about future registry releases or security disclosures. Live GitLab publication remains a separate upstream operational check; this project publishes through GitHub.
 
 Plugin publication requires its reviewed preparation pull request, required checks, protected merge, annotated tag and signed artifact publication. The published release and its verification evidence are authoritative; this audit record alone does not assert that a plugin release has been published.
+
+
+## Post-release audit on 25 September 2026
+
+A fresh fetch confirmed that `main` and the annotated **0.10.0** release tag point to `c4deadee6adc42c39ef354fd39ba585fc3e85533`. [Release preparation PR #101](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/pull/101) passed all 25 reported checks; [publication](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/actions/runs/36140046115) and [post-merge WordPress integration](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/actions/runs/36140046133) succeeded. Independent verification confirmed the published ZIP signature, exact-commit build attestation, annotated tag, all three asset hashes, and version metadata/exclusions in the 202-entry package. The repository had no open dependency, code-scanning or secret-scanning alerts at this dated checkpoint.
+
+Three additional focused reviewers and a root review found the following edge cases in 0.10.0. Each fix was reviewed independently; negative controls demonstrated the failure in the released implementation.
+
+| Priority | Finding | Correction and regression |
+| --- | --- | --- |
+| P2 | A failed insertion of a missing false, zero or empty setting was mistaken for a successful save | Distinguish missing options with a unique sentinel, explicitly insert missing values, and verify readback. Tests cover failed insertion, successful retry and unchanged persisted falsy values, including extension settings. |
+| P2 | An admin read could remain loading after its transport ignored cancellation | Settle the 30-second deadline independently, retain request-identity checks and require explicit retry. Mounted browser tests cover normal abort and late responses before and after retry. |
+| P2 | Event-schema or pruning errors prevented expired verification-state cleanup | Run the bounded cleanup before event maintenance. Tests retain live rows, drain a backlog through scheduled continuation, and preserve failure reporting and the previous success timestamp. |
+| P2 | A compact Bunny JSON response could exhaust memory before list validation | Check raw bytes, nesting and allocation-driving structural tokens before decoding. Isolated 128 MiB processes exercise dense arrays/objects, exact boundaries, escaping, flat strings and provider errors. |
+| P3 | Array-shaped proof input generated PHP warnings before rejection | Reject non-string proof inputs and malformed salt-query fields before casting or normalization. Warning-escalating tests confirm controlled rejection without consuming the original valid proof. |
+
+Local combined validation passes **499 PHP tests / 3,118 assertions**, including randomized order under an explicit 128 MiB memory limit, plus **16 admin/dependency cases**. Coding standards, static analysis, admin lint, security scans, dependency audits, translation generation and package validation pass. The follow-up change and its patch release must also pass their hosted checks before merge and publication.
+
+These corrections are child-owned and require no foundation divergence. The review found no new replay bypass or privilege escalation. Existing commercial-provider live-test and deployment-environment limits remain applicable.

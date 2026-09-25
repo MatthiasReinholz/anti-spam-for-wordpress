@@ -397,6 +397,7 @@ if ( ! function_exists( 'asfw_rest_operation_settings_update' ) ) {
 		$privacy_relevant_options    = class_exists( 'ASFW_Privacy_Policy_Text', false ) ? array_fill_keys( ASFW_Privacy_Policy_Text::get_relevant_options(), true ) : array();
 		$privacy_policy_text_updated = false;
 		$updated                     = array();
+		$missing                     = new stdClass();
 
 		foreach ( $values as $option => $raw_value ) {
 			$option = (string) $option;
@@ -404,7 +405,7 @@ if ( ! function_exists( 'asfw_rest_operation_settings_update' ) ) {
 				continue;
 			}
 
-			$old_value = get_option( $option );
+			$old_value = get_option( $option, $missing );
 
 			// REST request parameters are already unslashed, including decoded JSON.
 			if ( isset( $callbacks[ $option ] ) && is_callable( $callbacks[ $option ] ) ) {
@@ -413,8 +414,14 @@ if ( ! function_exists( 'asfw_rest_operation_settings_update' ) ) {
 				$sanitized = asfw_rest_sanitize_option_value( $option, $raw_value );
 			}
 
-			update_option( $option, $sanitized );
-			if ( ! asfw_rest_option_values_equal( get_option( $option ), $sanitized ) ) {
+			if ( $missing === $old_value ) {
+				// update_option() can skip inserting a missing literal-false value.
+				add_option( $option, $sanitized, '', false );
+			} else {
+				update_option( $option, $sanitized );
+			}
+			$stored = get_option( $option, $missing );
+			if ( $missing === $stored || ! asfw_rest_option_values_equal( $stored, $sanitized ) ) {
 				return new WP_Error(
 					'asfw_settings_save_failed',
 					__( 'Some settings could not be saved. Your edits are retained; retry saving after checking the database connection.', 'anti-spam-for-wordpress' ),
@@ -427,7 +434,7 @@ if ( ! function_exists( 'asfw_rest_operation_settings_update' ) ) {
 			if ( class_exists( 'ASFW_Settings_Registrar', false ) ) {
 				ASFW_Settings_Registrar::sync_legacy_feature_options( $option );
 			}
-			if ( isset( $privacy_relevant_options[ $option ] ) && ! asfw_rest_option_values_equal( $old_value, $sanitized ) ) {
+			if ( isset( $privacy_relevant_options[ $option ] ) && ( $missing === $old_value || ! asfw_rest_option_values_equal( $old_value, $sanitized ) ) ) {
 				$privacy_policy_text_updated = true;
 			}
 			$updated[] = $option;

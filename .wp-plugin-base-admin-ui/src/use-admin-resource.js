@@ -53,12 +53,27 @@ export default function useAdminResource( operation, query, enabled ) {
 			error: null,
 		} ) );
 		let timedOut = false;
-		const timeout = window.setTimeout( () => {
-			timedOut = true;
-			controller.abort();
-		}, 30000 );
-		Promise.resolve()
-			.then( () => readOperation( operation, query, controller.signal ) )
+		let timeout;
+		// Transport middleware may ignore abort, so the deadline must settle itself.
+		Promise.race( [
+			Promise.resolve().then( () =>
+				readOperation( operation, query, controller.signal )
+			),
+			new Promise( ( resolve, reject ) => {
+				timeout = window.setTimeout( () => {
+					timedOut = true;
+					reject(
+						new Error(
+							__(
+								'The request timed out. Please try again.',
+								'anti-spam-for-wordpress'
+							)
+						)
+					);
+					controller.abort();
+				}, 30000 );
+			} ),
+		] )
 			.then( ( data ) => {
 				if (
 					request.current !== current ||
@@ -80,14 +95,7 @@ export default function useAdminResource( operation, query, enabled ) {
 				setResource( ( value ) => ( {
 					...value,
 					status: 'error',
-					error: timedOut
-						? new Error(
-								__(
-									'The request timed out. Please try again.',
-									'anti-spam-for-wordpress'
-								)
-							)
-						: error,
+					error,
 				} ) );
 			} )
 			.finally( () => window.clearTimeout( timeout ) );
