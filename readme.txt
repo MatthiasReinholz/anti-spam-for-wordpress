@@ -78,6 +78,10 @@ Requires WordPress 6.4 or newer and PHP 8.0 or newer.
 3. Activate the plugin through the Plugins menu in WordPress.
 4. Review the settings and enable the integrations you need.
 
+= Updating an existing installation =
+
+Follow the [upgrade checklist](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/blob/main/docs/upgrading.md) before updating. Confirm WordPress 6.4+ and PHP 8.0+, retain a restorable backup, and test the integrations your site uses. When upgrading from 0.9.0 or earlier, explicitly review the trusted proxy header and shared-IP quotas, clear page/CDN caches, and refresh open forms to obtain new verification tokens. Update in place; uninstalling deletes configuration and event data.
+
 = Uninstalling =
 
 Uninstalling the plugin removes Anti Spam for WordPress options, atomic security state and legacy transients, scheduled maintenance and initialization hooks, and the local event table for each site in a multisite network. Export event data before uninstalling if you need to keep it.

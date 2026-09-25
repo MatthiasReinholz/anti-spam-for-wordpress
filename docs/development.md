@@ -50,6 +50,32 @@ The legacy `asfw_integrations` filter contains placement **mode values** (`captc
 
 Settings extensions can add section metadata through `asfw_settings_schema_sections` and fields through `asfw_settings_schema_fields`. Registration follows the resolved section order. A feature registered with a new section but no section metadata receives a visible fallback section titled from its first feature; explicit section metadata takes precedence. Extensions own cleanup of their additional options.
 
+### Settings field example
+
+Register filters from your site plugin on normal requests, including REST requests. The schema's `option` and `sanitize_callback` participate in the settings save allowlist and sanitization; merely rendering a control does not authorize a new option. For example, this adds a plain-text field to the existing general section:
+
+```php
+add_filter( 'asfw_settings_schema_fields', function ( $sections ) {
+    $sections['asfw_general_settings_section'][] = array(
+        'id'                => 'my_site_asfw_note_field',
+        'section'           => 'asfw_general_settings_section',
+        'title'             => 'Internal note',
+        'option'            => 'my_site_asfw_note',
+        'sanitize_callback' => 'sanitize_text_field',
+        'callback'          => 'asfw_settings_field_callback',
+        'args'              => array(
+            'name' => 'my_site_asfw_note',
+            'type' => 'text',
+        ),
+    );
+    return $sections;
+} );
+```
+
+WordPress field callbacks may be function names, closures, callable arrays or invokable objects. The React app describes controls from schema metadata; it does not execute PHP rendering callbacks or display their arbitrary HTML. For custom callbacks, set `args.type` explicitly (`text`, `textarea`, `select`, `checkbox`, `number`, `url` or `password`); selects also need `args.options` as a value-to-label map. Other input types render as text controls. Named built-in select/textarea callbacks retain their type inference. Non-string callbacks require the compatibility correction following 0.10.1; on earlier releases use the named built-in callbacks.
+
+Use `asfw_settings_external_registered_settings` with an `option` and callable `sanitize_callback` for additional saveable options not already derived from schema fields. The legacy `asfw_settings_integrations` registration hook alone does not create React controls. Your extension must remove its own stored options on uninstall. For operational compatibility when upgrading a site, see the [upgrade guide](upgrading.md).
+
 ## Custom form enforcement
 
 A shortcode only renders browser controls. A custom server handler must validate the matching field and context **before any side effect**. It must separately validate fields, check a WordPress nonce, and apply authorization where its operation requires it. Proof verification is neither authentication nor authorization.
@@ -134,7 +160,7 @@ The existing `tests/wp-plugin-base/` suite uses WordPress stubs and runs through
 
 The separate `scripts/test-wordpress-integration.sh` harness starts an isolated real WordPress multisite environment, uses independent PHP workers sharing a database, and verifies consumption races, quotas, lifecycle, schema failures, and uninstall. Before storage mutations, a real browser verifies core admin controls, authenticated REST, settings save/reload/restoration, Events, and Analytics. Every run checks both database-only behavior and an actual Redis object cache, verified across independent PHP processes. CI tests the advertised minimum WordPress 6.4 on PHP 8.3 and the reviewed current WordPress 7.1.2 / PHP 8.3. Set `ASFW_WP_VERSION` and `ASFW_PHP_VERSION` to reproduce either pair locally. Core downloads are version-specific and checksum-verified. It never uses the stub bootstrap. Docker is required.
 
-Run the frontend browser suite with `npm ci`, `npx playwright install`, and `npm run test:browser`; set `ASFW_BROWSER=firefox` or `webkit` for the other engines. Tests load both production scripts and real jQuery for provider lifecycle events. After installing and building the admin app, run `npm run test:admin` from the project root. Its 13 cases comprise 12 mounted React tests for requests, errors, cancellation, tab changes, and preservation of edits during saves, plus the dependency contract test described above.
+Run the frontend browser suite with `npm ci`, `npx playwright install`, and `npm run test:browser`; set `ASFW_BROWSER=firefox` or `webkit` for the other engines. Tests load both production scripts and real jQuery for provider lifecycle events. After installing and building the admin app, run `npm run test:admin` from the project root. Its 16 cases comprise 15 mounted React tests for requests, errors, cancellation, tab changes, and preservation of edits during saves, plus the dependency contract test described above.
 
 After foundation updates run:
 
