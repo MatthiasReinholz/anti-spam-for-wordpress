@@ -42,7 +42,7 @@ export default function AnalyticsTab( { data, isLoading, onReload } ) {
 						'Event logging is currently disabled.',
 						'anti-spam-for-wordpress'
 					)
-			  )
+				)
 			: null,
 		sample?.truncated
 			? createElement(
@@ -52,7 +52,7 @@ export default function AnalyticsTab( { data, isLoading, onReload } ) {
 						'Analytics sample is truncated for performance. Refine filters for full fidelity.',
 						'anti-spam-for-wordpress'
 					)
-			  )
+				)
 			: null,
 		createElement(
 			Card,
@@ -150,7 +150,7 @@ export default function AnalyticsTab( { data, isLoading, onReload } ) {
 											'anti-spam-for-wordpress'
 										)
 									)
-							  )
+								)
 							: null
 					)
 				)
@@ -221,7 +221,7 @@ export default function AnalyticsTab( { data, isLoading, onReload } ) {
 											'anti-spam-for-wordpress'
 										)
 									)
-							  )
+								)
 							: null
 					)
 				)
@@ -295,7 +295,7 @@ export default function AnalyticsTab( { data, isLoading, onReload } ) {
 													'anti-spam-for-wordpress'
 												)
 											)
-									  )
+										)
 									: null
 							)
 						)
@@ -370,7 +370,7 @@ export default function AnalyticsTab( { data, isLoading, onReload } ) {
 													'anti-spam-for-wordpress'
 												)
 											)
-									  )
+										)
 									: null
 							)
 						)

@@ -5,6 +5,8 @@ if (!defined('WP_CLI') || !WP_CLI || !defined('ASFW_INTEGRATION_TESTS') || !ASFW
     throw new RuntimeException('The isolated integration environment is required.');
 }
 
+require_once __DIR__ . '/worker-results.php';
+
 function asfw_integration_assert(bool $condition, string $message): void
 {
     if (!$condition) {
@@ -43,18 +45,9 @@ function asfw_integration_workers(array $input, int $count = 2): array
             usleep(10000);
         }
         touch($directory . '/release');
-        $results = array();
-        $deadline = microtime(true) + 25;
-        while (count(glob($directory . '/result-*.json')) !== $count) {
-            if (microtime(true) > $deadline) {
-                throw new RuntimeException('Workers did not complete after barrier release.');
-            }
-            usleep(10000);
-        }
-        foreach (array_keys($processes) as $index) {
-            $results[] = json_decode(file_get_contents($directory . '/result-' . $index . '.json'), true, 512, JSON_THROW_ON_ERROR);
-        }
-        return $results;
+        // A final result filename can exist before file_put_contents completes.
+        // Wait for successful worker exit before decoding, including shutdown.
+        return asfw_integration_worker_results($processes, $directory);
     } finally {
         foreach ($processes as $process) {
             if (proc_get_status($process)['running']) {

@@ -13,6 +13,25 @@ The public `AntiSpamForWordPressPlugin` façade delegates to small services in `
 - `.wp-plugin-base-admin-ui/src/` contains the child-owned admin app. Build with `npm ci && npm run build` in that directory; committed `assets/admin-ui/` is the production output.
 - `.wp-plugin-base/`, `lib/wp-plugin-base/`, managed workflows, and managed documentation come from the upstream foundation. Fix reusable behavior upstream, consume a verified release, and run its synchronization and validation scripts. Keep project guidance here rather than hand-editing managed `CONTRIBUTING.md`.
 
+## Admin toolchain
+
+Use Node.js 22.22.2 or later in the 22.x series, 24.15.0 or later in the 24.x series, or 26+, with npm 10.2.3 or newer. The exact supported range is declared in `.wp-plugin-base-admin-ui/package.json`. Hosted workflows select Node 22; local installations must also meet the patch-version requirement.
+
+Run these commands from the project root:
+
+```sh
+npm ci
+npm --prefix .wp-plugin-base-admin-ui ci --engine-strict
+npm --prefix .wp-plugin-base-admin-ui run lint:js
+npm --prefix .wp-plugin-base-admin-ui run build
+npx playwright install chromium
+npm run test:admin
+```
+
+The admin manifest and lockfile remain child-owned when the foundation is updated. Review corresponding starter updates, regenerate this project's lockfile, and preserve its application source and React 18 pins. Audit development dependencies with `npm --prefix .wp-plugin-base-admin-ui audit --include=dev` after dependency changes.
+
+Keep dependency overrides scoped to the consuming major version. In particular, `minimatch` v3 consumers need its callable export while v10 consumers use its named export; forcing every consumer onto one major breaks typed linting. `tests/admin/dependency-contracts.test.cjs` exercises actual TypeScript project-service parsing to protect this contract. The YAML and SVGO overrides likewise preserve their consumers' major-version APIs.
+
 ## Context and extension contracts
 
 Use `ASFW_Feature_Registry::normalize_context()` for policy and event contexts. Colons and periods are significant: `wordpress:login` and `custom:contact.v2` must survive normalization. Choose a nonempty resolved context before normalizing a fallback; an empty context normalizes to `generic`.
@@ -111,9 +130,9 @@ Extensions should emit minimal structured event details. Arrays, objects, JSON s
 
 The existing `tests/wp-plugin-base/` suite uses WordPress stubs and runs through the managed PHPUnit bootstrap. It covers service and integration contracts, failures, migrations, policy, and 205-site pagination. It does not prove MySQL concurrency or object-cache behavior.
 
-The separate `scripts/test-wordpress-integration.sh` harness starts an isolated real WordPress multisite environment, uses independent PHP workers sharing a database, and verifies consumption races, quotas, lifecycle, schema failures, and uninstall. Every run checks both database-only behavior and an actual Redis object cache, verified across independent PHP processes. CI tests the advertised minimum WordPress 6.4 on PHP 8.3 and the reviewed current WordPress 7.1.2 / PHP 8.3. Set `ASFW_WP_VERSION` and `ASFW_PHP_VERSION` to reproduce either pair locally. Core downloads are version-specific and checksum-verified. It never uses the stub bootstrap. Docker is required.
+The separate `scripts/test-wordpress-integration.sh` harness starts an isolated real WordPress multisite environment, uses independent PHP workers sharing a database, and verifies consumption races, quotas, lifecycle, schema failures, and uninstall. Before storage mutations, a real browser verifies core admin controls, authenticated REST, settings save/reload/restoration, Events, and Analytics. Every run checks both database-only behavior and an actual Redis object cache, verified across independent PHP processes. CI tests the advertised minimum WordPress 6.4 on PHP 8.3 and the reviewed current WordPress 7.1.2 / PHP 8.3. Set `ASFW_WP_VERSION` and `ASFW_PHP_VERSION` to reproduce either pair locally. Core downloads are version-specific and checksum-verified. It never uses the stub bootstrap. Docker is required.
 
-Run the frontend browser suite with `npm ci`, `npx playwright install`, and `npm run test:browser`; set `ASFW_BROWSER=firefox` or `webkit` for the other engines. Tests load both production scripts and real jQuery for provider lifecycle events. After installing and building the admin app, run `npm run test:admin` from the project root. These mounted React tests exercise requests, errors, cancellation, tab changes, and preservation of edits during saves.
+Run the frontend browser suite with `npm ci`, `npx playwright install`, and `npm run test:browser`; set `ASFW_BROWSER=firefox` or `webkit` for the other engines. Tests load both production scripts and real jQuery for provider lifecycle events. After installing and building the admin app, run `npm run test:admin` from the project root. Its 13 cases comprise 12 mounted React tests for requests, errors, cancellation, tab changes, and preservation of edits during saves, plus the dependency contract test described above.
 
 After foundation updates run:
 

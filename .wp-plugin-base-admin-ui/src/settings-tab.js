@@ -225,7 +225,7 @@ function PrivacyPolicyTextCard( {
 						value: legalBasisValue,
 						values,
 						onChange,
-				  } )
+					} )
 				: null,
 			createElement(
 				'p',
@@ -240,7 +240,7 @@ function PrivacyPolicyTextCard( {
 						'p',
 						{ className: 'asfw-admin-ui-muted' },
 						String( payload.summary )
-				  )
+					)
 				: null,
 			! hasGeneratedText
 				? createElement(
@@ -250,7 +250,7 @@ function PrivacyPolicyTextCard( {
 							'Use the privacy text legal basis setting above and save your settings so the suggested privacy policy text can be generated.',
 							'anti-spam-for-wordpress'
 						)
-				  )
+					)
 				: null,
 			! hasGeneratedText
 				? createElement(
@@ -266,7 +266,7 @@ function PrivacyPolicyTextCard( {
 							},
 							__( 'Save Settings', 'anti-spam-for-wordpress' )
 						)
-				  )
+					)
 				: null,
 			hasGeneratedText
 				? createElement( TextareaControl, {
@@ -279,7 +279,7 @@ function PrivacyPolicyTextCard( {
 						rows: 14,
 						className: 'asfw-privacy-policy-textarea',
 						onChange: () => {},
-				  } )
+					} )
 				: null,
 			hasGeneratedText
 				? createElement(
@@ -300,14 +300,14 @@ function PrivacyPolicyTextCard( {
 								'anti-spam-for-wordpress'
 							)
 						)
-				  )
+					)
 				: null,
 			copyError
 				? createElement(
 						Notice,
 						{ status: 'warning', isDismissible: false },
 						copyError
-				  )
+					)
 				: null
 		)
 	);

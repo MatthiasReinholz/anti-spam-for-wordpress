@@ -75,7 +75,7 @@ The admin routes are registered through the managed REST operations pack and req
 
 - Keep `asfw_integrations_settings_section` stable; it now owns all placement fields and is titled `Protection Placements`.
 - The context catalog is an internal reference. Do not render it as a primary settings card unless a user explicitly asks for a developer/debug view.
-- Rebuild `.wp-plugin-base-admin-ui` after editing UI sources: `npm run build`.
+- Rebuild after editing UI sources with `npm --prefix .wp-plugin-base-admin-ui run build` from the project root. See [the admin toolchain setup](development.md#admin-toolchain) for runtime requirements and validation.
 # Widget appearance
 
 The **Widget appearance** setting selects a complete, plugin-owned palette:

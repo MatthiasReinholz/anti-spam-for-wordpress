@@ -47,7 +47,7 @@ function ResourceView( { resource, children } ) {
 						},
 						__( 'Try again', 'anti-spam-for-wordpress' )
 					)
-			  )
+				)
 			: null,
 		resource.error && ! resource.data ? null : children
 	);
@@ -108,7 +108,7 @@ export default function App() {
 						isDismissible: true,
 					},
 					notice.message
-			  )
+				)
 			: null,
 		createElement( TabPanel, {
 			className: 'asfw-admin-tab-panel',

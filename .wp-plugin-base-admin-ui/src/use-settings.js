@@ -92,7 +92,7 @@ export default function useSettings( enabled, onNotice ) {
 					? __(
 							'Settings saved. The suggested privacy policy text was updated; review whether your privacy policy page needs changes.',
 							'anti-spam-for-wordpress'
-					  )
+						)
 					: __( 'Settings saved.', 'anti-spam-for-wordpress' ),
 			} );
 		} catch ( error ) {

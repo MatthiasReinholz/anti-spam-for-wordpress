@@ -122,7 +122,7 @@ fs.writeFileSync(config, JSON.stringify({
   testsEnvironment: false,
   port: 26000 + Math.floor(Math.random() * 3000),
   autoPort: true,
-  config: { ASFW_INTEGRATION_TESTS: true, WP_DEBUG: true, WP_REDIS_HOST: 'asfw-integration-redis', WP_REDIS_TIMEOUT: 1, WP_REDIS_READ_TIMEOUT: 1, WP_REDIS_MAXTTL: 900 },
+  config: { ASFW_INTEGRATION_TESTS: true, WP_DEBUG: true, CONCATENATE_SCRIPTS: false, WP_REDIS_HOST: 'asfw-integration-redis', WP_REDIS_TIMEOUT: 1, WP_REDIS_READ_TIMEOUT: 1, WP_REDIS_MAXTTL: 900 },
 }, null, 2));
 JS
 wp_env() { "$tools_dir/node_modules/.bin/wp-env" "$@" --config="$config_file"; }
@@ -136,10 +136,8 @@ wp_cli site create --slug=before-activation --title='Pre-existing integration si
 wp_cli plugin activate anti-spam-for-wordpress --network
 wp_cli core version
 wp_cli core verify-checksums --version="$wordpress_version"
-runner='wp-content/plugins/anti-spam-for-wordpress/tests/integration/bootstrap.php'
-wp_cli eval-file "$runner" database
-
-# Attach a new Redis container only to this freshly-created wp-env network.
+# Resolve the actual port from this run's Compose file: autoPort may have changed
+# the requested value. The browser accepts only local Docker bindings.
 compose_file=''
 for environment_dir in "$WP_ENV_HOME"/wp-env-*; do
   if [ -f "$environment_dir/docker-compose.yml" ]; then
@@ -151,6 +149,14 @@ if [ -z "$compose_file" ]; then
   echo 'Could not locate this isolated wp-env compose file.' >&2
   exit 1
 fi
+wp_cli eval 'if (!defined("ASFW_INTEGRATION_TESTS") || true !== ASFW_INTEGRATION_TESTS) { throw new RuntimeException("The disposable integration environment is required."); }'
+wordpress_port="$(docker compose -f "$compose_file" port wordpress 80)"
+node "$repo_root/tests/integration/admin-browser.cjs" "$wordpress_port" "$wordpress_version"
+
+runner='wp-content/plugins/anti-spam-for-wordpress/tests/integration/bootstrap.php'
+wp_cli eval-file "$runner" database
+
+# Attach a new Redis container only to this freshly-created wp-env network.
 cli_id="$(docker compose -f "$compose_file" ps -q cli)"
 network_name="$(docker inspect --format '{{range $name, $value := .NetworkSettings.Networks}}{{$name}}{{end}}' "$cli_id")"
 redis_started=true
@@ -162,4 +168,4 @@ wp_cli redis enable
 wp_cli redis status
 wp_cli eval-file "$runner" redis
 wp_cli eval-file "$runner" uninstall
-printf '%s\n' 'All real WordPress, concurrent database, Redis, multisite, schema recovery, and uninstall checks passed.'
+printf '%s\n' 'All real WordPress admin, concurrent database, Redis, multisite, schema recovery, and uninstall checks passed.'

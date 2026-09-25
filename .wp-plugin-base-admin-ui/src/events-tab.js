@@ -88,7 +88,7 @@ export default function EventsTab( {
 						'Event logging is currently disabled.',
 						'anti-spam-for-wordpress'
 					)
-			  )
+				)
 			: null,
 		createElement(
 			Card,
@@ -124,11 +124,11 @@ export default function EventsTab( {
 						? `${ __(
 								'Last maintenance run',
 								'anti-spam-for-wordpress'
-						  ) }: ${ data.last_maintenance_run_utc } UTC.`
+							) }: ${ data.last_maintenance_run_utc } UTC.`
 						: __(
 								'Last maintenance run: not recorded yet.',
 								'anti-spam-for-wordpress'
-						  )
+							)
 				),
 				createElement(
 					'table',
@@ -186,7 +186,7 @@ export default function EventsTab( {
 											'anti-spam-for-wordpress'
 										)
 									)
-							  )
+								)
 							: items.map( ( item ) =>
 									createElement(
 										'tr',
@@ -230,7 +230,7 @@ export default function EventsTab( {
 											)
 										)
 									)
-							  )
+								)
 					)
 				),
 				createElement(

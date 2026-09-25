@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import tempfile
@@ -18,6 +19,7 @@ import sys
 
 root = Path(os.environ['ASFW_CLEANUP_FIXTURE'])
 case = os.environ['ASFW_CLEANUP_CASE']
+started = case.startswith('redis-') or case == 'admin-browser-failure'
 arguments = sys.argv[1:]
 command = Path(sys.argv[0]).name
 environment = Path(os.environ['WP_ENV_HOME'])
@@ -30,6 +32,14 @@ with (root / 'commands.jsonl').open('a') as stream:
                             'compose_override': os.environ.get('COMPOSE_PROJECT_NAME'),
                             'compose_file': os.environ.get('COMPOSE_FILE')}) + '\n')
 
+if command == 'node':
+    if arguments[0] == '-':
+        os.execv(os.environ['ASFW_CLEANUP_REAL_NODE'], [os.environ['ASFW_CLEANUP_REAL_NODE']] + arguments)
+    if arguments[0].endswith('/tests/integration/admin-browser.cjs'):
+        if arguments[1:] != ['0.0.0.0:26801', '7.1.2']:
+            sys.exit(93)
+        sys.exit(42 if case == 'admin-browser-failure' else 0)
+    raise SystemExit('Unexpected node fixture invocation')
 if command == 'wp-env':
     if arguments[0] == 'start':
         environment.mkdir(parents=True)
@@ -44,16 +54,16 @@ if command == 'wp-env':
                 unrelated = environment / 'wp-env-foreign-project'
                 unrelated.mkdir()
                 (unrelated / 'docker-compose.yml').write_text('services: {}\n')
-        sys.exit(0 if case.startswith('redis-') else 23)
+        sys.exit(0 if started else 23)
     if arguments[0] == 'cleanup':
-        if case == 'native-success' or case.startswith('redis-'):
+        if case == 'native-success' or started:
             sys.exit(0)
         print('Environment not initialized', file=sys.stderr)
         sys.exit(1)
     if arguments[0] == 'logs':
         print('fixture startup failure')
         sys.exit(0)
-    if arguments[0] == 'run' and case.startswith('redis-'):
+    if arguments[0] == 'run' and started:
         if 'redis-cache' in arguments and 'install' in arguments and case != 'redis-success-cleanup-failure':
             sys.exit(23)
         sys.exit(0)
@@ -80,6 +90,12 @@ elif command == 'docker':
                 sys.exit(1)
             sys.exit(0)
     if arguments[0] == 'compose':
+        if arguments[-3:] == ['port', 'wordpress', '80'] and started:
+            compose = Path(arguments[arguments.index('-f') + 1])
+            if environment not in compose.parents:
+                sys.exit(94)
+            print('0.0.0.0:26801')
+            sys.exit(0)
         if arguments[-3:] == ['ps', '-q', 'cli'] and case.startswith('redis-'):
             print('owned-cli-id')
             sys.exit(0)
@@ -116,7 +132,7 @@ class CleanupTests(unittest.TestCase):
             foreign.mkdir()
             (foreign / 'docker-compose.yml').write_text('services: {}\n')
             (foreign / 'keep').write_text('unrelated environment')
-            for name in ('wp-env', 'docker'):
+            for name in ('wp-env', 'docker', 'node'):
                 target = tools / name
                 target.write_text(STUB)
                 target.chmod(0o755)
@@ -130,6 +146,7 @@ class CleanupTests(unittest.TestCase):
                 'ASFW_PHP_VERSION': '8.3',
                 'ASFW_CLEANUP_FIXTURE': str(fixture),
                 'ASFW_CLEANUP_CASE': case,
+                'ASFW_CLEANUP_REAL_NODE': shutil.which('node'),
                 'COMPOSE_PROJECT_NAME': 'foreign-project',
                 'COMPOSE_FILE': str(foreign / 'docker-compose.yml'),
             })
@@ -145,8 +162,12 @@ class CleanupTests(unittest.TestCase):
             down = [call for call in calls if call['command'] == 'docker' and 'down' in call['arguments']]
             self.assertEqual(expected_down, len(down), calls)
             scans = [call for call in calls if call['command'] == 'docker' and 'label=com.docker.compose.project' in call['arguments']]
-            self.assertEqual(0 if case == 'native-success' or case.startswith('redis-') else 3, len(scans), calls)
+            self.assertEqual(0 if case == 'native-success' or case.startswith('redis-') or case == 'admin-browser-failure' else 3, len(scans), calls)
             if case.startswith('redis-'):
+                browser = [index for index, call in enumerate(calls) if call['command'] == 'node' and call['arguments'][0].endswith('/admin-browser.cjs')]
+                database = [index for index, call in enumerate(calls) if call['command'] == 'wp-env' and 'eval-file' in call['arguments']]
+                self.assertEqual(1, len(browser), calls)
+                self.assertTrue(database and browser[0] < database[0], calls)
                 redis_scans = [call for call in calls if call['command'] == 'docker' and call['arguments'][:2] == ['container', 'ls']]
                 self.assertEqual(1, len(redis_scans), calls)
                 self.assertTrue(any(call['command'] == 'wp-env' and call['arguments'][0] == 'cleanup' for call in calls))
@@ -206,6 +227,25 @@ class CleanupTests(unittest.TestCase):
 
     def test_only_the_exact_owned_redis_name_is_stopped_and_removed(self):
         self.run_case('redis-clean', retained=False)
+
+    def test_browser_failure_stops_before_storage_mutation_and_uses_owned_cleanup(self):
+        calls = self.run_case('admin-browser-failure', retained=False, expected_status=42)
+        self.assertFalse(any('eval-file' in call['arguments'] for call in calls))
+        self.assertFalse(any(call['command'] == 'docker' and call['arguments'][0] == 'run' for call in calls))
+        self.assertTrue(any(call['command'] == 'wp-env' and call['arguments'][0] == 'cleanup' for call in calls))
+
+    def test_browser_origin_accepts_only_one_local_mapped_port(self):
+        script = """
+const assert = require('node:assert/strict');
+const { originFromMappedPort } = require(process.argv[1]);
+for (const mapping of ['0.0.0.0:26801', '127.0.0.1:26801', '[::1]:26801', '0.0.0.0:26801\\n[::]:26801']) {
+  assert.equal(originFromMappedPort(mapping), 'http://localhost:26801');
+}
+for (const mapping of ['', 'example.com:26801', '192.0.2.1:26801', '0.0.0.0:0', '0.0.0.0:65536', '0.0.0.0:26801\\n[::]:26802']) {
+  assert.throws(() => originFromMappedPort(mapping));
+}
+"""
+        subprocess.run(['node', '-e', script, str(ROOT / 'tests/integration/admin-browser.cjs')], check=True, capture_output=True, text=True, timeout=10)
 
     def test_cleanup_failure_turns_an_otherwise_successful_run_into_failure(self):
         self.run_case('redis-success-cleanup-failure', retained=True, expected_status=1)

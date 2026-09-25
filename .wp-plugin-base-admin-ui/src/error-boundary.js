@@ -9,7 +9,7 @@ function ErrorFallback( { error } ) {
 			: __(
 					'The admin UI encountered an unexpected error.',
 					'anti-spam-for-wordpress'
-			  );
+				);
 
 	return createElement(
 		'div',

@@ -86,7 +86,7 @@ export default function useAdminResource( operation, query, enabled ) {
 									'The request timed out. Please try again.',
 									'anti-spam-for-wordpress'
 								)
-						  )
+							)
 						: error,
 				} ) );
 			} )
