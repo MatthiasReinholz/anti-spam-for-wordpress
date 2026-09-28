@@ -496,8 +496,17 @@ test('bfcache restoration renews all affected credentials', async t => {
   assert.equal(counts.delay, 2);
 });
 
-test('multiple widgets share one submit continuation and retain the original submitter', async t => {
+test('multiple widgets share one submit continuation and retain the original submitter', { timeout: 15000 }, async t => {
   const page = await pageFor(t);
+  // Keep both proofs pending across both clicks. Browser input dispatch may take
+  // longer than a fixed widget delay, which would make click two a new submission.
+  const challenges = [];
+  let challengesReady;
+  const bothChallenges = new Promise(resolve => { challengesReady = resolve; });
+  await page.route('**/challenge', route => {
+    challenges.push(route);
+    if (challenges.length === 2) challengesReady();
+  });
   await page.evaluate(() => {
     const first = document.querySelector('asfw-widget');
     first.configure({ auto: 'onsubmit' });
@@ -511,7 +520,11 @@ test('multiple widgets share one submit continuation and retain the original sub
     });
   });
   await page.locator('form > button[type=submit]').click();
+  await bothChallenges;
   await page.locator('form > button[type=submit]').click();
+  assert.equal(await page.evaluate(() => window.submissions.length), 0);
+  assert.equal(challenges.length, 2, 'repeated submission must share the pending verifications');
+  await Promise.all(challenges.map(route => route.continue()));
   await page.waitForFunction(() => window.submissions.length > 0);
   await page.waitForTimeout(40);
   const submissions = await page.evaluate(() => window.submissions);
