@@ -10,13 +10,23 @@ Version 0.10.2 preserves existing settings and event data. Updating from 0.10.0 
 4. Record the enabled placements and guards under **Settings → Anti Spam for WordPress**, including any custom form handlers or configuration scripts. Remain logged in to an administrator account during the production update, and keep hosting or command-line access available.
 5. If upgrading from 0.9.0 or earlier with Bunny behind a trusted proxy, turn **Automatic Bunny sync** off on the production site before updating. After the update, select and verify the correct forwarding header before restoring automatic remote writes. Do not rely only on an old dry-run setting when modern and legacy values conflict; review the Bunny section below.
 
-Current automated tests cover supported WordPress versions, storage behavior and integration contracts. They cannot establish compatibility with every historical installation, theme or commercial form-plugin version. Test the integrations your site actually uses.
+Current automated tests cover supported WordPress versions, storage behavior and integration contracts, including WordPress 7.1.2 on PHP 8.3 and 8.4. They cannot establish compatibility with every historical installation, theme or commercial form-plugin version. Test the integrations your site actually uses.
 
 ## Review changes when skipping releases
 
 ### Fresh challenges and cached pages
 
 When upgrading from 0.9.0 or earlier, an already-issued proof, math challenge or submit-delay token may no longer be valid. Visitors should reload the form or use its retry control to obtain fresh verification. Do not expect a form left open during deployment to retain its verification result.
+
+For a deployment with multiple PHP workers or replicas, do not send public
+challenge requests to a mixture of 0.9.x and 0.10.x workers. These versions use
+different backing stores for short-lived verification state, so a challenge
+issued by one version cannot be assumed valid on the other. Normal readiness
+checks do not guarantee compatibility during a rolling update. Rehearse a
+coordinated routing cutover or a short maintenance/drain window, including
+background workers, and verify every serving replica uses the new release
+before reopening traffic. Forms already open still need a fresh challenge.
+Apply the same coordination when rolling back across this boundary.
 
 Clear page and CDN caches after replacing the plugin so visitors receive matching markup and scripts. Keep these public challenge routes available and excluded from all page/CDN caching:
 
