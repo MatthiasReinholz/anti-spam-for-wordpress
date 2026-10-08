@@ -374,3 +374,17 @@ The widget follows the current WordPress site language. Bundled PO/MO catalogs
 cover German, French, Italian, Spanish, Bulgarian, Portuguese, Polish, Hungarian,
 Swedish, Danish, Dutch, Norwegian (Bokmål and Nynorsk), Finnish, Czech and Greek,
 including regional variants. See [translation maintenance and locale behavior](docs/translations.md).
+
+## Foundation maintenance
+
+The vendored foundation is imported from signed release `v1.10.2`, commit
+`6c342a8f634c6a480ee78f6303118cea18b2356d`, using the foundation's verified manual
+importer. Managed automation ownership is recorded before synchronization; plugin
+runtime source remains application-owned.
+
+Scheduled foundation updates also change GitHub workflow files. Configure the
+repository's `WP_PLUGIN_BASE_PR_TOKEN` secret with a repository-scoped automation
+credential permitted to write contents, pull requests, and workflows. The ordinary
+`GITHUB_TOKEN` cannot publish these workflow changes. A manual adoption does not
+repair missing credential permissions; validate the next scheduled publisher after
+the secret is provisioned. Never put the credential in source or a Git remote.
