@@ -377,8 +377,8 @@ including regional variants. See [translation maintenance and locale behavior](d
 
 ## Foundation maintenance
 
-The vendored foundation is imported from signed release `v1.10.2`, commit
-`6c342a8f634c6a480ee78f6303118cea18b2356d`, using the foundation's verified manual
+The vendored foundation is imported from signed release `v1.10.3`, commit
+`8bf0092d12c11e37c7ed4f6bc7f86515edfc2fa1`, using the foundation's verified manual
 importer. Managed automation ownership is recorded before synchronization; plugin
 runtime source remains application-owned.
 
