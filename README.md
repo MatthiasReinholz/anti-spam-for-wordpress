@@ -377,8 +377,8 @@ including regional variants. See [translation maintenance and locale behavior](d
 
 ## Foundation maintenance
 
-The vendored foundation is imported from signed release `v1.10.6`, commit
-`a9c637b88a3db957783cb6f3b522b264efe646c5`, using the foundation's verified manual
+The vendored foundation is imported from signed release `v1.10.7`, commit
+`8dde95fcd2cc17874f43c201437c15cc019ebf72`, using the foundation's verified manual
 importer. Managed automation ownership is recorded before synchronization; plugin
 runtime source remains application-owned.
 
@@ -413,3 +413,8 @@ with a complete verified tool inventory and an isolated cache. This avoids npm
 10’s incomplete advisory graph without changing application install/build tools
 or relaxing graph validation. Raw counts can change with registry metadata;
 the complete report and remaining severities stay visible at every run.
+
+The signed foundation update qualifies existing compatibility adaptations before
+activating WordPress tooling. Unknown dependency versions, changed source bytes
+and linked inputs block installation; exact repeated adaptation is idempotent.
+Existing third-party transformations and audit thresholds remain unchanged.
