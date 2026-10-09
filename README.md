@@ -377,8 +377,8 @@ including regional variants. See [translation maintenance and locale behavior](d
 
 ## Foundation maintenance
 
-The vendored foundation is imported from signed release `v1.10.3`, commit
-`8bf0092d12c11e37c7ed4f6bc7f86515edfc2fa1`, using the foundation's verified manual
+The vendored foundation is imported from signed release `v1.10.5`, commit
+`7ce983baf36486201eae8e454dfaf25024e04fa6`, using the foundation's verified manual
 importer. Managed automation ownership is recorded before synchronization; plugin
 runtime source remains application-owned.
 
@@ -388,3 +388,22 @@ credential permitted to write contents, pull requests, and workflows. The ordina
 `GITHUB_TOKEN` cannot publish these workflow changes. A manual adoption does not
 repair missing credential permissions; validate the next scheduled publisher after
 the secret is provisioned. Never put the credential in source or a Git remote.
+
+The application-owned admin tooling lock has a compatible transitive refresh;
+direct WordPress and React package pins are unchanged, and the rebuilt production
+assets are byte-identical. Transitive WordPress packages also receive compatible
+updates. The raw npm report contains 22 high, 12 moderate and three low findings,
+with no critical findings. All high records propagate the upstream `braces`
+stack-depth advisory `GHSA-vfj7-8cjw-p6xm`.
+
+The admin workspace opts into the foundation's shared integrity-bound backport
+through `npm-remediations.json` and `postinstall`. The manifest binds its exact
+package manifest and lockfile; installation verifies and patches every physical
+copy. Read-only audit verifies the installed bytes and depth regression, retains
+the raw report, and reports remaining advisory sources without changing the
+high-severity threshold. The qualified graph has no remaining high or critical
+findings; moderate and low findings remain visible. This is a verified local
+backport, not an official upstream release or a zero-advisory claim. Dependency
+updates must review and refresh the manifest hashes. Remove the opt-in only after
+a compatible official fix replaces every copy and passes the unchanged gate;
+see `.wp-plugin-base/docs/npm-security-remediations.md` for the shared contract.

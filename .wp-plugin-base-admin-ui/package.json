@@ -7,7 +7,8 @@
   },
   "scripts": {
     "build": "wp-scripts build src/index.js --output-path=../assets/admin-ui",
-    "lint:js": "wp-scripts lint-js src --max-warnings=0"
+    "lint:js": "wp-scripts lint-js src --max-warnings=0",
+    "postinstall": "node ../.wp-plugin-base/scripts/security/npm-remediation.mjs apply --project-root ."
   },
   "devDependencies": {
     "@wordpress/api-fetch": "7.56.0",
