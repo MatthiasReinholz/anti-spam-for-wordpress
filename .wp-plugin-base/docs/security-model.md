@@ -85,6 +85,7 @@ The hardened baseline audits literal workflow and repo-local-script references t
 - `woocommerce.com`
 - `auth.docker.io`
 - `registry-1.docker.io`
+- `registry.npmjs.org` (integrity-locked npm tooling bootstrap and dependency audits)
 - `token.actions.githubusercontent.com`
 - `accounts.google.com` (Cosign publisher certificate issuer)
 
@@ -154,12 +155,12 @@ bash .wp-plugin-base/scripts/release/verify_sigstore_bundle.sh \
   <owner>/<repo> \
   <plugin-zip> \
   <plugin-zip>.sigstore.json \
-  plugin
+  plugin github-release https://api.github.com "" "" <historical-default-branch>
 ```
 
-The strict verifier only trusts signatures produced by the expected release workflows on `refs/heads/main`. Foundation update verification also downloads the signed `dist-foundation-release.json` metadata asset and its Sigstore bundle, verifies the bundle, and compares the repository, version, and commit fields against the selected release before any vendored code is refreshed. For self-managed GitLab foundation sources, `FOUNDATION_RELEASE_SOURCE_SIGSTORE_ISSUER` must be configured explicitly because the issuer is instance-specific. If the newest compatible release fails those checks, the updater falls back to the next older compatible published release instead of trusting the broken candidate.
+The plugin verifier trusts only the expected release workflows on the exact branch recorded for that release (`main` when the setting is absent). Supply that historical `DEFAULT_BRANCH` as the ninth verifier argument; do not substitute today's branch for an old tag. Foundation signatures independently remain bound to `refs/heads/main`. Foundation update verification also downloads the signed `dist-foundation-release.json` metadata asset and its Sigstore bundle, verifies the bundle, and compares the repository, version, and commit fields against the selected release before any vendored code is refreshed. For self-managed GitLab foundation sources, `FOUNDATION_RELEASE_SOURCE_SIGSTORE_ISSUER` must be configured explicitly because the issuer is instance-specific. If the newest compatible release fails those checks, the updater falls back to the next older compatible published release instead of trusting the broken candidate.
 
-If you intentionally need a different branch policy, treat it as an explicit policy change and document it in the repository that consumes the verifier.
+Follow the reviewed [downstream branch migration](downstream-branches.md) procedure when changing a plugin's branch. Historical signatures are never accepted through wildcard branch matching. Hosted recovery pins provenance API requests to its current runner context so historical configuration cannot redirect credentials.
 
 The foundation repository's `scorecard` workflow publishes Scorecard SARIF results to the GitHub Security tab on the default branch. That provides an external, machine-generated view of branch protection, token permissions, dependency update posture, and related repository hygiene.
 
@@ -255,3 +256,12 @@ reviewed scalar values. Custom scripts and comments are preserved. See the
 first-upgrade requirements.
 
 The real WordPress browser fixture may contact its disposable localhost server from `scripts/foundation/test_runtime_packs_wordpress.sh`. The workflow host audit scopes that exception to this exact test entrypoint; it does not allow local/private production endpoints or private hosts in project configuration.
+
+## Explicit npm backports
+
+Projects that need a maintained npm security backport can use the finite,
+integrity-bound foundation catalog and a hash-bound application manifest. The
+security pack verifies installed bytes and the full advisory graph without
+mutating packages or changing severity policy. See
+[npm security remediations](npm-security-remediations.md) for installation,
+qualification, unsupported layouts and removal requirements.

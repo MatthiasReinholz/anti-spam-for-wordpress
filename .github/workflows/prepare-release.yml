@@ -76,6 +76,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Require managed automation profile
+        run: bash .wp-plugin-base/scripts/ci/check_automation_profile.sh ".wp-plugin-base.env"
+
       - name: Resolve target version
         id: version
         shell: bash

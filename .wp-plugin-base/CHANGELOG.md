@@ -1,5 +1,61 @@
 # Changelog
 
+## v1.10.6
+
+* Acquire remediation audit evidence through integrity-locked official npm Arborist and report APIs. Complete advisory graphs no longer depend on the ambient npm CLI version; the existing strict classifier, raw findings and configured thresholds remain unchanged.
+* Isolate audit tooling and cache, verify its complete installed file inventory before loading code, and retain the Node 22 runtime floor. Qualify both real consumer graphs, hostile configuration, producer drift and unsupported links; monitor the public tool lock with Dependabot.
+
+## v1.10.5
+
+* Bind npm patch preflight and application to the verified project work tree. Nested admin projects inside Git checkouts no longer silently skip patch paths; exact installed-byte verification remains mandatory.
+* Remove inherited Git environment variables case-insensitively, including Windows spellings. Qualify real linked-worktree, nested-project and standalone installs, hostile Git context, and idempotent application without changing catalog artifacts, package versions or audit policy.
+
+## v1.10.4
+
+* Add an explicit, integrity-bound npm backport catalog with one canonical installer and a separate read-only audit verifier. Verify all physical package copies, exact source/lock bytes and security regressions before qualifying an advisory.
+* Qualify the reviewed braces 3.0.3 depth-limit backport without changing package versions or audit thresholds. Preserve raw findings and compute residual advisory severity from complete verified dependency paths; unrelated findings and malformed reports fail closed.
+* Integrate opt-in, hash-bound application manifests with the security pack and required full-suite regression coverage, including hostile npm configuration, mixed advisories and hidden package rejection.
+* Refresh compatible PHPStan 2.2.17, PHPUnit 9.6.38 and basic-starter source-map-js 1.2.2 lock records while retaining existing runtime requirements.
+
+## v1.10.3
+
+* Match the WordPress Abilities API nullable registration contract while preserving failure diagnostics and static-analysis compatibility.
+* Refresh compatible admin starter lock entries for patched shell-quote 1.12.0 and source-map-js 1.2.2 without changing starter runtime package majors.
+* Verify Syft publisher Sigstore bundles against the exact trusted release workflow and issuer; reject missing signatures and mismatched checksums before changing tool pins.
+* Restore secure isolated WordPress Git tooling while retaining its Node 22-compatible environment. Adapt the two upstream imports only after exact source/version checks, with real clone/fetch/checkout and drift-rejection coverage.
+* Align React, TypeScript and Python update policies with their supported runtimes. Refresh hash-locked Python tooling and qualify the pinned Semgrep scanner against all production permission rules and safe controls in required CI.
+
+## v1.10.2
+
+* Preserve pinned WordPress tooling alongside trusted release helpers in plugin, prerelease and foundation release workflows. Detached release drivers can now install their isolated WordPress environment after the original checkout is replaced or removed.
+* Fail immediately when a trusted driver lacks its tooling directory or cannot copy its locked inputs, including calls made from shell conditionals.
+* Qualify all seven workflow preservation commands with cold-install fixtures that verify the trusted package manifests and reject incomplete snapshots before copying files or running npm.
+
+## v1.10.1
+
+* Fix isolated Plugin Check startup for dependent plugins with `WORDPRESS_TEST_PLUGINS`, for example `woocommerce@11.1.2`. Explicitly pinned WordPress.org dependencies are installed before the child plugin and never included in its release ZIP. The configuration rejects URLs, floating versions, duplicate slugs and whitespace.
+* Refresh WordPress environment tooling pins to `brace-expansion` 2.1.7 and `fast-uri` 3.1.8 to resolve denial-of-service and URI normalization advisories.
+* Existing children without test dependencies keep the previous behavior. Children declaring `Requires Plugins` should configure exact dependency versions after adopting this verified foundation release.
+
+## v1.10.0
+
+* Add `AUTOMATION_PROFILE=local` conformance without foundation-owned hosted publishers, scheduled updates or deployment credentials, while preserving release eligibility checks. Managed automation remains the default; development readiness accepts matching experimental versions.
+* Build clean checkouts from declared generated outputs and optional complete SHA-256 artifact manifests. Validate required source inputs and containment before building, clear only declared generated ownership, and reject missing, stale, excluded or changed outputs afterward.
+* Serialize cooperating builds and retain independently verified package generations. Bind validation, SBOM, signing, attestation, upload and deployment to the captured generation; verify exact ZIP membership, bytes and modes, including admin UI lazy assets.
+* Isolate implicit ZIP options, normalize directories to 0755 and files to 0644 or executable 0755, harden archive recovery, and preserve previous packages on ordinary failures. Document toolchain reproducibility and interrupted-operation limits.
+* Provide complete verified exact-commit manual imports through the existing signed-release trust model, without automatic synchronization or publication. Autogenerated GitHub source archives remain incomplete exports.
+* Support configurable downstream default branches with exact historical signing identities and trusted host API context. Foundation-source trust remains independently pinned to its protected main branch.
+* Document and test adoption of an existing application-owned TypeScript/webpack/DataViews build with extracted WordPress dependencies, lazy chunks, CSS/RTL and licenses. Preserve application manifests and independently qualified WordPress minimums; the fixture’s WordPress 7.1 graph does not replace an existing application’s WordPress 6.9 qualification.
+
+### Migration notes
+
+* Core package verification, recovery and import tooling now require Python 3.10 or newer. Managed automation and the default `main` branch remain unchanged.
+* Capture automation ownership before replacing a pre-receipt vendor tree. Published v1.8.3 and v1.9.0 migration paths are qualified; customized files require explicit reconciliation. Commit `.wp-plugin-base-automation.json` alongside the managed files. Unknown application workflows remain application-owned.
+* A declared artifact manifest makes its parent directory disposable generated output. Keep source files outside it. Package directories use 0755, ordinary files 0644, and executable files 0755.
+* Consumers that can overlap builds must use captured generation paths. Retain generations while consumers are active; ordinary rollback does not imply crash-durable recovery. Historical releases keep their original exact signing branch.
+
+See the [local development](https://github.com/MatthiasReinholz/wp-plugin-base/blob/v1.10.0/docs/local-development.md), [package lifecycle](https://github.com/MatthiasReinholz/wp-plugin-base/blob/v1.10.0/docs/package-lifecycle.md), [manual import](https://github.com/MatthiasReinholz/wp-plugin-base/blob/v1.10.0/docs/manual-foundation-import.md), [downstream branches](https://github.com/MatthiasReinholz/wp-plugin-base/blob/v1.10.0/docs/downstream-branches.md) and [existing application adoption](https://github.com/MatthiasReinholz/wp-plugin-base/blob/v1.10.0/docs/existing-application-adoption.md) guides for configuration and adoption steps.
+
 ## v1.9.0
 
 * Isolate generated runtime classes per plugin and validate REST/Abilities input consistently, including nullable values, normalized input, and permission configuration.

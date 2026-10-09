@@ -374,3 +374,42 @@ The widget follows the current WordPress site language. Bundled PO/MO catalogs
 cover German, French, Italian, Spanish, Bulgarian, Portuguese, Polish, Hungarian,
 Swedish, Danish, Dutch, Norwegian (Bokmål and Nynorsk), Finnish, Czech and Greek,
 including regional variants. See [translation maintenance and locale behavior](docs/translations.md).
+
+## Foundation maintenance
+
+The vendored foundation is imported from signed release `v1.10.6`, commit
+`a9c637b88a3db957783cb6f3b522b264efe646c5`, using the foundation's verified manual
+importer. Managed automation ownership is recorded before synchronization; plugin
+runtime source remains application-owned.
+
+Scheduled foundation updates also change GitHub workflow files. Configure the
+repository's `WP_PLUGIN_BASE_PR_TOKEN` secret with a repository-scoped automation
+credential permitted to write contents, pull requests, and workflows. The ordinary
+`GITHUB_TOKEN` cannot publish these workflow changes. A manual adoption does not
+repair missing credential permissions; validate the next scheduled publisher after
+the secret is provisioned. Never put the credential in source or a Git remote.
+
+The application-owned admin tooling lock has a compatible transitive refresh;
+direct WordPress and React package pins are unchanged, and the rebuilt production
+assets are byte-identical. Transitive WordPress packages also receive compatible
+updates. The October 9 raw npm report contains 22 high, 12 moderate and three low findings,
+with no critical findings. All high records propagate the upstream `braces`
+stack-depth advisory `GHSA-vfj7-8cjw-p6xm`.
+
+The admin workspace opts into the foundation's shared integrity-bound backport
+through `npm-remediations.json` and `postinstall`. The manifest binds its exact
+package manifest and lockfile; installation verifies and patches every physical
+copy. Read-only audit verifies the installed bytes and depth regression, retains
+the raw report, and reports remaining advisory sources without changing the
+high-severity threshold. The qualified graph has no remaining high or critical
+findings; moderate and low findings remain visible. This is a verified local
+backport, not an official upstream release or a zero-advisory claim. Dependency
+updates must review and refresh the manifest hashes. Remove the opt-in only after
+a compatible official fix replaces every copy and passes the unchanged gate;
+see `.wp-plugin-base/docs/npm-security-remediations.md` for the shared contract.
+
+Audit evidence uses the foundation’s integrity-locked official npm audit APIs,
+with a complete verified tool inventory and an isolated cache. This avoids npm
+10’s incomplete advisory graph without changing application install/build tools
+or relaxing graph validation. Raw counts can change with registry metadata;
+the complete report and remaining severities stay visible at every run.
