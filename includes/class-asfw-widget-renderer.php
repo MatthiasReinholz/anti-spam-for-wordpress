@@ -129,6 +129,10 @@ if ( ! class_exists( 'ASFW_Widget_Renderer', false ) ) {
 				$attrs['challengeurl'] = $challenge_url;
 			}
 
+			if ( is_array( $presentation_overrides ) && isset( $presentation_overrides['presentation'] ) && 'invisible' === $presentation_overrides['presentation'] ) {
+				$attrs['presentation'] = 'invisible';
+			}
+
 			$attrs['name'] = $field_name;
 
 			if ( $auto ) {
@@ -151,7 +155,14 @@ if ( ! class_exists( 'ASFW_Widget_Renderer', false ) ) {
 				$attrs['hidefooter'] = '1';
 			}
 
-			return apply_filters( 'asfw_widget_attrs', $attrs, $mode, $language, $field_name, $context );
+			$attrs = apply_filters( 'asfw_widget_attrs', $attrs, $mode, $language, $field_name, $context );
+			if ( isset( $attrs['presentation'] ) && 'invisible' === $attrs['presentation'] ) {
+				// A hidden manual control would make the protected form unusable.
+				$attrs['auto']   = 'onsubmit';
+				$attrs['hidden'] = 'hidden';
+			}
+
+			return $attrs;
 		}
 
 		public function render_widget_auxiliary_fields( $field_name = 'asfw', $context = 'generic' ) {

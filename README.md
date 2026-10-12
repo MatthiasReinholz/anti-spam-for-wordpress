@@ -368,6 +368,43 @@ page rules, form serialization, reset/reconnection, automatic submission,
 translations, narrow containers and accessibility presentation modes. CI runs Chromium, Firefox and WebKit;
 set `ASFW_BROWSER=firefox` or `ASFW_BROWSER=webkit` to select a local engine.
 
+### Invisible presentation for custom forms
+
+Custom integrations can select `presentation="invisible"` through the
+`render_widget()` / `get_widget_attrs()` presentation overrides or the
+context-aware `asfw_widget_attrs` filter. For example:
+
+```php
+add_filter( 'asfw_widget_attrs', function ( $attrs, $mode, $language, $name, $context ) {
+    if ( 'newsletter' === $context ) {
+        $attrs['presentation'] = 'invisible';
+    }
+    return $attrs;
+}, 10, 5 );
+```
+
+This is a presentation setting, not a protection setting. The renderer initially
+hides the host, and the widget requires automatic verification on submission
+regardless of the site's manual/onload setting. It solves the same local
+proof-of-work challenge and resumes with `requestSubmit()` only after every
+current guard passes. Proof serialization, server verification, context signatures,
+honeypot, minimum challenge age, expiry and rate limits remain unchanged.
+
+Idle, pending and successful verification do not display the verification card.
+A failed verification reveals a plain accessible error and retry button and
+blocks submission. Retry prepares a fresh proof; the visitor submits the form
+again after it succeeds. The card stylesheet is optional for invisible proof
+verification, so a card styling failure cannot strand a hidden control. Reset,
+challenge changes and disconnection cancel pending submission; no stale proof
+can resume it. Selecting visible presentation restores the standard card.
+
+Optional math challenges and submit-delay guards remain separate surfaces and
+retain their behavior. Invisible presentation does not hide a required math
+answer or remove its server check. Integrations needing no interactive math
+surface must choose an appropriate context policy rather than concealing it.
+Never hide the widget with page CSS: that can leave manual verification and
+accessible failure recovery unreachable.
+
 ## Widget translations
 
 The widget follows the current WordPress site language. Bundled PO/MO catalogs
