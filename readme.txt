@@ -234,6 +234,7 @@ Native WooCommerce product reviews also use the Comments protection. WooCommerce
 == Changelog ==
 
 = 0.10.3 =
+* Fix - Preserve invisible verification through public WordPress widget helpers while retaining unsafe-attribute filtering.
 * Add - Add a supported, context-scoped `presentation="invisible"` renderer override and attribute.
 * Update - Require automatic on-submit proof verification; hide idle, pending and successful verification without changing proof serialization or server protections.
 * Update - Keep actionable verification failures accessible through a plain error and retry control; styling failures do not block invisible local proof verification.
