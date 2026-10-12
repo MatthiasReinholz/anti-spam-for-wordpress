@@ -8,6 +8,8 @@ The same atomic security tests run first against MariaDB without an external obj
 
 The suite checks:
 
+- Public widget helper sanitization using real WordPress KSES: preserve context-scoped invisible presentation, initial hiding, automatic submission and signed helper fields; remove unsafe attributes and preserve other visible contexts.
+
 - Real WordPress admin controls, authenticated settings save/reload/restore, and REST-backed Events and Analytics tabs on both core versions.
 
 - Two workers reading the same authoritative state, then attempting consumption concurrently.
