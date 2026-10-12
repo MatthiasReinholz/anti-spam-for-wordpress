@@ -1027,6 +1027,81 @@ async function invisiblePageFor(t) {
   return page;
 }
 
+test('invisible verification prepares one real proof while editing, before submit, and reuses it', async t => {
+  const page = await invisiblePageFor(t);
+  let challenges = 0;
+  await page.route('**/challenge', route => { challenges += 1; return route.continue(); });
+  await page.locator('asfw-widget').evaluate(widget => widget.configure({ 'data-asfw-min-submit-time': '1' }));
+  assert.equal(challenges, 0); // Untouched forms do no work.
+  await page.locator('[name=email]').fill('reader@example.test');
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verifying');
+  assert.equal(await page.evaluate(() => new FormData(document.querySelector('form')).get('proof')), '');
+  await page.locator('[name=email]').fill('another@example.test');
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
+  const preparedProof = await page.evaluate(() => new FormData(document.querySelector('form')).get('proof'));
+  assert.equal(challenges, 1);
+  assert.equal(JSON.parse(Buffer.from(preparedProof, 'base64')).number, '2');
+  assert.deepEqual(await page.evaluate(() => window.submissions), []);
+  await page.locator('form > button').click();
+  assert.equal(challenges, 1);
+  assert.equal((await page.evaluate(() => window.submissions))[0].proof, preparedProof);
+});
+
+test('invisible submit announces waiting synchronously and clears it after proof failure or cancellation', async t => {
+  const page = await invisiblePageFor(t);
+  let hold;
+  const requestSeen = new Promise(resolve => { hold = resolve; });
+  await page.route('**/challenge', route => { hold(route); });
+  const immediate = await page.evaluate(() => {
+    window.protectionPhases = [];
+    const form = document.querySelector('form');
+    form.addEventListener('asfw:submission-state', event => {
+      window.protectionPhases.push({state: event.detail.state, submitter: event.detail.submitter?.textContent});
+    });
+    form.requestSubmit(form.querySelector('button[type=submit]'));
+    form.requestSubmit(form.querySelector('button[type=submit]'));
+    return window.protectionPhases;
+  });
+  assert.deepEqual(immediate, [{ state: 'verifying', submitter: 'Submit' }]);
+  const heldRequest = await requestSeen;
+  await page.locator('asfw-widget').evaluate(widget => widget.reset());
+  assert.deepEqual(await page.evaluate(() => window.protectionPhases.map(item => item.state)), ['verifying', 'idle']);
+  await heldRequest.fulfill({ status: 503, body: '' });
+  assert.deepEqual(await page.evaluate(() => window.submissions), []);
+  await page.unroute('**/challenge');
+  await page.route('**/challenge', route => route.fulfill({ status: 503, body: '' }));
+  await page.locator('form > button').click();
+  await page.waitForFunction(() => window.protectionPhases.length === 4);
+  assert.deepEqual(await page.evaluate(() => window.protectionPhases.map(item => item.state)), ['verifying', 'idle', 'verifying', 'idle']);
+  assert.deepEqual(await page.evaluate(() => window.submissions), []);
+});
+
+test('typing after a failed invisible warm-up does not create a retry loop; expired prepared proof is refreshed', async t => {
+  const page = await invisiblePageFor(t);
+  let challenges = 0;
+  await page.route('**/challenge', route => {
+    challenges += 1;
+    return route.fulfill({ status: 503, body: '' });
+  });
+  await page.locator('[name=email]').fill('reader@example.test');
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'error');
+  await page.locator('[name=email]').fill('another@example.test');
+  assert.equal(challenges, 1);
+  assert.deepEqual(await page.evaluate(() => window.submissions), []);
+  await page.unroute('**/challenge');
+  await page.route('**/challenge', route => { challenges += 1; return route.continue(); });
+  await page.locator('asfw-widget .asfw-verification-retry').click();
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
+  await page.locator('asfw-widget').evaluate(widget => { widget._challenge.salt = 'expired?expires=1'; });
+  await page.locator('[name=email]').fill('fresh@example.test');
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified' && document.querySelector('asfw-widget')._challenge.salt !== 'expired?expires=1');
+  assert.equal(challenges, 3);
+  assert.deepEqual(await page.evaluate(() => window.submissions), []);
+  await page.locator('form > button').click();
+  assert.equal(challenges, 3);
+  assert.equal(await page.evaluate(() => window.submissions.length), 1);
+});
+
 test('invisible presentation submits real proof without displaying the card or changing FormData', async t => {
   const page = await invisiblePageFor(t);
   const widget = page.locator('asfw-widget');
@@ -1120,10 +1195,16 @@ test('invisible presentation retains accessible required math and submit-delay g
   await guardsReady(page);
   assert.equal(await page.locator('.asfw-math-challenge').isVisible(), true);
   // Match the required input emitted by the actual block-mode PHP renderer.
-  await page.locator('input[name=asfw_math_answer]').evaluate(el => { el.required = true; });
+  await page.locator('input[name=asfw_math_answer]').evaluate(el => {
+    el.required = true;
+    window.protectionPhases = [];
+    el.form.addEventListener('asfw:submission-state', event => window.protectionPhases.push(event.detail.state));
+  });
   await page.locator('form > button[type=submit]').click();
   assert.deepEqual(await page.evaluate(() => window.submissions), []);
-  assert.equal(await page.locator('asfw-widget').evaluate(el => el.getState()), 'idle');
+  // Native validation may focus the editable math input and warm a proof, but
+  // it must neither submit nor present submission loading for an invalid form.
+  assert.deepEqual(await page.evaluate(() => window.protectionPhases), []);
   assert.equal(await page.locator('input[name=asfw_math_answer]').evaluate(el => document.activeElement === el), true);
   await page.locator('input[name=asfw_math_answer]').fill('5');
   await page.locator('form > button[type=submit]').click();
