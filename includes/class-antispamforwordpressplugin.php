@@ -162,6 +162,8 @@ class AntiSpamForWordPressPlugin {
 			'floating'                  => array(),
 			'appearance'                => array(),
 			'layout'                    => array(),
+			'presentation'              => array(),
+			'hidden'                    => array(),
 			'delay'                     => array(),
 			'hidelogo'                  => array(),
 			'hidefooter'                => array(),

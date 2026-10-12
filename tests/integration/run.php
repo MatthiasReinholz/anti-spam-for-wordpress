@@ -145,6 +145,35 @@ try {
 } finally {
     delete_option($booleanOption);
 }
+// Exercise the public integration helper with core wp_kses, not the unit stub.
+// HF Engage consumes this helper rather than the renderer's unfiltered markup.
+$invisibleWidget = static function ($attrs, $mode, $language, $field, $context) {
+    if ($context === 'hf-engage:signup') {
+        $attrs['presentation'] = 'invisible';
+        $attrs['onclick'] = 'window.asfwInjected = true';
+        $attrs['unsupported-attribute'] = 'must-be-removed';
+    }
+    return $attrs;
+};
+add_filter('asfw_widget_attrs', $invisibleWidget, 10, 5);
+try {
+    $invisibleMarkup = asfw_render_widget_markup('captcha', 'hf-engage:signup', 'asfw_hf_engage', false);
+    asfw_integration_assert(preg_match('/<asfw-widget\b[^>]*\bpresentation="invisible"/', $invisibleMarkup) === 1, 'public helper preserves invisible presentation through real WordPress KSES');
+    asfw_integration_assert(preg_match('/<asfw-widget\b[^>]*\bhidden="hidden"/', $invisibleMarkup) === 1, 'public helper preserves initially hidden verification through real WordPress KSES');
+    asfw_integration_assert(str_contains($invisibleMarkup, 'auto="onsubmit"'), 'public helper preserves automatic protected submission');
+    asfw_integration_assert(str_contains($invisibleMarkup, 'data-asfw-context="hf-engage:signup"'), 'public helper preserves newsletter protection context');
+    foreach (array('started', 'context', 'context_sig', 'website') as $helperField) {
+        asfw_integration_assert(str_contains($invisibleMarkup, 'name="asfw_hf_engage_' . $helperField . '"'), 'public helper retains protection field ' . $helperField);
+    }
+    asfw_integration_assert(!str_contains($invisibleMarkup, 'onclick=') && !str_contains($invisibleMarkup, 'unsupported-attribute='), 'public helper still strips unsafe and unsupported custom-element attributes');
+    $otherMarkup = asfw_render_widget_markup('captcha', 'custom:contact', 'asfw_contact', false);
+    asfw_integration_assert(!str_contains($otherMarkup, 'presentation="invisible"') && !str_contains($otherMarkup, 'hidden="hidden"'), 'context-scoped invisible presentation leaves other protected forms visible');
+} finally {
+    remove_filter('asfw_widget_attrs', $invisibleWidget, 10);
+}
+$unknownPresentation = asfw_render_widget_markup('captcha', 'hf-engage:signup', 'asfw_hf_engage', false, null, array('presentation' => 'unknown'));
+asfw_integration_assert(!str_contains($unknownPresentation, 'presentation=') && !str_contains($unknownPresentation, 'hidden="hidden"'), 'unknown presentation overrides preserve the normal visible widget');
+
 update_option('asfw_feature_math_challenge_enabled', 1);
 update_option('asfw_feature_math_challenge_mode', 'block');
 update_option('asfw_feature_math_challenge_scope_mode', 'all');
