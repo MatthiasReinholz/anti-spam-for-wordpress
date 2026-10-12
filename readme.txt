@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.10.3
-Stable tag: 0.10.3
+Version: 0.10.4
+Stable tag: 0.10.4
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 7.1
@@ -232,6 +232,10 @@ Native WooCommerce product reviews also use the Comments protection. WooCommerce
 5. Floating UI example
 
 == Changelog ==
+
+= 0.10.4 =
+* Update - Warm invisible anti-spam proof during editing and expose submission loading.
+
 
 = 0.10.3 =
 * Fix - Preserve invisible verification through public WordPress widget helpers while retaining unsafe-attribute filtering.
