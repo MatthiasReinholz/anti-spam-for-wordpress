@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.10.2
-Stable tag: 0.10.2
+Version: 0.10.3
+Stable tag: 0.10.3
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 7.1
@@ -232,6 +232,18 @@ Native WooCommerce product reviews also use the Comments protection. WooCommerce
 5. Floating UI example
 
 == Changelog ==
+
+= 0.10.3 =
+* Fix - Preserve invisible verification through public WordPress widget helpers while retaining unsafe-attribute filtering.
+* Add - Add a supported, context-scoped `presentation="invisible"` renderer override and attribute.
+* Update - Require automatic on-submit proof verification; hide idle, pending and successful verification without changing proof serialization or server protections.
+* Update - Keep actionable verification failures accessible through a plain error and retry control; styling failures do not block invisible local proof verification.
+* Update - Preserve guarded native submission, cancellation, challenge expiry, minimum age, honeypot and optional math/delay checks.
+* Update - Document the integration contract and protect visible behavior with regressions.
+* Update - chore: adopt signed foundation v1.10.7 compatibility guards.
+* Update - chore: adopt verified foundation and restore managed automation ownership.
+* Update - Cover PHP 8.4 and document coordinated challenge-state upgrades.
+
 
 = 0.10.2 =
 * Fix - Support callable custom-field renderers in admin settings without errors or warnings, preserving built-in field types.
