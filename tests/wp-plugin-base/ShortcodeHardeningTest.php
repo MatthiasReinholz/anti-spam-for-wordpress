@@ -62,6 +62,39 @@ final class ShortcodeHardeningTest extends AsfwPluginTestCase
         $this->assertStringNotContainsString('wide', $markup);
     }
 
+    public function test_invisible_renderer_keeps_context_helpers_and_forces_automatic_submission(): void
+    {
+        update_option(AntiSpamForWordPressPlugin::$option_auto, 'onload');
+        $renderer = new ASFW_Widget_Renderer();
+        $markup = $renderer->render_widget('captcha', false, null, 'proof', 'newsletter', array('presentation' => 'invisible'));
+
+        $this->assertStringContainsString('presentation="invisible"', $markup);
+        $this->assertStringContainsString('auto="onsubmit"', $markup);
+        $this->assertStringContainsString('hidden="hidden"', $markup);
+        $this->assertStringContainsString('name="proof"', $markup);
+        $this->assertStringContainsString('name="proof_context"', $markup);
+        $this->assertStringContainsString('name="proof_context_sig"', $markup);
+        $this->assertStringContainsString('name="proof_started"', $markup);
+        $this->assertStringContainsString('asfw-honeypot', $markup);
+    }
+
+    public function test_invisible_context_filter_does_not_change_other_widget_contexts(): void
+    {
+        add_filter('asfw_widget_attrs', static function ($attrs, $mode, $language, $name, $context) {
+            if ('newsletter' === $context) $attrs['presentation'] = 'invisible';
+            return $attrs;
+        }, 10, 5);
+        $renderer = new ASFW_Widget_Renderer();
+        $newsletter = $renderer->get_widget_attrs('captcha', null, 'proof', 'newsletter', true);
+        $other = $renderer->get_widget_attrs('captcha', null, 'proof', 'contact', true);
+
+        $this->assertSame('invisible', $newsletter['presentation']);
+        $this->assertSame('onsubmit', $newsletter['auto']);
+        $this->assertArrayHasKey('hidden', $newsletter);
+        $this->assertArrayNotHasKey('hidden', $other);
+        $this->assertArrayNotHasKey('presentation', $other);
+    }
+
     public function test_shortcode_returns_empty_when_plugin_instance_is_missing(): void
     {
         update_option(AntiSpamForWordPressPlugin::$option_integration_custom, 'captcha');

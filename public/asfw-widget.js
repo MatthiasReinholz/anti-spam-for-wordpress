@@ -55,7 +55,7 @@ function asfwSetOptionalDataAttribute(element, name, value) {
 
 class ASFWWidgetElement extends HTMLElement {
   static get observedAttributes() {
-    return ['appearance', 'auto', 'challengeurl', 'data-asfw-challengeurl', 'data-asfw-field', 'data-asfw-lazy', 'data-asfw-min-submit-time', 'data-asfw-privacy-new-tab', 'data-asfw-privacy-url', 'delay', 'floating', 'hidefooter', 'hidelogo', 'layout', 'name', 'strings'];
+    return ['appearance', 'auto', 'challengeurl', 'data-asfw-challengeurl', 'data-asfw-field', 'data-asfw-lazy', 'data-asfw-min-submit-time', 'data-asfw-privacy-new-tab', 'data-asfw-privacy-url', 'delay', 'floating', 'hidefooter', 'hidelogo', 'layout', 'name', 'presentation', 'strings'];
   }
 
   constructor() {
@@ -99,14 +99,14 @@ class ASFWWidgetElement extends HTMLElement {
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (this._configuring) {
-      if (oldValue !== newValue && ['name', 'data-asfw-field', 'delay', 'data-asfw-min-submit-time'].includes(name)) this._configurationChanged = true;
+      if (oldValue !== newValue && ['name', 'data-asfw-field', 'delay', 'data-asfw-min-submit-time', 'presentation'].includes(name)) this._configurationChanged = true;
       return;
     }
     if (!this.isConnected || !this._rendered) {
       return;
     }
 
-    if (oldValue !== newValue && ['name', 'data-asfw-field', 'delay', 'data-asfw-min-submit-time'].includes(name)) {
+    if (oldValue !== newValue && ['name', 'data-asfw-field', 'delay', 'data-asfw-min-submit-time', 'presentation'].includes(name)) {
       this.clearVerification(true);
     }
     this.refresh();
@@ -210,6 +210,19 @@ class ASFWWidgetElement extends HTMLElement {
     });
     this._styleFallback.append(this._styleError, this._styleRetry);
     root.appendChild(this._styleFallback);
+    // Invisible presentation retains a plain, accessible failure surface even
+    // when the optional card stylesheet is unavailable.
+    this._verificationFallback = document.createElement('div');
+    this._verificationFallback.className = 'asfw-verification-fallback';
+    this._verificationFallback.hidden = true;
+    this._verificationError = document.createElement('p');
+    this._verificationError.setAttribute('role', 'alert');
+    this._verificationRetry = document.createElement('button');
+    this._verificationRetry.className = 'asfw-verification-retry';
+    this._verificationRetry.type = 'button';
+    this._verificationRetry.addEventListener('click', () => void this.startVerification());
+    this._verificationFallback.append(this._verificationError, this._verificationRetry);
+    root.insertBefore(this._verificationFallback, this._styleFallback);
     this.loadStyles();
   }
 
@@ -225,8 +238,8 @@ class ASFWWidgetElement extends HTMLElement {
         window.clearTimeout(timeout);
         stylesheet.removeEventListener('load', onLoad);
         stylesheet.removeEventListener('error', onError);
-        this._shell.hidden = !loaded;
-        this._styleFallback.hidden = loaded;
+        this._stylesLoaded = loaded;
+        this.syncPresentation();
         this._styleRetry.disabled = false;
         if (!loaded) stylesheet.remove();
         resolve(loaded);
@@ -250,6 +263,7 @@ class ASFWWidgetElement extends HTMLElement {
     const strings = this.getStrings();
     this._styleError.textContent = strings.error;
     this._styleRetry.textContent = strings.retry;
+    this._verificationRetry.textContent = strings.retry;
     const privacyUrl = this.getPrivacyUrl();
     const privacyNewTab = this.opensPrivacyInNewTab();
     this._label.textContent = strings.label;
@@ -358,7 +372,12 @@ class ASFWWidgetElement extends HTMLElement {
     return this.getAttribute('name') || this.dataset.asfwField || 'asfw';
   }
 
+  isInvisible() {
+    return this.getAttribute('presentation') === 'invisible';
+  }
+
   getAutoMode() {
+    if (this.isInvisible()) return 'onsubmit';
     const value = this.getAttribute('auto') || '';
     return ['onload', 'onfocus', 'onsubmit'].includes(value) ? value : '';
   }
@@ -425,6 +444,21 @@ class ASFWWidgetElement extends HTMLElement {
     this.setState('idle');
   }
 
+  syncPresentation() {
+    if (!this._shell) return;
+    const invisible = this.isInvisible();
+    this._shell.hidden = invisible || this._stylesLoaded !== true;
+    this._styleFallback.hidden = invisible || this._stylesLoaded !== false;
+    this._verificationFallback.hidden = !invisible || this._state !== 'error';
+    if (invisible) this.hidden = this._state !== 'error';
+    else if (this._invisible) this.hidden = false;
+    this._invisible = invisible;
+  }
+
+  focusVerificationControl() {
+    (this.isInvisible() ? this._verificationRetry : this._button).focus();
+  }
+
   setState(state, errorMessage = '') {
     const strings = this.getStrings();
 
@@ -432,6 +466,9 @@ class ASFWWidgetElement extends HTMLElement {
     if (!this._shell) return;
     this._shell.dataset.state = state;
     this._button.disabled = state === 'verifying';
+    this._verificationRetry.disabled = state === 'verifying';
+    this._verificationError.textContent = state === 'error' ? (errorMessage || strings.error) : '';
+    this.syncPresentation();
 
     if (state === 'verified') {
       this._status.textContent = strings.verified;
@@ -491,7 +528,7 @@ class ASFWWidgetElement extends HTMLElement {
     const manual = pending.find(widget => widget.getAutoMode() !== 'onsubmit');
     if (manual) {
       if (manual._state !== 'verifying') manual.setState('error', manual.getStrings().required);
-      manual._button.focus();
+      manual.focusVerificationControl();
       return;
     }
 
@@ -505,7 +542,7 @@ class ASFWWidgetElement extends HTMLElement {
           widgets.some((widget, index) => widget._form !== form || !widget.isConnected ||
             widget._verificationGeneration !== attempt.generations[index])) return;
       if (results.some(result => !result) || widgets.some(widget => widget.isChallengeExpired())) {
-        pending.find(widget => widget._state !== 'verified')?._button.focus();
+        pending.find(widget => widget._state !== 'verified')?.focusVerificationControl();
         return;
       }
       // No bypass flag: the re-entered event must still pass every current guard.
@@ -625,7 +662,7 @@ class ASFWWidgetElement extends HTMLElement {
       try {
         this.setState('verifying');
 
-        if (!await this._stylesReady) {
+        if (!this.isInvisible() && !await this._stylesReady) {
           throw new Error('Widget stylesheet could not be loaded.');
         }
 

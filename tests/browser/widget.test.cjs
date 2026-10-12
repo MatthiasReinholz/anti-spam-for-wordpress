@@ -33,9 +33,9 @@ before(async () => {
     res.setHeader('Content-Type', 'text/html');
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'");
     res.end(`<!doctype html><html lang="en"><body><form>
-      <input name="email"><asfw-widget name="proof" layout="extended" challengeurl="/challenge"
+      <input name="email"><asfw-widget ${url.searchParams.has('invisible') ? 'presentation="invisible" hidden' : ''} name="proof" layout="extended" challengeurl="/challenge"
       data-asfw-privacy-url="/privacy"></asfw-widget><button type="submit">Submit</button></form>
-      <script src="/jquery.js"></script><script src="/public/script.js"></script><script type="module" src="/public/asfw-widget.js?ver=fixture"></script></body></html>`);
+      <link rel="stylesheet" href="/public/asfw-widget.css"><script src="/jquery.js"></script><script src="/public/script.js"></script><script type="module" src="/public/asfw-widget.js?ver=fixture"></script></body></html>`);
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   origin = `http://127.0.0.1:${server.address().port}`;
@@ -180,7 +180,7 @@ test('stylesheet failure leaves an accessible error and blocks automatic verific
   await page.waitForFunction(() => document.querySelector('asfw-widget')?.shadowRoot?.querySelector('[role=alert]'));
   const verified = await page.locator('asfw-widget').evaluate(el => el.startVerification());
   assert.equal(verified, false);
-  assert.equal(await page.locator('asfw-widget [role=alert]').isVisible(), true);
+  assert.equal(await page.getByRole('alert').isVisible(), true);
   assert.equal(await page.evaluate(() => new FormData(document.querySelector('form')).get('proof')), '');
 });
 
@@ -514,7 +514,7 @@ test('multiple widgets share one submit continuation and retain the original sub
     second.configure({ name: 'second', challengeurl: '/challenge', auto: 'onsubmit', delay: '60' });
     first.after(second);
     window.submissions = [];
-    document.querySelector('form').addEventListener('submit', event => {
+    document.addEventListener('submit', event => {
       event.preventDefault();
       window.submissions.push({ fields: Object.fromEntries(new FormData(event.target)), submitter: event.submitter.textContent });
     });
@@ -1008,4 +1008,133 @@ test('eager loading bounds a stalled prefetch and permits explicit retry', async
   assert.equal(await page.locator('asfw-widget').evaluate(el => el.getState()), 'idle');
   assert.equal(await page.locator('asfw-widget').evaluate(el => el.startVerification()), true);
   assert.equal(challenges, 2);
+});
+
+
+async function invisiblePageFor(t) {
+  const page = await browser.newPage();
+  t.after(() => page.close());
+  await page.goto(origin + '?invisible');
+  await page.waitForFunction(() => document.querySelector('asfw-widget')?.getState?.() === 'idle');
+  await page.evaluate(() => {
+    window.submissions = [];
+    document.addEventListener('submit', event => {
+      event.preventDefault();
+      window.submissions.push({ proof: new FormData(event.target).get('proof'),
+        submitter: event.submitter?.textContent });
+    });
+  });
+  return page;
+}
+
+test('invisible presentation submits real proof without displaying the card or changing FormData', async t => {
+  const page = await invisiblePageFor(t);
+  const widget = page.locator('asfw-widget');
+  assert.equal(await widget.isVisible(), false);
+  // Presentation cannot accidentally inherit a manual/onload setting.
+  await widget.evaluate(el => el.configure({ auto: 'onload' }));
+  assert.equal(await widget.evaluate(el => el.getAutoMode()), 'onsubmit');
+  assert.equal(await widget.evaluate(el => el.getState()), 'idle');
+  await page.locator('form > button').click();
+  await page.waitForFunction(() => window.submissions.length === 1);
+  const submission = (await page.evaluate(() => window.submissions))[0];
+  assert.equal(JSON.parse(Buffer.from(submission.proof, 'base64')).number, '2');
+  assert.equal(submission.submitter, 'Submit');
+  assert.equal(await widget.isVisible(), false);
+  assert.equal(await widget.locator('.asfw-widget-shell').isVisible(), false);
+  await widget.evaluate(el => el.reset());
+  assert.equal(await page.evaluate(() => new FormData(document.querySelector('form')).get('proof')), '');
+  assert.equal(await widget.isVisible(), false);
+  // Visible presentation remains usable when selected again.
+  await widget.evaluate(el => el.configure({ presentation: 'visible', auto: null }));
+  assert.equal(await widget.locator('.asfw-control').isVisible(), true);
+  assert.equal(await widget.evaluate(el => el.getAutoMode()), '');
+});
+
+test('invisible verification fails closed with accessible retry and recovers without duplicate submission', async t => {
+  const page = await invisiblePageFor(t);
+  await page.route('**/challenge', route => route.fulfill({ status: 503, body: '' }));
+  await page.locator('form > button').click();
+  const widget = page.locator('asfw-widget');
+  const retry = widget.locator('.asfw-verification-retry');
+  await retry.waitFor({ state: 'visible' });
+  assert.equal(await widget.locator('.asfw-verification-fallback [role=alert]').textContent(), 'Verification failed. Try again later.');
+  assert.equal(await retry.evaluate(el => el.getRootNode().activeElement === el), true);
+  assert.equal(await widget.locator('.asfw-widget-shell').isVisible(), false);
+  assert.deepEqual(await page.evaluate(() => window.submissions), []);
+  assert.equal(await page.evaluate(() => new FormData(document.querySelector('form')).get('proof')), '');
+  await page.unroute('**/challenge');
+  await retry.click();
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
+  assert.equal(await widget.isVisible(), false);
+  assert.deepEqual(await page.evaluate(() => window.submissions), []);
+  await page.locator('form > button').click();
+  assert.equal(await page.evaluate(() => window.submissions.length), 1);
+});
+
+test('invisible proof keeps the minimum age guard and does not depend on card CSS', async t => {
+  const page = await browser.newPage();
+  t.after(() => page.close());
+  await page.route('**/asfw-widget-internal.css*', route => route.abort());
+  await page.goto(origin + '?invisible');
+  await page.waitForFunction(() => document.querySelector('asfw-widget')?.getState?.() === 'idle');
+  await page.evaluate(() => {
+    document.querySelector('asfw-widget').configure({ 'data-asfw-min-submit-time': '1' });
+    window.submittedAt = null;
+    document.querySelector('form').addEventListener('submit', event => {
+      event.preventDefault(); window.submittedAt = Date.now();
+    });
+    window.startedAt = Date.now();
+    document.querySelector('form').requestSubmit();
+  });
+  assert.equal(await page.locator('asfw-widget').isVisible(), false);
+  await page.waitForFunction(() => window.submittedAt !== null);
+  assert.ok(await page.evaluate(() => window.submittedAt - window.startedAt >= 990));
+  assert.equal(await page.locator('asfw-widget [role=alert]').first().isVisible(), false);
+  assert.equal(await page.evaluate(() => !!new FormData(document.querySelector('form')).get('proof')), true);
+});
+
+test('reset cancels invisible pending submission and stale proof cannot resume the form', async t => {
+  const page = await invisiblePageFor(t);
+  let notifyRequest;
+  const requestSeen = new Promise(resolve => { notifyRequest = resolve; });
+  await page.route('**/challenge', route => notifyRequest(route));
+  await page.locator('form > button').click();
+  const oldRequest = await requestSeen;
+  await page.locator('asfw-widget').evaluate(el => el.reset());
+  await oldRequest.fulfill({ status: 503, body: '' });
+  await page.waitForFunction(() => document.querySelector('asfw-widget')._verifyPromise === null);
+  assert.deepEqual(await page.evaluate(() => window.submissions), []);
+  assert.equal(await page.evaluate(() => new FormData(document.querySelector('form')).get('proof')), '');
+  assert.equal(await page.locator('asfw-widget').isVisible(), false);
+  await page.unroute('**/challenge');
+  await page.locator('form > button').click();
+  await page.waitForFunction(() => window.submissions.length === 1);
+});
+
+
+test('invisible presentation retains accessible required math and submit-delay guards', async t => {
+  const page = await invisiblePageFor(t);
+  await guardRoutes(page, 30);
+  await addGuards(page, { math: true });
+  await guardsReady(page);
+  assert.equal(await page.locator('.asfw-math-challenge').isVisible(), true);
+  // Match the required input emitted by the actual block-mode PHP renderer.
+  await page.locator('input[name=asfw_math_answer]').evaluate(el => { el.required = true; });
+  await page.locator('form > button[type=submit]').click();
+  assert.deepEqual(await page.evaluate(() => window.submissions), []);
+  assert.equal(await page.locator('asfw-widget').evaluate(el => el.getState()), 'idle');
+  assert.equal(await page.locator('input[name=asfw_math_answer]').evaluate(el => document.activeElement === el), true);
+  await page.locator('input[name=asfw_math_answer]').fill('5');
+  await page.locator('form > button[type=submit]').click();
+  await page.waitForFunction(() => window.submissions.length === 1);
+  assert.equal(await page.locator('asfw-widget').isVisible(), false);
+  const submitted = await page.evaluate(() => ({
+    proof: new FormData(document.querySelector('form')).get('proof'),
+    math: new FormData(document.querySelector('form')).get('asfw_math_challenge'),
+    delay: new FormData(document.querySelector('form')).get('asfw_submit_delay_token'),
+  }));
+  assert.ok(submitted.proof);
+  assert.ok(submitted.math);
+  assert.ok(submitted.delay);
 });

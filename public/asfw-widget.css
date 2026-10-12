@@ -24,6 +24,10 @@ asfw-widget {
   display: block;
 }
 
+asfw-widget[hidden] {
+  display: none !important;
+}
+
 .asfw-hidden-value {
   display: none;
 }

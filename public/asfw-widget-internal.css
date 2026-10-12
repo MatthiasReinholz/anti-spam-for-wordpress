@@ -3,6 +3,10 @@
   display: block;
 }
 
+:host([hidden]) {
+  display: none !important;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
