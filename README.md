@@ -387,7 +387,12 @@ This is a presentation setting, not a protection setting. The renderer initially
 hides the host, and the widget requires automatic verification on submission
 regardless of the site's manual/onload setting. It solves the same local
 proof-of-work challenge and resumes with `requestSubmit()` only after every
-current guard passes. Proof serialization, server verification, context signatures,
+current guard passes. Invisible forms begin preparing the proof when the visitor
+focuses or edits a visible text input. Preparation is deduplicated, reuses the
+current unexpired proof and overlaps the minimum-age wait with typing. Untouched
+forms do no extra proof work, and failed preparation requires an explicit retry.
+Typing and preparation do not submit the form or send its field values to the
+challenge endpoint. Proof serialization, server verification, context signatures,
 honeypot, minimum challenge age, expiry and rate limits remain unchanged.
 
 Idle, pending and successful verification do not display the verification card.
@@ -397,6 +402,16 @@ again after it succeeds. The card stylesheet is optional for invisible proof
 verification, so a card styling failure cannot strand a hidden control. Reset,
 challenge changes and disconnection cancel pending submission; no stale proof
 can resume it. Selecting visible presentation restores the standard card.
+
+Integrations can provide immediate loading feedback by listening on the form for
+the bubbling `asfw:submission-state` event. Its detail contains `state`
+(`verifying` or `idle`) and the original `submitter`. `verifying` is dispatched
+synchronously when a valid native submit must wait for automatic verification;
+`idle` follows continuation, failure, reset or disconnection. Proof work started
+by typing does not emit submission loading events. The continuation remains a
+guarded native `requestSubmit()`; an integration awaiting its own network request
+must retain its sending indicator when verification returns to `idle`. These are
+presentation events and never indicate server acceptance or consent.
 
 Optional math challenges and submit-delay guards remain separate surfaces and
 retain their behavior. Invisible presentation does not hide a required math

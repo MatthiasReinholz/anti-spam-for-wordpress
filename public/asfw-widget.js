@@ -18,6 +18,19 @@ const ASFW_TEXT_ENCODER = new TextEncoder();
 const ASFW_FORM_SUBMISSIONS = new WeakMap();
 const ASFW_REQUEST_TIMEOUT_MS = 10000;
 
+function asfwSubmissionState(form, state, submitter) {
+  form.dispatchEvent(new CustomEvent('asfw:submission-state', {
+    bubbles: true, detail: { state, submitter },
+  }));
+}
+
+function asfwClearSubmission(form) {
+  const attempt = ASFW_FORM_SUBMISSIONS.get(form);
+  if (!attempt) return;
+  ASFW_FORM_SUBMISSIONS.delete(form);
+  asfwSubmissionState(form, 'idle', attempt.submitter);
+}
+
 function asfwSleep(ms, signal) {
   return new Promise((resolve, reject) => {
     const cancel = () => {
@@ -319,6 +332,7 @@ class ASFWWidgetElement extends HTMLElement {
     this._form.addEventListener('focusin', this._boundInteract, true);
     this._form.addEventListener('pointerdown', this._boundInteract, true);
     this._form.addEventListener('keydown', this._boundInteract, true);
+    this._form.addEventListener('input', this._boundInteract, true);
     this._form.addEventListener('asfw:renew', this._boundRenew);
   }
 
@@ -331,8 +345,9 @@ class ASFWWidgetElement extends HTMLElement {
     this._form.removeEventListener('focusin', this._boundInteract, true);
     this._form.removeEventListener('pointerdown', this._boundInteract, true);
     this._form.removeEventListener('keydown', this._boundInteract, true);
+    this._form.removeEventListener('input', this._boundInteract, true);
     this._form.removeEventListener('asfw:renew', this._boundRenew);
-    ASFW_FORM_SUBMISSIONS.delete(this._form);
+    asfwClearSubmission(this._form);
     this._form = null;
   }
 
@@ -433,7 +448,7 @@ class ASFWWidgetElement extends HTMLElement {
     this._challengeController = null;
     this._challengePromise = null;
     this._verifyPromise = null;
-    if (this._form) ASFW_FORM_SUBMISSIONS.delete(this._form);
+    if (this._form) asfwClearSubmission(this._form);
     if (this._valueInput) this._valueInput.value = '';
     if (clearChallenge) {
       this._challenge = null;
@@ -503,6 +518,19 @@ class ASFWWidgetElement extends HTMLElement {
   }
 
   handleInteractiveTrigger(event) {
+    if (this.isInvisible()) {
+      // Prepare only the form the visitor starts editing. Hidden, untouched
+      // forms must not fetch challenges or consume CPU merely by being present.
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) ||
+          target.disabled || target.readOnly || !target.getClientRects().length || this.contains(target) ||
+          (target instanceof HTMLInputElement && !['email', 'text', 'search', 'tel', 'url', 'password', 'number'].includes(target.type)) ||
+          !['focusin', 'input'].includes(event.type)) return;
+      if (this.isChallengeExpired()) this.clearVerification(true);
+      // Errors require an explicit retry; typing must not create a retry loop.
+      if (this._state === 'idle') void this.startVerification();
+      return;
+    }
     if (this.getAutoMode() !== 'onfocus') {
       return;
     }
@@ -533,9 +561,12 @@ class ASFWWidgetElement extends HTMLElement {
     }
 
     // One continuation per form, including when it contains several widgets.
-    const attempt = { widgets, generations: widgets.map(widget => widget._verificationGeneration) };
     const submitter = event.submitter || null;
+    const attempt = { widgets, submitter, generations: widgets.map(widget => widget._verificationGeneration) };
     ASFW_FORM_SUBMISSIONS.set(form, attempt);
+    // Synchronous feedback precedes challenge fetch, proof solving and the
+    // minimum-age wait. No verification event implies server acceptance.
+    asfwSubmissionState(form, 'verifying', submitter);
     try {
       const results = await Promise.all(pending.map(widget => widget.startVerification()));
       if (ASFW_FORM_SUBMISSIONS.get(form) !== attempt || !form.isConnected ||
@@ -553,7 +584,7 @@ class ASFWWidgetElement extends HTMLElement {
         submitter.click();
       }
     } finally {
-      if (ASFW_FORM_SUBMISSIONS.get(form) === attempt) ASFW_FORM_SUBMISSIONS.delete(form);
+      if (ASFW_FORM_SUBMISSIONS.get(form) === attempt) asfwClearSubmission(form);
     }
   }
 
