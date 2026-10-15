@@ -470,3 +470,16 @@ The signed foundation update qualifies existing compatibility adaptations before
 activating WordPress tooling. Unknown dependency versions, changed source bytes
 and linked inputs block installation; exact repeated adaptation is idempotent.
 Existing third-party transformations and audit thresholds remain unchanged.
+
+### Moving a protected form between inline and dialog presentation
+
+A synchronous DOM move preserves verification only when the exact same form and
+widget remain in the same document with unchanged widget attributes. Changing detached
+attributes, including configuration changes made through `configure()`, invalidates
+proof on reconnection. This includes an inline notification form
+moving into a native dialog and returning on close. Input, active verification
+and the single submit continuation remain intact; expiry is still checked before
+submission. Genuine disconnection, moving the widget to another form, or adopting
+the form into another document clears proof and removes the old form listeners.
+Do not clone a protected form or its proof. Browser regressions exercise these
+lifecycle boundaries in Chromium, Firefox and WebKit.

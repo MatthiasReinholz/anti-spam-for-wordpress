@@ -80,6 +80,7 @@ class ASFWWidgetElement extends HTMLElement {
     this._challengeController = null;
     this._prefetchStarted = false;
     this._form = null;
+    this._formDocument = null;
     this._verifyPromise = null;
     this._verificationGeneration = 0;
     this._controller = null;
@@ -96,6 +97,18 @@ class ASFWWidgetElement extends HTMLElement {
   }
 
   connectedCallback() {
+    // A synchronous move of the same form (for example into a native dialog)
+    // must not cancel a pending verification or consume a second challenge.
+    // Document identity is stored separately: adoption also changes the form's
+    // ownerDocument, so comparing the two current documents would be unsafe.
+    if (this._form && this.closest('form') === this._form && this.ownerDocument === this._formDocument && this._disconnectedAttributes === this.connectionAttributes()) {
+      this._disconnectedAttributes = null;
+      return;
+    }
+    if (this._form) {
+      this.clearVerification(true);
+      this.detachFormListeners();
+    }
     if (!this._rendered) {
       this.render();
       this._rendered = true;
@@ -105,9 +118,19 @@ class ASFWWidgetElement extends HTMLElement {
     this.refresh();
   }
 
+  connectionAttributes() {
+    return JSON.stringify(Array.from(this.attributes, attribute => [attribute.name, attribute.value]).sort(([left], [right]) => left.localeCompare(right)));
+  }
+
   disconnectedCallback() {
-    this.clearVerification(true);
-    this.detachFormListeners();
+    this._disconnectedAttributes = this.connectionAttributes();
+    queueMicrotask(() => {
+      if (this.isConnected && this._form && this.closest('form') === this._form && this.ownerDocument === this._formDocument) {
+        return;
+      }
+      this.clearVerification(true);
+      this.detachFormListeners();
+    });
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -323,6 +346,7 @@ class ASFWWidgetElement extends HTMLElement {
 
     this.detachFormListeners();
     this._form = form;
+    this._formDocument = form ? this.ownerDocument : null;
 
     if (!this._form) {
       return;
@@ -349,6 +373,7 @@ class ASFWWidgetElement extends HTMLElement {
     this._form.removeEventListener('asfw:renew', this._boundRenew);
     asfwClearSubmission(this._form);
     this._form = null;
+    this._formDocument = null;
   }
 
   getStrings() {

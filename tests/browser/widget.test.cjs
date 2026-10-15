@@ -1219,3 +1219,113 @@ test('invisible presentation retains accessible required math and submit-delay g
   assert.ok(submitted.math);
   assert.ok(submitted.delay);
 });
+
+test('synchronous moves of the same form preserve verified proof and one widget', async t => {
+  const page = await pageFor(t);
+  await page.locator('asfw-widget .asfw-control').click();
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
+  const result = await page.evaluate(() => {
+    const widget = document.querySelector('asfw-widget'), form = widget.closest('form');
+    const proof = new FormData(form).get('proof');
+    const host = document.createElement('div'), dialog = document.createElement('dialog');
+    document.body.append(host, dialog); dialog.append(form); dialog.showModal();
+    dialog.close(); host.append(form);
+    return { sameProof: proof === new FormData(form).get('proof'), state: widget.getState(), expired: widget.isChallengeExpired(), count: form.querySelectorAll('asfw-widget').length };
+  });
+  assert.deepEqual(result, { sameProof: true, state: 'verified', expired: false, count: 1 });
+});
+
+test('moving a form during verification preserves its pending promise and single submit continuation', async t => {
+  const page = await pageFor(t);
+  let release;
+  const held = new Promise(resolve => { release = resolve; });
+  let challengeRequests = 0;
+  await page.route('**/challenge', async route => { challengeRequests++; await held; await route.continue(); });
+  await page.evaluate(() => {
+    const widget = document.querySelector('asfw-widget'), form = widget.closest('form');
+    widget.configure({ auto: 'onsubmit' }); window.confirmedSubmissions = 0;
+    form.addEventListener('submit', event => { event.preventDefault(); if (widget.getState() === 'verified') window.confirmedSubmissions++; });
+    form.requestSubmit(form.querySelector('button[type=submit]'));
+    window.pendingVerification = widget.startVerification();
+  });
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verifying');
+  assert.equal(await page.evaluate(() => {
+    const widget = document.querySelector('asfw-widget'), form = widget.closest('form');
+    const holder = document.createElement('div'); document.body.append(holder); holder.append(form);
+    return widget.getState() === 'verifying';
+  }), true);
+  release();
+  assert.equal(await page.evaluate(() => window.pendingVerification), true);
+  await page.waitForFunction(() => window.confirmedSubmissions === 1);
+  assert.equal(challengeRequests, 1);
+  assert.equal(await page.evaluate(() => Boolean(new FormData(document.querySelector('form')).get('proof'))), true);
+});
+
+test('genuine detach and different-form moves discard proof and release the old form', async t => {
+  const page = await pageFor(t);
+  await page.locator('asfw-widget .asfw-control').click();
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
+  const detached = await page.evaluate(async () => {
+    const widget = document.querySelector('asfw-widget'), form = widget.closest('form');
+    widget.remove(); await Promise.resolve();
+    const state = widget.getState(); form.append(widget);
+    return { state, proof: new FormData(form).get('proof'), reconnected: widget.getState() };
+  });
+  assert.deepEqual(detached, { state: 'idle', proof: '', reconnected: 'idle' });
+  await page.locator('asfw-widget .asfw-control').click();
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
+  const moved = await page.evaluate(() => {
+    const widget = document.querySelector('asfw-widget'), previous = widget.closest('form');
+    const next = document.createElement('form'); document.body.append(next); next.append(widget);
+    return { state: widget.getState(), oldProof: new FormData(previous).get('proof'), newProof: new FormData(next).get('proof') };
+  });
+  assert.deepEqual(moved, { state: 'idle', oldProof: null, newProof: '' });
+});
+
+test('adopting the same form into another document discards its verification', async t => {
+  const page = await pageFor(t);
+  await page.locator('asfw-widget .asfw-control').click();
+  await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
+  const result = await page.evaluate(() => {
+    const widget = document.querySelector('asfw-widget'), form = widget.closest('form');
+    const frame = document.createElement('iframe'); document.body.append(frame);
+    frame.contentDocument.body.append(form);
+    return { state: widget.getState(), proof: new FormData(form).get('proof') };
+  });
+  assert.deepEqual(result, { state: 'idle', proof: '' });
+});
+
+for (const configure of [false, true]) {
+  test(`detached ${configure ? 'configure()' : 'attribute'} changes invalidate same-form verification`, async t => {
+    const page = await pageFor(t);
+    await page.locator('asfw-widget .asfw-control').click();
+    await page.waitForFunction(() => document.querySelector('asfw-widget').getState() === 'verified');
+    const result = await page.evaluate(useConfigure => {
+      const widget = document.querySelector('asfw-widget'), form = widget.closest('form');
+      widget.remove();
+      if (useConfigure) widget.configure({ name: 'new-proof', challengeurl: '/another-challenge' });
+      else { widget.setAttribute('name', 'new-proof'); widget.setAttribute('challengeurl', '/another-challenge'); }
+      form.append(widget);
+      return { state: widget.getState(), previous: new FormData(form).get('proof'), next: new FormData(form).get('new-proof') };
+    }, configure);
+    assert.deepEqual(result, { state: 'idle', previous: null, next: '' });
+  });
+}
+
+test('an expired proof retained through a move still renews before one submission', async t => {
+  const page = await pageFor(t);
+  let challenges = 0;
+  page.on('request', request => { if (new URL(request.url()).pathname === '/challenge') challenges++; });
+  await page.evaluate(async () => {
+    const widget = document.querySelector('asfw-widget'), form = widget.closest('form');
+    widget.configure({ auto: 'onsubmit' });
+    await widget.startVerification();
+    widget._challenge.salt = 'expired?expires=1';
+    const holder = document.createElement('div'); document.body.append(holder); holder.append(form);
+    window.confirmedSubmissions = 0;
+    form.addEventListener('submit', event => { event.preventDefault(); if (widget.getState() === 'verified' && !widget.isChallengeExpired()) window.confirmedSubmissions++; });
+    form.requestSubmit(form.querySelector('button[type=submit]'));
+  });
+  await page.waitForFunction(() => window.confirmedSubmissions === 1);
+  assert.equal(challenges, 2);
+});
