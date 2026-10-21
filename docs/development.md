@@ -15,7 +15,7 @@ The public `AntiSpamForWordPressPlugin` façade delegates to small services in `
 
 ## Admin toolchain
 
-Use Node.js 22.22.2 or later in the 22.x series, 24.15.0 or later in the 24.x series, or 26+, with npm 10.2.3 or newer. The exact supported range is declared in `.wp-plugin-base-admin-ui/package.json`. Hosted workflows select Node 22; local installations must also meet the patch-version requirement.
+Use Node.js 24. `NODE_VERSION` in `.wp-plugin-base.env` selects it for the managed workflows, and the project-owned browser and WordPress integration workflows select the same major version. The admin manifest accepts Node.js 22.22.2 or later in the 22.x series, 24.15.0 or later in the 24.x series, or 26+, with npm 10.2.3 or newer; the exact range is declared in `.wp-plugin-base-admin-ui/package.json`. From wp-plugin-base v1.11.0 the foundation's managed WordPress environment tooling requires Node.js 24.18.0 or later with npm 11.16.0 or newer, so local installations should use a current 24.x release.
 
 Run these commands from the project root:
 
