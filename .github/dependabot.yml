@@ -8,15 +8,6 @@ updates:
     commit-message:
       prefix: chore
       include: scope
-    ignore:
-      - dependency-name: actions/attest-build-provenance
-      - dependency-name: actions/checkout
-      - dependency-name: actions/download-artifact
-      - dependency-name: actions/setup-node
-      - dependency-name: actions/upload-artifact
-      - dependency-name: github/codeql-action
-      - dependency-name: ossf/scorecard-action
-      - dependency-name: shivammathur/setup-php
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -25,6 +16,11 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    # Shared @wordpress/* packages are qualified together; keep them in one update.
+    groups:
+      wordpress-packages:
+        patterns:
+          - "@wordpress/*"
   - package-ecosystem: npm
     directory: /.wp-plugin-base-admin-ui
     schedule:
@@ -33,3 +29,8 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    # Shared @wordpress/* packages are qualified together; keep them in one update.
+    groups:
+      wordpress-packages:
+        patterns:
+          - "@wordpress/*"
