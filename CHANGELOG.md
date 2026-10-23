@@ -4,6 +4,28 @@ All notable changes to this project should be documented in this file.
 
 The format follows a simple Keep a Changelog-style layout with one section per released version and concise bullet points for user-visible changes.
 
+## [0.10.6] - 2026-10-23
+
+- Maintenance release with no plugin runtime changes; built admin assets are byte-identical to 0.10.5.
+- Update the provenance-verified wp-plugin-base foundation to v1.10.13, adopting reviewed GitHub Actions pins and grouped `@wordpress/*` Dependabot updates.
+- Refresh admin UI build tooling to the current WordPress package set on React 18.3.1 and resolve the high-severity `markdown-it` development advisory that failed the readiness audit.
+- Run development and CI tooling on Node.js 24 and update browser tests to Playwright 1.64.1.
+
+## [0.10.5] - 2026-10-15
+
+- Preserve verification when a protected form is moved within the same dialog.
+
+## [0.10.4] - 2026-10-12
+
+- Prepare the invisible anti-spam proof while visitors edit the form, and expose the submission loading lifecycle to integrations.
+
+## [0.10.3] - 2026-10-12
+
+- Add invisible form verification with automatic on-submit proof, plus a context-scoped `presentation="invisible"` renderer override and attribute.
+- Preserve invisible presentation through the public WordPress widget helpers while retaining unsafe-attribute filtering.
+- Keep actionable verification failures accessible through a plain error and retry control; preserve guarded native submission, challenge expiry, minimum age, honeypot and optional math or delay checks.
+- Cover PHP 8.4, document coordinated challenge-state upgrades, and adopt signed foundation v1.10.7 with restored managed automation ownership.
+
 ## [0.10.2] - 2026-09-25
 
 - Fix admin settings errors from custom fields using closures, callable arrays or invokable renderers while preserving built-in field types.

@@ -234,8 +234,10 @@ Native WooCommerce product reviews also use the Comments protection. WooCommerce
 == Changelog ==
 
 = 0.10.6 =
-* Dev - Dev - Run development and CI tooling on Node.js 24.
-* Dev - Dev - Update wp-plugin-base to v1.10.13 and refresh the admin UI build tooling.
+* Dev - Maintenance release: plugin runtime code and built admin assets are unchanged from 0.10.5.
+* Dev - Update the provenance-verified wp-plugin-base foundation to v1.10.13 with reviewed GitHub Actions pins and grouped WordPress package updates.
+* Dev - Refresh the admin UI build tooling to the current WordPress package set on React 18.3.1 and resolve the high-severity `markdown-it` advisory in development dependencies.
+* Dev - Run development and CI tooling on Node.js 24 and update browser tests to Playwright 1.64.1.
 
 
 = 0.10.5 =
