@@ -96,7 +96,7 @@ needed. Maintain related catalogs together when changing shared wording.
 ### Updating translations
 
 Requirements: PHP, WP-CLI with its `i18n` commands, Python 3.9 or newer, and Node.js
-22 or newer for browser tests. Run these commands from the plugin repository.
+24 for browser tests, the version CI uses. Run these commands from the plugin repository.
 
 1. Keep PHP translation calls literal and use the plugin's text domain. When
    adding a widget string, add its English fallback to `public/asfw-widget.js`.
