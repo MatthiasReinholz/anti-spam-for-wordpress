@@ -250,6 +250,7 @@ It reads the current submitted form's saved template, not posted context fields.
 * Fix - Derive manual Contact Form 7 verification policy from saved templates while preserving renderer defaults, context filters and the emergency bypass.
 * Dev - Resolve admin toolchain advisories with compatible dependency updates; preserve verified backports and unchanged security gates.
 * Dev - Document integration boundaries, upgrade requirements and verification APIs; extend regression coverage.
+* Dev - Update the signed foundation to v1.10.14 with public-only remediation provenance and compatible development tooling.
 
 = 0.10.6 =
 * Dev - Maintenance release: plugin runtime code and built admin assets are unchanged from 0.10.5.

@@ -12,6 +12,7 @@ The format follows a simple Keep a Changelog-style layout with one section per r
 - Derive Contact Form 7 shortcode verification policy from saved templates, preserving legacy widgets, context filters and the native emergency bypass.
 - Emit a minimal successful-verification signal for dependent application actions; never treat an emergency bypass as successful verification.
 - Update admin development dependencies to published fixes for body-parser, fast-uri, serialize-javascript and Zod advisories; preserve compatible parent APIs and security audit enforcement.
+- Consume signed wp-plugin-base v1.10.14 with public-only remediation provenance and compatible development tooling; preserve application-owned dependencies and runtime behavior.
 
 ## [0.10.6] - 2026-10-23
 

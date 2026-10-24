@@ -147,3 +147,9 @@ checks and a disposable real WordPress/WooCommerce CPT/HPOS fixture with actual
 Revolut preflight and Store API dispatch/schema/mutation assertions. This is source
 validation, not evidence of a signed release, production deployment or site activation.
 See [the rollout plan](form-coverage.md) for those separate gates and limitations.
+
+The release consumes signature-verified foundation v1.10.14. Its public catalog
+omits internal-only attribution while preserving every patch, regression and
+package integrity digest. Compatible foundation tooling and starter dependency
+repairs retain the existing audit thresholds; application-owned dependencies
+remain explicitly reviewed.
