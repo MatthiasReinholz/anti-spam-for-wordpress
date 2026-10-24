@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.10.6
-Stable tag: 0.10.6
+Version: 0.11.0
+Stable tag: 0.11.0
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 7.1
@@ -242,6 +242,15 @@ It reads the current submitted form's saved template, not posted context fields.
 5. Floating UI example
 
 == Changelog ==
+
+= 0.11.0 =
+* Add - Add separate anonymous classic and Blocks/Store API checkout protection, including account creation, retry handling and gateway preflight isolation.
+* Add - Add explicit unslashed-field verification for JSON/custom transports and a success-only verification action.
+* Add - Add native multisite signup and core REST comment protection while preserving programmatic creation and authorized moderation.
+* Fix - Fix manual Contact Form 7 verification to derive policy from saved templates while preserving the emergency bypass.
+* Dev - Dev - Document integration boundaries, upgrade requirements and verification APIs; extend regression coverage.
+* Dev - Dev - Resolve admin toolchain advisories with compatible body-parser, fast-uri, serialize-javascript and Puppeteer/Zod updates; preserve integrity-bound backports and unchanged security gates.
+
 
 = 0.10.6 =
 * Dev - Maintenance release: plugin runtime code and built admin assets are unchanged from 0.10.5.
