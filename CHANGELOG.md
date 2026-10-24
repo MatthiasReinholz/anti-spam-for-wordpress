@@ -4,6 +4,10 @@ All notable changes to this project should be documented in this file.
 
 The format follows a simple Keep a Changelog-style layout with one section per released version and concise bullet points for user-visible changes.
 
+## [Unreleased]
+
+- Update admin development dependencies to published fixes for body-parser, fast-uri, serialize-javascript and Zod advisories; preserve compatible parent APIs and security audit enforcement.
+
 ## [0.10.6] - 2026-10-23
 
 - Maintenance release with no plugin runtime changes; built admin assets are byte-identical to 0.10.5.

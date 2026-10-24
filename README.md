@@ -449,14 +449,14 @@ with no critical findings. All high records propagate the upstream `braces`
 stack-depth advisory `GHSA-vfj7-8cjw-p6xm`.
 
 The admin workspace opts into the foundation's shared integrity-bound backport
-through `npm-remediations.json` and `postinstall`. The manifest binds its exact
-package manifest and lockfile; installation verifies and patches every physical
+through `npm-remediations.json` and `postinstall`. The manifest selects reviewed
+catalog entries; installation verifies and patches every matching physical
 copy. Read-only audit verifies the installed bytes and depth regression, retains
 the raw report, and reports remaining advisory sources without changing the
 high-severity threshold. The qualified graph has no remaining high or critical
 findings; moderate and low findings remain visible. This is a verified local
 backport, not an official upstream release or a zero-advisory claim. Dependency
-updates must review and refresh the manifest hashes. Remove the opt-in only after
+updates must reverify each installed package against the catalog. Remove the opt-in only after
 a compatible official fix replaces every copy and passes the unchanged gate;
 see `.wp-plugin-base/docs/npm-security-remediations.md` for the shared contract.
 

@@ -32,6 +32,16 @@ The admin manifest, lockfile and application source remain child-owned when the 
 
 Keep dependency overrides scoped to the consuming major version. In particular, `minimatch` v3 consumers need its callable export while v10 consumers use its named export; forcing every consumer onto one major breaks typed linting. `tests/admin/dependency-contracts.test.cjs` exercises actual TypeScript project-service parsing to protect this contract. The YAML and SVGO overrides likewise preserve their consumers' major-version APIs.
 
+Update a parent package when its fixed dependency requires a new major API. The
+October 2026 toolchain update moves Puppeteer and its browser helpers together,
+allowing the supported Chromium BiDi package to consume patched Zod 4 rather than
+forcing Zod 4 into an older Zod 3 consumer. Compatible lockfile updates also fix
+body-parser and fast-uri; the serialize-javascript override stays on major 7.
+Qualify these changes with strict engine installation, typed linting, the admin
+build and mounted browser tests. Keep the integrity-bound braces backport and the
+unchanged high-severity readiness gate until a compatible official fix replaces
+every affected copy.
+
 ## Context and extension contracts
 
 Use `ASFW_Feature_Registry::normalize_context()` for policy and event contexts. Colons and periods are significant: `wordpress:login` and `custom:contact.v2` must survive normalization. Choose a nonempty resolved context before normalizing a fallback; an empty context normalizes to `generic`.
