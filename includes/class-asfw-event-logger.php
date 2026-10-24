@@ -255,8 +255,8 @@ class ASFW_Event_Logger {
 			return;
 		}
 
-		$email_hash = '';
-		foreach ( $matched_fields as $matched_field ) {
+		$email_hash = isset( $analysis['email_hash'] ) && is_string( $analysis['email_hash'] ) && preg_match( '/^[a-f0-9]{64}$/D', $analysis['email_hash'] ) ? $analysis['email_hash'] : '';
+		foreach ( '' === $email_hash ? $matched_fields : array() as $matched_field ) {
 			$email_value = $this->get_posted_field_value( $matched_field );
 			if ( '' === $email_value ) {
 				continue;

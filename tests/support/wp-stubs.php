@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/wordpress-shortcodes.php';
+
 if (!defined('ARRAY_A')) {
     define('ARRAY_A', 'ARRAY_A');
 }
@@ -463,17 +465,6 @@ function shortcode_atts($pairs, $atts, $shortcode = '')
     return array_merge($pairs, array_intersect_key($atts, $pairs));
 }
 
-function shortcode_parse_atts($text)
-{
-    $attributes = array();
-    if (preg_match_all('/([a-zA-Z0-9_-]+)="([^"]*)"/', (string) $text, $matches, PREG_SET_ORDER) !== false) {
-        foreach ($matches as $match) {
-            $attributes[$match[1]] = $match[2];
-        }
-    }
-
-    return $attributes;
-}
 
 function do_shortcode($content)
 {
@@ -859,7 +850,7 @@ function is_user_logged_in()
 
 function current_user_can($capability, ...$args)
 {
-    return false;
+    return !empty($GLOBALS['asfw_test_capabilities'][$capability]);
 }
 
 function wp_die($message = '')
@@ -927,6 +918,7 @@ function asfw_test_reset_state(array $options = array(), ?array $active_plugins 
     $GLOBALS['asfw_test_rest_routes'] = array();
     $GLOBALS['asfw_test_privacy_policy_content'] = array();
     $GLOBALS['asfw_test_user_logged_in'] = false;
+    $GLOBALS['asfw_test_capabilities'] = array();
     $GLOBALS['asfw_native_comment_submission_posts'] = array();
     $GLOBALS['asfw_test_doing_ajax'] = false;
 

@@ -12,6 +12,27 @@ Version 0.10.2 preserves existing settings and event data. Updating from 0.10.0 
 
 Current automated tests cover supported WordPress versions, storage behavior and integration contracts, including WordPress 7.1.2 on PHP 8.3 and 8.4. They cannot establish compatibility with every historical installation, theme or commercial form-plugin version. Test the integrations your site actually uses.
 
+## New form coverage (next release)
+
+The added guest-checkout placement is opt-in and independent of account registration.
+Deploy the complete compatible plugin fleet before enabling it; old workers do not
+have its enforcement hook. Rehearse classic, Blocks, express/headless and active
+payment gateway paths, validation errors, payment failures and retries. Clear cached
+form assets and verify fresh public markup. This addition does not change the atomic
+challenge storage format or require the historical 0.9/0.10 state migration.
+
+Existing CF7 shortcode templates are preserved. The current saved template must contain
+exactly one effective widget; escaped literals are ignored. Context and field name
+come from that template using rendering defaults/filters. Fix missing/ambiguous widgets
+before upgrade. No template rewrite or automatic CF7 mode switch is required.
+
+Core REST comment clients without moderation capability must supply a proof and guards
+when the Comments placement is enabled. Migrate legitimate clients to the explicit-field
+API, or deliberately configure a different site policy. Programmatic comment creation
+and authorized moderation remain available; do not exempt ordinary customer accounts.
+
+For the implementation sequence and acceptance matrix, see [form coverage](form-coverage.md).
+
 ## Review changes when skipping releases
 
 ### Fresh challenges and cached pages

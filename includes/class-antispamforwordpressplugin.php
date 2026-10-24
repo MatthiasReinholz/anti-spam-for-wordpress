@@ -138,6 +138,8 @@ class AntiSpamForWordPressPlugin {
 
 	public static $option_integration_woocommerce_register = 'asfw_integration_woocommerce_register';
 
+	public static $option_integration_woocommerce_checkout = 'asfw_integration_woocommerce_checkout';
+
 	public static $option_integration_woocommerce_reset_password = 'asfw_integration_woocommerce_reset_password';
 
 	public static $option_integration_html_forms = 'asfw_integration_html_forms';
@@ -484,6 +486,10 @@ class AntiSpamForWordPressPlugin {
 		return $this->options_service()->get_integration_woocommerce_register();
 	}
 
+	public function get_integration_woocommerce_checkout() {
+		return $this->options_service()->get_integration_woocommerce_checkout();
+	}
+
 	public function get_integration_woocommerce_reset_password() {
 		return $this->options_service()->get_integration_woocommerce_reset_password();
 	}
@@ -806,6 +812,18 @@ class AntiSpamForWordPressPlugin {
 	 */
 	public function verify( $payload, $hmac_key = null, $context = null, $field_name = 'asfw' ) {
 		return $this->verifier_service()->verify( $payload, $hmac_key, $context, $field_name );
+	}
+
+	public function validate_math_challenge_fields( $context, array $submission ) {
+		return $this->challenge_manager_service()->validate_math_challenge_fields( $context, $submission );
+	}
+
+	public function validate_submit_delay_fields( $context, $delay_ms, array $submission ) {
+		return $this->challenge_manager_service()->validate_submit_delay_fields( $context, $delay_ms, $submission );
+	}
+
+	public function verify_submission( array $submission, $context, $field_name = 'asfw' ) {
+		return $this->verifier_service()->verify_submission( $submission, $context, $field_name );
 	}
 
 	/**

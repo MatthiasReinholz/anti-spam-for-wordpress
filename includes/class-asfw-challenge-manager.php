@@ -259,9 +259,14 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 		}
 
 		public function validate_math_challenge_submission( $context ) {
-			$challenge_id = asfw_get_posted_value( $this->get_math_challenge_id_field_name() );
-			$signature    = asfw_get_posted_value( $this->get_math_challenge_signature_field_name() );
-			$answer       = asfw_get_posted_value( $this->get_math_challenge_answer_field_name() );
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Legacy form verification.
+			return $this->validate_math_challenge_fields( $context, asfw_unslash_submission( $_POST ) );
+		}
+
+		public function validate_math_challenge_fields( $context, array $submission ) {
+			$challenge_id = asfw_submission_value( $submission, $this->get_math_challenge_id_field_name() );
+			$signature    = asfw_submission_value( $submission, $this->get_math_challenge_signature_field_name() );
+			$answer       = asfw_submission_value( $submission, $this->get_math_challenge_answer_field_name() );
 
 			if ( '' === $challenge_id || '' === $signature || '' === $answer ) {
 				return new WP_Error( 'asfw_math_missing', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
@@ -353,8 +358,13 @@ if ( ! class_exists( 'ASFW_Challenge_Manager', false ) ) {
 		}
 
 		public function validate_submit_delay_submission( $context, $delay_ms ) {
-			$token_id  = asfw_get_posted_value( $this->get_submit_delay_token_field_name() );
-			$signature = asfw_get_posted_value( $this->get_submit_delay_signature_field_name() );
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Legacy form verification.
+			return $this->validate_submit_delay_fields( $context, $delay_ms, asfw_unslash_submission( $_POST ) );
+		}
+
+		public function validate_submit_delay_fields( $context, $delay_ms, array $submission ) {
+			$token_id  = asfw_submission_value( $submission, $this->get_submit_delay_token_field_name() );
+			$signature = asfw_submission_value( $submission, $this->get_submit_delay_signature_field_name() );
 			if ( '' === $token_id || '' === $signature ) {
 				return new WP_Error( 'asfw_submit_delay_missing', __( 'Verification failed.', 'anti-spam-for-wordpress' ) );
 			}

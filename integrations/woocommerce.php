@@ -23,6 +23,8 @@ function asfw_is_native_wordpress_auth_request() {
 }
 
 require_once __DIR__ . '/class-asfw-woocommerce-login-dispatch.php';
+require_once __DIR__ . '/class-asfw-woocommerce-checkout.php';
+ASFW_WooCommerce_Checkout::register();
 
 add_filter( 'woocommerce_login_credentials', array( 'ASFW_WooCommerce_Login_Dispatch', 'mark' ), PHP_INT_MAX, 1 );
 add_filter( 'authenticate', array( 'ASFW_WooCommerce_Login_Dispatch', 'begin' ), 0, 2 );

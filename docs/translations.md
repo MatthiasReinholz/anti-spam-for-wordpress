@@ -67,8 +67,9 @@ available for custom wording; return plain text for the existing keys.
 
 PO files are the editable source. Compiled MO files are included in the release
 ZIP so self-hosted installations have translations immediately. The POT is the
-full-plugin extraction template; the PO files currently contain only the widget
-messages listed above.
+full-plugin extraction template; the PO files primarily cover the widget
+messages listed above. German catalogs also include the placement messages
+described below.
 
 | Language | Primary WordPress locales |
 | --- | --- |
@@ -132,3 +133,15 @@ locale coverage, duplicate messages, fuzzy entries and placeholders. Browser tes
 exercise every shipped catalog, verification states, retry text and malformed or
 HTML-like translations. PHP tests cover request-language rendering, custom footer
 preservation and locale-stack restoration. CI runs Chromium, Firefox and WebKit.
+
+
+## New placement server messages
+
+The bundled catalogs primarily cover the widget contract. New placement-specific
+server errors and operator labels are gettext-enabled, but fall back to English
+until the relevant translations are supplied. The new checkout and
+account-verification messages are included in the German variants; other
+languages retain English fallback for these placement messages. The
+customer-facing compatibility message asks the visitor to contact the store;
+WooCommerce capability requirements belong to operator documentation. Existing
+translated widget strings remain unchanged.

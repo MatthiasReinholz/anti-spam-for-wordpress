@@ -39,7 +39,7 @@ If you place the widget manually with `[anti_spam_widget]` while the **Custom HT
 
 Proof-of-work protection for native WordPress comment forms is enabled by default under **Protection Placements -> Comments**. It applies to anonymous and logged-in browser submissions, including wpDiscuz forms when they use the WordPress fallback policy.
 
-Direct programmatic calls to `wp_new_comment()` and authenticated REST, XML-RPC, or AJAX clients are not forced through a browser-only challenge. Anonymous remote comment submissions remain protected. Actual wpDiscuz server dispatch selects its configured policy for main and inline submissions, including reviews. Missing, altered, or stale signed fields cannot select a weaker native-comment policy. Signed context fields bind rendered controls and are not authorization credentials.
+Direct programmatic calls to `wp_new_comment()` remain available. Core REST comment creation is verified before insertion, including ordinary signed-in customers; authorized comment moderators are exempt. Non-moderator remote XML-RPC/AJAX comment submissions also require verification. JSON clients use the explicit-fields API described below. Actual wpDiscuz server dispatch selects its configured policy for main and inline submissions, including reviews. Missing, altered, or stale signed fields cannot select a weaker native-comment policy. Signed context fields bind rendered controls and are not authorization credentials.
 
 ## Security matrix
 
@@ -147,11 +147,43 @@ Originally based on [ALTCHA for WordPress](https://github.com/altcha-org/wordpre
 * HTML Forms
 * WPDiscuz
 * WPForms
-* WordPress login, registration, password reset
+* WordPress login, registration, password reset, and native multisite user/site signup
 * WordPress comments
-* WooCommerce
+* WooCommerce account login, registration, reset password, and opt-in guest checkout (classic and Checkout Blocks / Store API)
 * Optional Bunny Shield access-list escalation
 * Custom HTML with `[anti_spam_widget]`
+
+### Form coverage and deployment
+
+Activation does not enable every placement. Configure each live site's account,
+checkout and form policies explicitly; inspect event logging separately. The
+checkout setting protects all anonymous checkout submissions, including guest
+orders and account creation; authenticated checkout and existing order-payment
+pages keep their own authorization. Classic checkout validates at the native
+submission boundary, without consuming proofs in a gateway's validation-only
+preflight. Checkout Blocks use WooCommerce's supported extension data and
+OrderMeta SlotFill, tested against WooCommerce 11.2.1 / WordPress 7.1.3. Older
+WooCommerce releases must supply the same registered extension capabilities; an
+unsupported Blocks runtime must be upgraded or use a supported checkout before
+enabling this placement. Headless/express clients must send the same proof extension;
+verify every enabled payment surface before enabling the placement.
+
+Native multisite signup uses the registration placement and a distinct
+`wordpress:multisite-register` context. Administrative and programmatic user
+creation is not subjected to an unrendered browser widget.
+
+Contact Form 7 automatic mode binds verification to `contact-form-7`. In shortcode
+mode the server derives context and field name from the current submission's
+saved template, with exactly one effective widget. Bare legacy shortcodes and
+explicit contexts remain supported. A proof from another form family cannot
+select the expected policy. Forms sharing a configured context share that proof
+family; use explicit distinct contexts when individual form separation is needed.
+
+Custom newsletter, back-in-stock and JSON handlers can render the shared widget
+and call `asfw_verify_submission( $unslashed_fields, $server_owned_context )`
+before storing data, creating accounts or sending messages. Preserve each
+provider's consent, authorization, idempotency and recipient quotas. See the
+[coverage and rollout plan](docs/form-coverage.md) and [developer API](docs/development.md#explicit-fields-and-json-transports).
 
 ## Installation
 
@@ -292,7 +324,15 @@ do_action('asfw_rate_limited', string $type, string $context, array $state)
 **`asfw_verify_result`** — Fires after every verification attempt.
 
 ```php
-do_action('asfw_verify_result', bool $success, true|WP_Error $result, string|null $context, string $field_name, string|null $resolved_context)
+do_action('asfw_verify_result', bool $success, true|WP_Error $result, string|null $context, string $field_name, string|null $resolved_context, array $submission)
+```
+
+The optional sixth argument contains unslashed submitted fields for in-process analysis. Existing listeners accepting fewer arguments remain supported. Do not persist raw fields or credentials.
+
+**`asfw_submission_verified`** — Fires only after complete successful proof verification, never for kill-switch bypass. Applications can use this request-local signal to gate a dependent action without consuming a proof twice. It is not a durable authorization token.
+
+```php
+do_action('asfw_submission_verified', string $resolved_context, string $field_name)
 ```
 
 **`asfw_guard_result`** — Fires after each optional context guard check (math challenge or submit delay).

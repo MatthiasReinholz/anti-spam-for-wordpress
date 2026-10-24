@@ -123,3 +123,23 @@ The callable correction passes the complete local quality pack: **508 PHP tests 
 The project has coherent service, provider-adapter and admin-component boundaries. Compatibility facades and the child/foundation ownership split are intentional. The review supports retaining that organization; its concrete improvements concern extension behavior and discoverable, accurate operational guidance. The audited 0.10.1 package contains the pre-existing callable-field defect; the correction from this review is separate from that package. Built-in settings do not use those problematic callback shapes.
 
 The correction and documentation were merged through [PR #104](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/pull/104) after all **16 hosted checks** passed on commit `54042c42af9d33f7f6012e0c389e74fc34d732f9`. The [CI](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/actions/runs/36150685377), [browser](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/actions/runs/36150685439) and [WordPress integration](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/actions/runs/36150685357) runs cover the supported matrix. Patch release **0.10.2** is prepared through [PR #105](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/pull/105); its protected checks and independently verified publication remain the release completion evidence. It changes no verification format, settings precedence or database schema relative to 0.10.1.
+
+
+## Form coverage follow-up, 23 October 2026
+
+The next feature release adds explicit-field JSON verification, distinct classic
+and Blocks/Store API guest checkout, native multisite signup dispatch protection,
+core REST comment insertion protection and server-derived CF7 template policy.
+The implementation preserves programmatic creation and authorized moderation.
+Its dependent verification signal excludes emergency bypasses, and optional feature
+analysis uses the same normalized data as the verifier.
+
+An independent review covered the plugin implementation and documentation.
+The review led to authoritative REST author-email mapping, consistent context-filter
+and JSON logging behavior, native gateway-preflight isolation, visible Blocks
+capability errors, and saved-template CF7 policy that preserves existing markup.
+Validation includes PHPUnit, full widget/admin browser suites, static/security
+checks and a disposable real WordPress/WooCommerce CPT/HPOS fixture with actual
+Revolut preflight and Store API dispatch/schema/mutation assertions. This is source
+validation, not evidence of a signed release, production deployment or site activation.
+See [the rollout plan](form-coverage.md) for those separate gates and limitations.

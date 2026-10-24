@@ -23,3 +23,16 @@ The suite checks:
 Workers have bounded barriers and completion deadlines; the runner terminates and reaps them on failure. The runner also requires the test-only `ASFW_INTEGRATION_TESTS` configuration constant. Never run it against an existing WordPress installation: the schema and uninstall checks intentionally delete plugin-owned test data. The fast PHPUnit suite separately exercises network pagination beyond 100 sites.
 
 Concurrency workers publish a JSON result and then exit. The parent waits for successful process completion before reading results, so a visible but partially written file cannot produce a false failure or hide a failing worker. Unit regressions cover slow writes, nonzero exits, missing or malformed results, and the completion deadline.
+
+
+## Commerce form coverage
+
+`scripts/test-form-coverage.sh` is the additional isolated WooCommerce CPT/HPOS
+fixture. Supply reviewed `ASFW_WOOCOMMERCE_SOURCE` and optional
+`ASFW_REVOLUT_SOURCE` plugin directories; see `docs/development.md` for the command.
+It tests real classic checkout, validation-only gateway preflight and Store API
+extension schema/dispatch against the candidate ASFW source. Missing, wrong-context,
+replayed and nonce-rejected requests cannot create users/orders; valid checkout
+creates one customer/order. Its pinned WordPress/PHP and MariaDB containers use an
+internal network, intercepted mail and no production credentials. Cleanup verifies
+created resource IDs/ownership labels and retains the run log, including on failure.

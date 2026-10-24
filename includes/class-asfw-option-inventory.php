@@ -64,6 +64,7 @@ final class ASFW_Option_Inventory {
 			'asfw_integration_gravityforms',
 			'asfw_integration_woocommerce_login',
 			'asfw_integration_woocommerce_register',
+			'asfw_integration_woocommerce_checkout',
 			'asfw_integration_woocommerce_reset_password',
 			'asfw_integration_html_forms',
 			'asfw_integration_wordpress_login',

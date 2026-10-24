@@ -22,3 +22,11 @@ bash .wp-plugin-base/scripts/ci/validate_project.sh
 For release changes, also run the release preparation workflow or local release checks documented in `CONTRIBUTING.md` before merging.
 <!-- wp-plugin-base:agents-end -->
 
+
+## Public repository content
+
+Use generic examples and synthetic fixture identities. Keep customer or
+application names, private repository links, deployment topology, internal
+hostnames, account records and credentials out of source, docs, tests, commit
+messages, PR descriptions and release notes. Review the package contents as well
+as the Git diff before publishing. Use a public GitHub noreply commit identity.

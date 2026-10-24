@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Anti Spam for WordPress\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/anti-spam-for-wordpress\n"
-"PO-Revision-Date: 2026-09-12 00:00+0000\n"
+"PO-Revision-Date: 2026-10-23 00:00+0000\n"
 "Last-Translator: Anti Spam for WordPress contributors\n"
 "Language-Team: de_AT\n"
 "Language: de_AT\n"
@@ -51,3 +51,15 @@ msgstr "Für dieses Formular brauchst du JavaScript."
 #, php-format
 msgid "Please wait %s s..."
 msgstr "Bitte warte %s s..."
+
+msgid "Spam protection"
+msgstr "Spam-Schutz"
+
+msgid "Please complete spam verification before placing your order."
+msgstr "Bitte schließe den Spam-Schutz ab, bevor du deine Bestellung aufgibst."
+
+msgid "Checkout verification could not load. Please contact the store."
+msgstr "Die Prüfung an der Kasse konnte nicht geladen werden. Bitte kontaktiere den Shop."
+
+msgid "Could not verify you are not a robot."
+msgstr "Wir konnten nicht bestätigen, dass du kein Roboter bist."

@@ -52,6 +52,9 @@ class CatalogTests(unittest.TestCase):
                     self.assertEqual(sorted(re.findall(placeholders, msgid)), sorted(re.findall(placeholders, translated)))
                 self.assertNotEqual("I'm not a robot", catalog.gettext("I'm not a robot"))
                 self.assertEqual('Unknown message', catalog.gettext('Unknown message'))
+                if locale.startswith('de_'):
+                    for message in ['Spam protection', 'Please complete spam verification before placing your order.', 'Checkout verification could not load. Please contact the store.', 'Could not verify you are not a robot.']:
+                        self.assertNotEqual(message, catalog.gettext(message))
 
 
 if __name__ == '__main__':

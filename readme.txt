@@ -27,7 +27,9 @@ https://github.com/altcha-org/wordpress-plugin
 * Self-hosted challenge generation and verification
 * No external API required for core protection
 * Privacy-friendly proof-of-work widget
-* Protection for core WordPress screens and popular form plugins
+* Protection for core WordPress screens, native multisite signup and popular form plugins
+* Separate WooCommerce account and guest-checkout placements, including Checkout Blocks / Store API
+* Explicit-field verification API for JSON, newsletter and back-in-stock integrations
 * Proof-of-work protection for native WordPress comments, enabled by default
 * Optional Bunny Shield access-list escalation
 * Custom shortcode support via `[anti_spam_widget]`
@@ -219,9 +221,17 @@ Instead of asking the user to solve a visual puzzle, the widget asks the browser
 
 = Does comment protection affect integrations that create comments through code? =
 
-Native browser comment forms are protected by default, including logged-in submissions. Direct `wp_new_comment()` calls and authenticated REST, XML-RPC, or AJAX clients are not forced through a browser challenge. Anonymous remote comment submissions remain protected. You can disable the native Comments placement from the plugin settings if needed.
+Native browser comment forms are protected by default, including logged-in submissions. Direct programmatic `wp_new_comment()` calls remain available. Core REST comments require verification for ordinary signed-in customers as well as guests admitted by WordPress; authorized moderators are exempt. Non-moderator remote XML-RPC/AJAX comments also require verification. You can disable the native Comments placement from the plugin settings if needed.
 
-Native WooCommerce product reviews also use the Comments protection. WooCommerce login protection covers account, checkout, and embedded login forms. WooCommerce registration protection covers the account registration form; checkout account creation and programmatic customer creation use their own validation and do not require an unrendered widget.
+Native WooCommerce product reviews also use the Comments protection. WooCommerce login protection covers account, checkout, and embedded login forms. WooCommerce registration protection covers the account registration form. The separate guest-checkout placement covers anonymous classic checkout and Checkout Blocks / Store API, including account creation. It avoids consuming proofs during payment-gateway validation-only preflights. Programmatic customer creation remains unaffected. Headless and express clients must supply the documented extension proof fields; validate enabled gateways before activating checkout protection.
+
+= Are custom JSON forms protected automatically? =
+
+No. Render a context-bound widget and call `asfw_verify_submission()` with unslashed parsed fields and a server-owned expected context before any side effect. The API preserves request globals and checks the same proof, honeypot, timing, visitor binding, quotas, optional supported guards and disposable-email policy. It fails closed when protection is unavailable. The existing posted-widget API remains supported. See docs/development.md and docs/form-coverage.md in the repository.
+
+= How does Contact Form 7 shortcode mode select its policy? =
+
+It reads the current submitted form's saved template, not posted context fields. Exactly one effective widget is required. Legacy bare shortcodes and explicit context/name attributes are supported; escaped literals are ignored. Automatic mode uses the fixed contact-form-7 context.
 
 == Screenshots ==
 

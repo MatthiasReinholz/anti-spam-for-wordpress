@@ -7,6 +7,11 @@ The format follows a simple Keep a Changelog-style layout with one section per r
 ## [Unreleased]
 
 - Update admin development dependencies to published fixes for body-parser, fast-uri, serialize-javascript and Zod advisories; preserve compatible parent APIs and security audit enforcement.
+- Add separate anonymous WooCommerce checkout protection for classic checkout and Checkout Blocks / Store API, including account creation, with retry handling and gateway preflight isolation.
+- Add explicit unslashed-field verification for JSON and custom forms without replacing request globals; retain full guard, quota, identity and observability behavior.
+- Protect native multisite signup stages and core REST comments from ordinary authenticated customers while preserving programmatic creation and authorized moderation.
+- Derive Contact Form 7 shortcode verification policy from saved templates, preserving legacy widgets and context filters.
+- Emit a minimal successful-verification signal for dependent application actions; never treat an emergency bypass as successful verification.
 
 ## [0.10.6] - 2026-10-23
 
