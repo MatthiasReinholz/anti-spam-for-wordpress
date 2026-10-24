@@ -23,7 +23,7 @@ class ASFW_Content_Heuristics_Module {
 	}
 
 	public function register_hooks() {
-		add_action( 'asfw_verify_result', array( $this, 'inspect_submission' ), 20, 5 );
+		add_action( 'asfw_verify_result', array( $this, 'inspect_submission' ), 20, 6 );
 	}
 
 	public function is_enabled( $context = null ) {
@@ -44,10 +44,12 @@ class ASFW_Content_Heuristics_Module {
 		return is_array( $terms ) ? $terms : array();
 	}
 
-	protected function collect_candidate_text() {
+	protected function collect_candidate_text( $submission = null ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Legacy analysis normalizes form transport once.
+		$submission = is_array( $submission ) ? $submission : asfw_unslash_submission( $_POST );
 		$candidates = array();
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- This is read-only heuristic analysis after verification.
-		foreach ( (array) $_POST as $key => $value ) {
+		foreach ( $submission as $key => $value ) {
 			$key = (string) $key;
 			if ( false !== strpos( $key, 'asfw' ) || asfw_field_is_credential( $key ) ) {
 				continue;
@@ -57,7 +59,7 @@ class ASFW_Content_Heuristics_Module {
 				continue;
 			}
 
-			$value = trim( (string) wp_unslash( $value ) );
+			$value = trim( (string) $value );
 			if ( '' !== $value ) {
 				$candidates[ $key ] = $value;
 			}
@@ -66,10 +68,10 @@ class ASFW_Content_Heuristics_Module {
 		return $candidates;
 	}
 
-	public function analyze_submission( $context = null ) {
+	public function analyze_submission( $context = null, $submission = null ) {
 		$context           = ASFW_Feature_Registry::normalize_context( $context );
 		$terms             = $this->get_heuristic_terms();
-		$candidates        = $this->collect_candidate_text();
+		$candidates        = $this->collect_candidate_text( $submission );
 		$score             = 0;
 		$reasons           = array();
 		$matches           = array();
@@ -119,22 +121,23 @@ class ASFW_Content_Heuristics_Module {
 		}
 
 		return array(
-			'score'     => $score,
-			'reasons'   => array_values( array_unique( $reasons ) ),
-			'matches'   => array_values( array_unique( $matches ) ),
-			'threshold' => $this->is_strict() ? 2 : 4,
-			'fields'    => count( $candidates ),
+			'email_hash' => ! empty( $disposable_emails ) ? $this->store->hash_value( strtolower( trim( (string) reset( $disposable_emails ) ) ), 'email' ) : '',
+			'score'      => $score,
+			'reasons'    => array_values( array_unique( $reasons ) ),
+			'matches'    => array_values( array_unique( $matches ) ),
+			'threshold'  => $this->is_strict() ? 2 : 4,
+			'fields'     => count( $candidates ),
 		);
 	}
 
-	public function inspect_submission( $success, $result, $context, $field_name, $resolved_context = null ) {
+	public function inspect_submission( $success, $result, $context, $field_name, $resolved_context = null, $submission = null ) {
 		$event_context = ASFW_Feature_Registry::normalize_context( '' !== trim( (string) $resolved_context ) ? $resolved_context : $context );
 
 		if ( ! $success || ! $this->is_enabled( $event_context ) ) {
 			return;
 		}
 
-			$analysis = $this->analyze_submission( $event_context );
+			$analysis = $this->analyze_submission( $event_context, $submission );
 		if ( $analysis['score'] < $analysis['threshold'] ) {
 			return;
 		}

@@ -258,6 +258,10 @@ if ( ! class_exists( 'ASFW_Options', false ) ) {
 			return trim( get_option( AntiSpamForWordPressPlugin::$option_integration_woocommerce_register ) );
 		}
 
+		public function get_integration_woocommerce_checkout() {
+			return trim( (string) get_option( AntiSpamForWordPressPlugin::$option_integration_woocommerce_checkout, '' ) );
+		}
+
 		public function get_integration_woocommerce_reset_password() {
 			return trim( get_option( AntiSpamForWordPressPlugin::$option_integration_woocommerce_reset_password ) );
 		}

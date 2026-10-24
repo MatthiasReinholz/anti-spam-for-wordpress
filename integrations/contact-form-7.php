@@ -4,6 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/class-asfw-contact-form-policy.php';
+
 if ( asfw_plugin_active( 'contact-form-7' ) ) {
 	add_filter( 'wpcf7_form_elements', 'do_shortcode' );
 
@@ -38,10 +40,17 @@ if ( asfw_plugin_active( 'contact-form-7' ) ) {
 				return $spam;
 			}
 
-				$plugin = AntiSpamForWordPressPlugin::$instance;
-				$mode   = $plugin->get_integration_contact_form_7();
+			$plugin = AntiSpamForWordPressPlugin::$instance;
+			if ( $plugin->is_kill_switch_enabled() ) {
+				return $spam;
+			}
+			$mode = $plugin->get_integration_contact_form_7();
 			if ( ! empty( $mode ) && ( 'captcha' === $mode || 'shortcode' === $mode ) ) {
-				return false === asfw_verify_posted_widget( 'captcha' === $mode ? 'contact-form-7' : null );
+				if ( 'captcha' === $mode ) {
+					return ! asfw_verify_posted_widget( 'contact-form-7' );
+				}
+				$policy = ASFW_Contact_Form_Policy::current();
+				return null === $policy || ! asfw_verify_posted_widget( $policy['context'], $policy['name'] );
 			}
 
 			return $spam;

@@ -34,7 +34,7 @@ class ASFW_Disposable_Email_Module {
 	}
 
 	public function register_hooks() {
-		add_action( 'asfw_verify_result', array( $this, 'log_verify_result' ), 15, 5 );
+		add_action( 'asfw_verify_result', array( $this, 'log_verify_result' ), 15, 6 );
 	}
 
 	public function is_enabled( $context = null ) {
@@ -69,7 +69,7 @@ class ASFW_Disposable_Email_Module {
 			return '';
 		}
 
-		return trim( strtolower( (string) wp_unslash( $value ) ) );
+		return trim( strtolower( (string) $value ) );
 	}
 
 	public function get_candidate_email_fields( $context ) {
@@ -98,7 +98,7 @@ class ASFW_Disposable_Email_Module {
 				continue;
 			}
 
-			$email = $this->normalize_email( wp_unslash( (string) $value ) );
+			$email = $this->normalize_email( (string) $value );
 			if ( '' === $email ) {
 				continue;
 			}
@@ -112,7 +112,7 @@ class ASFW_Disposable_Email_Module {
 	public function get_candidate_emails( $context, $post = null, &$used_fallback = false ) {
 		$context = ASFW_Feature_Registry::normalize_context( $context );
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Anti-spam email analysis intentionally reads the submitted payload during verification.
-		$post                   = is_array( $post ) ? $post : $_POST;
+		$post                   = is_array( $post ) ? $post : asfw_unslash_submission( $_POST );
 		$emails                 = array();
 		$used_fallback          = false;
 		$candidate_email_fields = $this->get_candidate_email_fields( $context );
@@ -240,10 +240,10 @@ class ASFW_Disposable_Email_Module {
 		return true;
 	}
 
-	public function log_verify_result( $success, $result, $context, $field_name, $resolved_context = null ) {
+	public function log_verify_result( $success, $result, $context, $field_name, $resolved_context = null, $submission = null ) {
 		$event_context = '' !== trim( (string) $resolved_context ) ? $resolved_context : $context;
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Logging uses the just-verified submission to record privacy-preserving spam signals.
-		$analysis = $this->analyze_submission( $event_context, $_POST );
+		$analysis = $this->analyze_submission( $event_context, $submission );
 
 		if ( empty( $analysis['hit'] ) ) {
 			return;

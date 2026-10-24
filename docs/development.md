@@ -130,6 +130,52 @@ function my_site_contact_submit() {
 
 This public example intentionally allows visitors. A handler modifying private content must also require the appropriate logged-in user and capability. Nonces on long-lived cached pages require their own refresh strategy.
 
+## Explicit fields and JSON transports
+
+`asfw_verify_submission( array $submission, string $context, string $field_name = 'asfw' ): bool`
+accepts **unslashed** parsed fields, such as `WP_REST_Request::get_json_params()` or
+`get_body_params()`. Include the proof and its auxiliary fields exactly as rendered.
+The context must come from application configuration, not a posted field. This helper
+runs supported optional context guards and the full proof verifier, including honeypot,
+minimum age, IP binding, atomic single use, quotas and disposable-email policy. It does
+not replace `$_POST` and fails closed for unavailable or kill-switched protection.
+Legacy `asfw_verify_posted_widget()` retains its documented native bypass behavior.
+
+```php
+$fields = $request->get_json_params();
+if ( ! is_array( $fields ) || ! asfw_verify_submission( $fields, 'custom:newsletter', 'asfw' ) ) {
+    return new WP_Error( 'verification_failed', 'Please complete verification again.', array( 'status' => 422 ) );
+}
+// Validate consent and provider data; apply recipient quotas and idempotency
+// before storing a signup or sending email. Proof does not establish ownership.
+```
+
+Map policy fields to the **authoritative data being persisted**. For example, checkout
+maps `billing_address.email` to `billing_email`, and the comment adapter maps core's
+resolved author address to `email`. Do not accept an unrelated benign alias while
+persisting another address. Event/disposable/content analysis sees these same normalized
+fields; stored output remains bounded and pseudonymous.
+
+`asfw_submission_verified( $normalized_context, $field_name )` is a request-local
+success-only action for dependent operations such as optional registration newsletter
+consent. It never fires for a kill-switch bypass. Bind any dependent action to its
+actual submitted identity and nonce, and do not replay or persist this signal as an
+authorization credential. Existing `asfw_verify_result` listeners may accept a sixth
+argument containing unslashed fields for in-process analysis; never log that array.
+
+The public widget emits a bubbling `asfw:state-change` event with only `{ state }`.
+Proof values remain in the owning form fields and are not included in the event.
+The checkout adapter uses this event to synchronize documented Store API extension
+fields before checkout validation. Blocks automatic verification prepares ahead of
+submission; manual widgets retain their explicit verification control. Completion and
+error recovery renew proofs outside WooCommerce validation observers.
+
+The native checkout adapter protects the actual classic dispatch and Store API POST
+checkout callback, including batch dispatch, after WordPress route permissions. WooCommerce may perform additional Store nonce checks inside its callback; clients must renew a consumed proof after those errors. Gateway preflight
+validation must not consume proofs. All public headless/express checkout clients must
+supply the same `extensions['anti-spam-for-wordpress']` guard fields. Existing-order
+payment routes and administrative/service customer creation are distinct operations.
+
 ## AJAX and cached pages
 
 Lazy challenge loading defers proof-challenge requests until verification starts. Turning it off prefetches one challenge when the widget connects; manual widgets still require the visitor to start verification before solving or setting a proof. An explicit `auto="onload"` setting starts verification immediately and takes precedence over lazy loading. Reset, field changes, and disconnection cancel stale requests; expired prefetched challenges are refreshed before verification.
@@ -171,6 +217,26 @@ The existing `tests/wp-plugin-base/` suite uses WordPress stubs and runs through
 The separate `scripts/test-wordpress-integration.sh` harness starts an isolated real WordPress multisite environment, uses independent PHP workers sharing a database, and verifies consumption races, quotas, lifecycle, schema failures, and uninstall. Before storage mutations, a real browser verifies core admin controls, authenticated REST, settings save/reload/restoration, Events, and Analytics. Every run checks both database-only behavior and an actual Redis object cache, verified across independent PHP processes. CI tests the advertised minimum WordPress 6.4 on PHP 8.3 and the reviewed current WordPress 7.1.2 / PHP 8.3. Set `ASFW_WP_VERSION` and `ASFW_PHP_VERSION` to reproduce either pair locally. Core downloads are version-specific and checksum-verified. It never uses the stub bootstrap. Docker is required.
 
 Run the frontend browser suite with `npm ci`, `npx playwright install`, and `npm run test:browser`; set `ASFW_BROWSER=firefox` or `webkit` for the other engines. Tests load both production scripts and real jQuery for provider lifecycle events. After installing and building the admin app, run `npm run test:admin` from the project root. Its 16 cases comprise 15 mounted React tests for requests, errors, cancellation, tab changes, and preservation of edits during saves, plus the dependency contract test described above.
+
+### Real commerce regression
+
+Run the additional disposable CPT/HPOS fixture with reviewed local provider sources:
+
+```sh
+ASFW_WOOCOMMERCE_SOURCE=/path/to/woocommerce \
+ASFW_REVOLUT_SOURCE=/path/to/revolut-gateway-for-woocommerce \
+bash scripts/test-form-coverage.sh
+```
+
+The core and database images are pinned. It creates an internal network and disposable
+database, intercepts mail/external requests, and exercises real WooCommerce 11.2.1
+classic dispatch, Revolut validation-only preflight and Store API schema/dispatch.
+It asserts missing/wrong/replayed proofs and invalid nonces create no extra users or
+orders, and a verified request creates exactly one of each. Resource labels/IDs fence
+cleanup; diagnostics are retained at the reported temporary log path. Revolut is
+optional for generic consumers but required when certifying that gateway's preflight.
+The fast browser adapter test uses the real ASFW widget with documented Woo interfaces;
+it does not replace this real provider lifecycle fixture or an enabled-wallet rehearsal.
 
 After foundation updates run:
 

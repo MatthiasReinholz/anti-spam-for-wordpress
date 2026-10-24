@@ -32,6 +32,24 @@ The Settings tab follows the setup path an operator normally takes:
 
 The native WordPress Comments placement defaults to `Captcha`. It injects the proof-of-work widget into comment forms for both anonymous and logged-in commenters and validates standard comment submissions on the server. Select `Disable` to opt out.
 
+## Additional form placements
+
+Review placements per site in multisite: activation does not enable every integration.
+The registration placement covers native WordPress registration and multisite signup.
+WooCommerce account registration and anonymous checkout are separate settings. The
+checkout setting covers anonymous guest orders and account creation for classic and
+Blocks checkout; enable it only after validating active payment integrations and any
+headless/express client. Logged-in checkout is outside that guest policy.
+
+Contact Form 7 shortcode mode requires exactly one effective widget in the saved form.
+The submitted signed context cannot choose a different policy. Existing bare and
+explicit widgets remain supported; an invalid/missing template policy fails closed.
+
+The Comments placement also guards core REST comment creation by ordinary customer
+accounts. Moderation-capable authenticated API clients and direct programmatic
+creation retain their separate authorization. Pingbacks/trackbacks do not use browser
+proofs; disable them through the owning site's discussion policy when unused.
+
 ## Widget layout
 
 The **Widget layout** setting offers two consistent layouts:

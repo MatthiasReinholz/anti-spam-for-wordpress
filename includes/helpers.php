@@ -141,35 +141,33 @@ function asfw_print_late_widget_styles() {
 add_action( 'wp_footer', 'asfw_print_late_widget_styles', 0 );
 add_action( 'login_footer', 'asfw_print_late_widget_styles', 0 );
 
-function asfw_get_posted_value( $key ) {
-	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Integrations call this helper only while performing their own anti-spam verification checks.
-	if ( ! isset( $_POST[ $key ] ) ) {
-		return '';
-	}
-
-	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Raw request inspection is required for anti-spam verification.
-	return trim( sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) );
+/** Unslash transport strings without coercing malformed proof/guard values. */
+function asfw_unslash_submission( array $submission ): array {
+	return array_map(
+		static function ( $value ) {
+			return is_string( $value ) ? wp_unslash( $value ) : $value;
+		},
+		$submission
+	);
 }
 
-/**
- * Retrieve a raw proof-of-work payload from $_POST.
- *
- * Unlike asfw_get_posted_value(), this function intentionally skips
- * sanitize_text_field() because the payload is a base64-encoded JSON
- * string that must be preserved verbatim for cryptographic verification.
- * The returned value MUST be passed through decode_payload() before use.
- *
- * @param string $key The $_POST key to retrieve.
- * @return string The raw payload string, or empty string if not set.
- */
-function asfw_get_posted_payload( $key ) {
-	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Integrations call this helper only while performing their own anti-spam verification checks.
-	if ( ! isset( $_POST[ $key ] ) || ! is_string( $_POST[ $key ] ) ) {
+/** Read an unslashed field without accepting arrays, objects or coerced scalars. */
+function asfw_submission_value( array $submission, $key, $sanitize = true ) {
+	if ( ! isset( $submission[ $key ] ) || ! is_string( $submission[ $key ] ) ) {
 		return '';
 	}
+	return trim( $sanitize ? sanitize_text_field( $submission[ $key ] ) : $submission[ $key ] );
+}
 
-	// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- The payload must be read verbatim before cryptographic validation.
-	return trim( wp_unslash( $_POST[ $key ] ) );
+function asfw_get_posted_value( $key ) {
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Called during anti-spam validation; no privileged mutation.
+	return asfw_submission_value( asfw_unslash_submission( $_POST ), $key );
+}
+
+/** Read the raw base64 proof; its verifier performs cryptographic validation. */
+function asfw_get_posted_payload( $key ) {
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- The verifier validates this raw proof before use.
+	return asfw_submission_value( asfw_unslash_submission( $_POST ), $key, false );
 }
 
 function asfw_render_widget_markup( $mode, $context = null, $name = null, $wrap = true, $language = null, $presentation_overrides = array() ) {
@@ -192,6 +190,22 @@ function asfw_verify_posted_widget( $context = null, $field_name = 'asfw' ) {
 	}
 
 	return $plugin->verify( $payload, null, $context, $field_name );
+}
+
+/**
+ * Verify unslashed fields from a custom form or parsed JSON/REST request.
+ *
+ * The expected context is application-owned, never selected from client input.
+ * This full verifier includes honeypot, binding, timing, quotas and single-use
+ * consumption. It never replaces request globals or treats the kill switch as
+ * successful protection. Legacy posted integrations retain their bypass policy.
+ */
+function asfw_verify_submission( array $submission, string $context, string $field_name = 'asfw' ): bool {
+	$plugin = asfw_plugin_instance();
+	if ( ! $plugin instanceof AntiSpamForWordPressPlugin || $plugin->is_kill_switch_enabled() || '' === trim( $context ) ) {
+		return false;
+	}
+	return $plugin->verify_submission( $submission, $context, $field_name );
 }
 
 function asfw_supported_context_guards() {
@@ -247,6 +261,11 @@ function asfw_render_context_guards( $context ) {
 }
 
 function asfw_validate_context_guards( $context ) {
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Legacy form verification.
+	return asfw_validate_context_guard_fields( $context, asfw_unslash_submission( $_POST ) );
+}
+
+function asfw_validate_context_guard_fields( $context, array $submission ) {
 	$plugin  = asfw_plugin_instance();
 	$context = ASFW_Feature_Registry::normalize_context( $context );
 	if ( ! $plugin instanceof AntiSpamForWordPressPlugin || ! asfw_is_context_guard_supported( $context ) ) {
@@ -264,7 +283,7 @@ function asfw_validate_context_guards( $context ) {
 		$result = asfw_emit_context_guard_result(
 			'submit_delay',
 			$context,
-			$plugin->validate_submit_delay_submission( $context, $plugin->get_feature_submit_delay_ms() )
+			$plugin->validate_submit_delay_fields( $context, $plugin->get_feature_submit_delay_ms(), $submission )
 		);
 		if ( $result instanceof WP_Error ) {
 			$plugin->increment_rate_limit( 'failure', $context );
@@ -280,7 +299,7 @@ function asfw_validate_context_guards( $context ) {
 			}
 		}
 
-		$result = asfw_emit_context_guard_result( 'math_challenge', $context, $plugin->validate_math_challenge_submission( $context ) );
+		$result = asfw_emit_context_guard_result( 'math_challenge', $context, $plugin->validate_math_challenge_fields( $context, $submission ) );
 		if ( $result instanceof WP_Error ) {
 			$plugin->increment_rate_limit( 'failure', $context );
 			return $result;

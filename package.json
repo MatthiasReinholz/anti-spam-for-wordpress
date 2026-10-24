@@ -2,7 +2,7 @@
   "name": "anti-spam-for-wordpress-browser-tests",
   "private": true,
   "scripts": {
-    "test:browser": "node --test tests/browser/widget.test.cjs",
+    "test:browser": "node --test tests/browser/*.test.cjs",
     "test:admin": "node --test tests/admin/*.test.cjs"
   },
   "devDependencies": {

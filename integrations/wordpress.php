@@ -4,6 +4,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/class-asfw-multisite-signup.php';
+require_once __DIR__ . '/class-asfw-comment-requests.php';
+ASFW_Multisite_Signup::register();
+ASFW_Comment_Requests::register();
+
 add_action(
 	'register_form',
 	function () {
@@ -310,7 +315,7 @@ add_filter(
 		$remote_request = ( defined( 'REST_REQUEST' ) && REST_REQUEST )
 			|| ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST )
 			|| wp_doing_ajax();
-		if ( ! $provider_request && $remote_request && ! is_user_logged_in() ) {
+		if ( ! $provider_request && $remote_request && ! current_user_can( 'moderate_comments' ) ) {
 			$native_request = true;
 		}
 

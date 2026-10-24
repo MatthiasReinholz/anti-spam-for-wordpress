@@ -503,6 +503,7 @@ class ASFWWidgetElement extends HTMLElement {
     const strings = this.getStrings();
 
     this._state = state;
+    this.dispatchEvent(new CustomEvent('asfw:state-change', { bubbles: true, detail: { state } }));
     if (!this._shell) return;
     this._shell.dataset.state = state;
     this._button.disabled = state === 'verifying';

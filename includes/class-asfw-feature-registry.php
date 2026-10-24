@@ -480,6 +480,17 @@ final class ASFW_Feature_Registry {
 				false,
 				! asfw_plugin_active( 'wpforms' )
 			),
+			'woocommerce_checkout'       => self::build_integration_feature(
+				'woocommerce_checkout',
+				__( 'WooCommerce guest checkout (classic and Blocks)', 'anti-spam-for-wordpress' ),
+				AntiSpamForWordPressPlugin::$option_integration_woocommerce_checkout,
+				'get_integration_woocommerce_checkout',
+				'asfw_settings_woocommerce_checkout_integration_field',
+				'asfw_integrations_settings_section',
+				'woocommerce:checkout',
+				false,
+				! asfw_plugin_active( 'woocommerce' )
+			),
 			'woocommerce_register'       => self::build_integration_feature(
 				'woocommerce_register',
 				__( 'WooCommerce register page', 'anti-spam-for-wordpress' ),
@@ -531,7 +542,7 @@ final class ASFW_Feature_Registry {
 			),
 			'wordpress_register'         => self::build_integration_feature(
 				'wordpress_register',
-				__( 'Register page', 'anti-spam-for-wordpress' ),
+				__( 'Register page and multisite signup', 'anti-spam-for-wordpress' ),
 				AntiSpamForWordPressPlugin::$option_integration_wordpress_register,
 				'get_integration_wordpress_register',
 				'asfw_settings_wordpress_register_integration_field',
@@ -591,6 +602,8 @@ final class ASFW_Feature_Registry {
 				}
 			)
 		);
+
+		$features['wordpress_register']['contexts'][] = 'WordPress:multisite-register';
 
 		return apply_filters( 'asfw_feature_registry_integrations', $features );
 	}
