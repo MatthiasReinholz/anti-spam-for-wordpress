@@ -241,11 +241,6 @@ It reads the current submitted form's saved template, not posted context fields.
 4. Custom shortcode usage
 5. Floating UI example
 
-== Upgrade Notice ==
-
-= 0.11.0 =
-Checkout protection is opt-in. Configured protection now covers native multisite signup and non-moderator REST comments; manual CF7 checks saved widget policy. Review custom/headless clients and refresh cached form assets. See the upgrade guide before enabling new placements.
-
 == Changelog ==
 
 = 0.11.0 =
@@ -534,3 +529,8 @@ Checkout protection is opt-in. Configured protection now covers native multisite
 * Removed hosted API modes and remote spam classification.
 * Added settings migration compatibility for existing installs.
 * Replaced the shortcode with `[anti_spam_widget]`.
+
+== Upgrade Notice ==
+
+= 0.11.0 =
+Checkout protection is opt-in. Configured protection now covers native multisite signup and non-moderator REST comments; manual CF7 checks saved widget policy. Review custom/headless clients and refresh cached form assets. See the upgrade guide before enabling new placements.
