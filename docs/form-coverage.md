@@ -1,6 +1,6 @@
 # Form coverage implementation and rollout
 
-The plugin provides the integrations below. Installing a release and enabling
+Version 0.11.0 provides the integrations below. Installing a release and enabling
 site policies are separate steps: activation alone does not enable every
 placement. Verify each configured public form after deployment.
 

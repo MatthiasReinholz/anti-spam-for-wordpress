@@ -1,6 +1,6 @@
 # Updating an existing installation
 
-Version 0.10.2 preserves existing settings and event data. Updating from 0.10.0 or 0.10.1 does not introduce a new database schema or reset configuration. Sites skipping older releases need the checks below: the supported platform, client-IP handling, challenge limits and some legacy settings have changed over the project's lifetime.
+Version 0.11.0 preserves existing settings, event data and the challenge storage format. It adds opt-in checkout protection and extends configured enforcement to native multisite signup, REST comments and saved-template CF7 policy; review the coverage changes below. Sites skipping older releases also need the platform, client-IP, quota and legacy-setting checks in this guide.
 
 ## Before updating
 
@@ -12,7 +12,7 @@ Version 0.10.2 preserves existing settings and event data. Updating from 0.10.0 
 
 Current automated tests cover supported WordPress versions, storage behavior and integration contracts, including WordPress 7.1.2 on PHP 8.3 and 8.4. They cannot establish compatibility with every historical installation, theme or commercial form-plugin version. Test the integrations your site actually uses.
 
-## New form coverage (next release)
+## New form coverage in 0.11.0
 
 The added guest-checkout placement is opt-in and independent of account registration.
 Deploy the complete compatible plugin fleet before enabling it; old workers do not

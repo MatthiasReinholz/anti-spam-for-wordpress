@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.10.6
-Stable tag: 0.10.6
+Version: 0.11.0
+Stable tag: 0.11.0
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 7.1
@@ -242,6 +242,15 @@ It reads the current submitted form's saved template, not posted context fields.
 5. Floating UI example
 
 == Changelog ==
+
+= 0.11.0 =
+* Add - Separate opt-in anonymous classic and Blocks/Store API checkout protection, including account creation, retries and gateway preflight isolation.
+* Add - Explicit unslashed-field verification for JSON/custom transports and a success-only verification action.
+* Add - Native multisite signup and core REST comment protection while preserving programmatic creation and authorized moderation.
+* Fix - Derive manual Contact Form 7 verification policy from saved templates while preserving renderer defaults, context filters and the emergency bypass.
+* Dev - Resolve admin toolchain advisories with compatible dependency updates; preserve verified backports and unchanged security gates.
+* Dev - Document integration boundaries, upgrade requirements and verification APIs; extend regression coverage.
+* Dev - Update the signed foundation to v1.10.14 with public-only remediation provenance and compatible development tooling.
 
 = 0.10.6 =
 * Dev - Maintenance release: plugin runtime code and built admin assets are unchanged from 0.10.5.
@@ -521,3 +530,8 @@ It reads the current submitted form's saved template, not posted context fields.
 * Removed hosted API modes and remote spam classification.
 * Added settings migration compatibility for existing installs.
 * Replaced the shortcode with `[anti_spam_widget]`.
+
+== Upgrade Notice ==
+
+= 0.11.0 =
+Checkout protection is opt-in. Configured protection now covers native multisite signup and non-moderator REST comments; manual CF7 checks saved widget policy. Review custom/headless clients and refresh cached form assets. See the upgrade guide before enabling new placements.
