@@ -241,16 +241,20 @@ It reads the current submitted form's saved template, not posted context fields.
 4. Custom shortcode usage
 5. Floating UI example
 
+== Upgrade Notice ==
+
+= 0.11.0 =
+Checkout protection is opt-in. Configured protection now covers native multisite signup and non-moderator REST comments; manual CF7 checks saved widget policy. Review custom/headless clients and refresh cached form assets. See the upgrade guide before enabling new placements.
+
 == Changelog ==
 
 = 0.11.0 =
-* Add - Add separate anonymous classic and Blocks/Store API checkout protection, including account creation, retry handling and gateway preflight isolation.
-* Add - Add explicit unslashed-field verification for JSON/custom transports and a success-only verification action.
-* Add - Add native multisite signup and core REST comment protection while preserving programmatic creation and authorized moderation.
-* Fix - Fix manual Contact Form 7 verification to derive policy from saved templates while preserving the emergency bypass.
-* Dev - Dev - Document integration boundaries, upgrade requirements and verification APIs; extend regression coverage.
-* Dev - Dev - Resolve admin toolchain advisories with compatible body-parser, fast-uri, serialize-javascript and Puppeteer/Zod updates; preserve integrity-bound backports and unchanged security gates.
-
+* Add - Separate opt-in anonymous classic and Blocks/Store API checkout protection, including account creation, retries and gateway preflight isolation.
+* Add - Explicit unslashed-field verification for JSON/custom transports and a success-only verification action.
+* Add - Native multisite signup and core REST comment protection while preserving programmatic creation and authorized moderation.
+* Fix - Derive manual Contact Form 7 verification policy from saved templates while preserving renderer defaults, context filters and the emergency bypass.
+* Dev - Resolve admin toolchain advisories with compatible dependency updates; preserve verified backports and unchanged security gates.
+* Dev - Document integration boundaries, upgrade requirements and verification APIs; extend regression coverage.
 
 = 0.10.6 =
 * Dev - Maintenance release: plugin runtime code and built admin assets are unchanged from 0.10.5.

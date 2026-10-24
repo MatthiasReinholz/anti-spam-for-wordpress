@@ -125,9 +125,9 @@ The project has coherent service, provider-adapter and admin-component boundarie
 The correction and documentation were merged through [PR #104](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/pull/104) after all **16 hosted checks** passed on commit `54042c42af9d33f7f6012e0c389e74fc34d732f9`. The [CI](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/actions/runs/36150685377), [browser](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/actions/runs/36150685439) and [WordPress integration](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/actions/runs/36150685357) runs cover the supported matrix. Patch release **0.10.2** is prepared through [PR #105](https://github.com/MatthiasReinholz/anti-spam-for-wordpress/pull/105); its protected checks and independently verified publication remain the release completion evidence. It changes no verification format, settings precedence or database schema relative to 0.10.1.
 
 
-## Form coverage follow-up, 23 October 2026
+## Form coverage release audit, 24 October 2026
 
-The next feature release adds explicit-field JSON verification, distinct classic
+Version 0.11.0 adds explicit-field JSON verification, distinct classic
 and Blocks/Store API guest checkout, native multisite signup dispatch protection,
 core REST comment insertion protection and server-derived CF7 template policy.
 The implementation preserves programmatic creation and authorized moderation.
@@ -137,7 +137,11 @@ analysis uses the same normalized data as the verifier.
 An independent review covered the plugin implementation and documentation.
 The review led to authoritative REST author-email mapping, consistent context-filter
 and JSON logging behavior, native gateway-preflight isolation, visible Blocks
-capability errors, and saved-template CF7 policy that preserves existing markup.
+capability errors, and saved-template CF7 policy that preserves existing markup
+and the native emergency bypass. The full PHP suite passes 570 tests with 3,338
+assertions. All 66 browser cases pass in Chromium, Firefox and WebKit; the admin
+suite passes 16 cases. The refreshed qualified dependency audit has no residual
+or blocked advisories.
 Validation includes PHPUnit, full widget/admin browser suites, static/security
 checks and a disposable real WordPress/WooCommerce CPT/HPOS fixture with actual
 Revolut preflight and Store API dispatch/schema/mutation assertions. This is source
