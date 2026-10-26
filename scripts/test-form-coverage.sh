@@ -59,17 +59,20 @@ if [[ -n "$gateway_source" ]]; then
   gateway_source="$(cd "$gateway_source" && pwd)"
   gateway_arguments=(-v "$gateway_source:/gateway:ro" -e ASFW_REVOLUT_ROOT=/gateway)
 fi
-for storage in CPT HPOS; do
-  test_id="$(docker create --label "asfw.fixture.owner=$owner" --network "$network_id" -e ASFW_FORM_COVERAGE_DISPOSABLE=true -e ASFW_FORM_STORAGE="$storage" \
-    -e WP_TEST_CORE_ROOT=/usr/src/wordpress -e ASFW_WOOCOMMERCE_ROOT=/woocommerce \
-    -v "$repo_root:/plugin:ro" -v "$woo_source:/woocommerce:ro" "${gateway_arguments[@]}" \
-    --entrypoint php "$core_image" /plugin/tests/integration/form-coverage.php)"
-  docker start -a "$test_id" 2>&1 | tee -a "$test_log"
-  test_exit="$(docker inspect --format '{{.State.ExitCode}}' "$test_id")"
-  [[ "$test_exit" == 0 ]] || { echo "The $storage fixture exited with $test_exit." >&2; exit 1; }
-  cleanup_container "$test_id"
-  test_id=""
-  grep -Fxq "Real WooCommerce ASFW $storage form coverage passed." "$test_log" || {
-    echo "The $storage fixture did not reach its completion assertion." >&2; exit 1;
-  }
+for presentation in visual-manual visual-auto invisible; do
+  for storage in CPT HPOS; do
+    test_id="$(docker create --label "asfw.fixture.owner=$owner" --network "$network_id" -e ASFW_FORM_COVERAGE_DISPOSABLE=true -e ASFW_FORM_STORAGE="$storage" \
+      -e ASFW_FORM_PRESENTATION="$presentation" \
+      -e WP_TEST_CORE_ROOT=/usr/src/wordpress -e ASFW_WOOCOMMERCE_ROOT=/woocommerce \
+      -v "$repo_root:/plugin:ro" -v "$woo_source:/woocommerce:ro" "${gateway_arguments[@]}" \
+      --entrypoint php "$core_image" /plugin/tests/integration/form-coverage.php)"
+    docker start -a "$test_id" 2>&1 | tee -a "$test_log"
+    test_exit="$(docker inspect --format '{{.State.ExitCode}}' "$test_id")"
+    [[ "$test_exit" == 0 ]] || { echo "The $storage/$presentation fixture exited with $test_exit." >&2; exit 1; }
+    cleanup_container "$test_id"
+    test_id=""
+    grep -Fxq "Real WooCommerce ASFW $storage $presentation form coverage passed." "$test_log" || {
+      echo "The $storage/$presentation fixture did not reach its completion assertion." >&2; exit 1;
+    }
+  done
 done

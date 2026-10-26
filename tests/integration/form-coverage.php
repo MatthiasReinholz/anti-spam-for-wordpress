@@ -6,7 +6,7 @@ if (getenv('ASFW_FORM_COVERAGE_DISPOSABLE') !== 'true') {
     throw new RuntimeException('Use scripts/test-form-coverage.sh with its disposable database.');
 }
 if ($argc === 1) {
-    foreach (['classic-missing', 'classic-valid', 'classic-preflight', 'store-missing', 'store-missing-mixed-case', 'store-wrong-context', 'store-valid-replay', 'store-invalid-nonce', 'store-schema'] as $case) {
+    foreach (['classic-missing', 'classic-valid', 'classic-preflight', 'classic-guest', 'classic-guest-missing', 'classic-disabled', 'classic-logged-in', 'store-missing', 'store-missing-mixed-case', 'store-wrong-context', 'store-valid-replay', 'store-invalid-nonce', 'store-schema', 'store-guest', 'store-guest-missing', 'store-disabled', 'store-logged-in', 'register-missing', 'register-valid', 'register-invalid-nonce', 'register-wrong-context', 'register-retry'] as $case) {
         $process = proc_open([PHP_BINARY, __FILE__, $case], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
         if (!is_resource($process)) { throw new RuntimeException('Could not start isolated form fixture request.'); }
         $output = stream_get_contents($pipes[1]);
@@ -16,7 +16,7 @@ if ($argc === 1) {
         echo $output;
         if ($error !== '') { fwrite(STDERR, $error); }
     }
-    echo 'Real WooCommerce ASFW ' . getenv('ASFW_FORM_STORAGE') . " form coverage passed.\n";
+    echo 'Real WooCommerce ASFW ' . getenv('ASFW_FORM_STORAGE') . ' ' . getenv('ASFW_FORM_PRESENTATION') . " form coverage passed.\n";
     exit;
 }
 
@@ -83,10 +83,29 @@ foreach (WC()->mailer()->get_emails() as $email) { add_filter('woocommerce_email
 require dirname(__DIR__, 2) . '/anti-spam-for-wordpress.php';
 asfw_activate(); asfw_init();
 update_option('asfw_integration_woocommerce_checkout', 'captcha');
+update_option('asfw_integration_woocommerce_register', 'captcha');
 update_option('asfw_min_submit_time', '0');
 update_option('asfw_complexity', 'low');
 update_option('asfw_rate_limit_max_challenges', '100');
 update_option('asfw_kill_switch', '0');
+$presentation = getenv('ASFW_FORM_PRESENTATION');
+if (!in_array($presentation, ['visual-manual', 'visual-auto', 'invisible'], true)) {
+    throw new RuntimeException('An explicit supported presentation fixture is required.');
+}
+update_option('asfw_auto', $presentation === 'visual-auto' ? 'onload' : '');
+if ($presentation === 'invisible') {
+    add_filter('asfw_widget_attrs', static function (array $attrs): array {
+        $attrs['presentation'] = 'invisible';
+        return $attrs;
+    });
+}
+if (str_ends_with($case, '-disabled')) { update_option('asfw_integration_woocommerce_checkout', ''); }
+if (str_ends_with($case, '-logged-in')) {
+    $existing = wc_create_new_customer('existing@example.invalid');
+    if (is_wp_error($existing)) { throw new RuntimeException('Could not create the existing fixture customer.'); }
+    wp_set_current_user($existing);
+    WC()->customer = new WC_Customer($existing);
+}
 $product = new WC_Product_Simple();
 $product->set_name('Disposable verification fixture');
 $product->set_regular_price('10');
@@ -95,22 +114,33 @@ $product->save();
 WC()->cart->add_to_cart($product->get_id(), 1);
 WC()->cart->calculate_totals();
 
-function asfw_forms_check(bool $condition, string $message): void {
-    if (!$condition) { throw new RuntimeException($message); }
+function asfw_forms_check(bool $condition, string $message, array $details = []): void {
+    if (!$condition) { throw new RuntimeException($message . ($details ? ': ' . wp_json_encode($details) : '')); }
     echo 'PASS ' . $message . "\n";
 }
-function asfw_forms_proof(string $context = 'woocommerce:checkout'): array {
+function asfw_forms_check_widget(string $markup, string $context, string $field): void {
+    $tag = new WP_HTML_Tag_Processor($markup);
+    asfw_forms_check($tag->next_tag('ASFW-WIDGET'), $context . ': provider renders a proof widget');
+    asfw_forms_check($tag->get_attribute('name') === $field && $tag->get_attribute('data-asfw-context') === $context, $context . ': rendered proof matches server policy');
+    $presentation = getenv('ASFW_FORM_PRESENTATION');
+    if ($presentation === 'invisible') {
+        asfw_forms_check($tag->get_attribute('presentation') === 'invisible' && $tag->get_attribute('hidden') === 'hidden' && $tag->get_attribute('auto') === 'onsubmit', $context . ': invisible widget cannot leave an inaccessible manual control');
+    } else {
+        asfw_forms_check($tag->get_attribute('hidden') === null && $tag->get_attribute('auto') === ($presentation === 'visual-auto' ? 'onload' : null), $context . ': visible mode preserves manual or automatic choice');
+    }
+}
+function asfw_forms_proof(string $context = 'woocommerce:checkout', string $field = 'asfw_checkout'): array {
     $plugin = asfw_plugin_instance();
     $challenge = $plugin->generate_challenge(null, 'low', 300, $context);
     if (!is_array($challenge)) { throw new RuntimeException('Could not issue fixture proof.'); }
     for ($number = 0; $number <= (int)$challenge['maxnumber']; $number++) {
         if (hash('sha256', $challenge['salt'] . $number) !== $challenge['challenge']) { continue; }
         return [
-            'asfw_checkout' => base64_encode(wp_json_encode(['algorithm' => $challenge['algorithm'], 'challenge' => $challenge['challenge'], 'number' => $number, 'salt' => $challenge['salt'], 'signature' => $challenge['signature']])),
-            'asfw_checkout_started' => (string)(time() - 10),
-            'asfw_checkout_context' => $context,
-            'asfw_checkout_context_sig' => $plugin->sign_widget_context($context, 'asfw_checkout'),
-            'asfw_checkout_website' => '',
+            $field => base64_encode(wp_json_encode(['algorithm' => $challenge['algorithm'], 'challenge' => $challenge['challenge'], 'number' => $number, 'salt' => $challenge['salt'], 'signature' => $challenge['signature']])),
+            $field . '_started' => (string)(time() - 10),
+            $field . '_context' => $context,
+            $field . '_context_sig' => $plugin->sign_widget_context($context, $field),
+            $field . '_website' => '',
         ];
     }
     throw new RuntimeException('Could not solve fixture proof.');
@@ -134,22 +164,53 @@ function asfw_forms_classic(): array {
     if (!is_array($decoded)) { throw new RuntimeException('Checkout did not return JSON: ' . $body); }
     return $decoded;
 }
-function asfw_forms_store(array $proof, string $nonce = '', string $route = '/wc/store/v1/checkout'): WP_REST_Response {
+function asfw_forms_store(array $proof, string $nonce = '', string $route = '/wc/store/v1/checkout', bool $create_account = true): WP_REST_Response {
     $request = new WP_REST_Request('POST', $route);
     $request->set_header('Content-Type', 'application/json');
     $request->set_header('Nonce', $nonce ?: wp_create_nonce('wc_store_api'));
     $request->set_body(wp_json_encode([
         'billing_address' => ['first_name' => 'Fixture', 'last_name' => 'Customer', 'email' => 'store@example.invalid', 'phone' => '+49305550000', 'country' => 'DE', 'address_1' => 'Example Street 1', 'city' => 'Berlin', 'postcode' => '10115'],
-        'payment_method' => 'bacs', 'create_account' => true,
+        'payment_method' => 'bacs', 'create_account' => $create_account,
         'extensions' => [ASFW_WooCommerce_Checkout::NAMESPACE => $proof],
     ]));
     return rest_get_server()->dispatch($request);
 }
 
 $before = asfw_forms_counts();
-if (str_starts_with($case, 'classic-')) {
+if (str_starts_with($case, 'register-')) {
+    $_SERVER['REQUEST_URI'] = '/my-account/';
+    add_filter('woocommerce_registration_auth_new_customer', '__return_false'); // Keep the actual handler in-process instead of redirecting/exiting.
+    ob_start(); do_action('woocommerce_register_form'); $markup = (string)ob_get_clean();
+    asfw_forms_check_widget($markup, 'woocommerce:register', 'asfw_register');
+    $_POST = ['register' => 'Register', 'email' => $case === 'register-retry' ? 'invalid-email' : 'account@example.invalid', 'woocommerce-register-nonce' => $case === 'register-invalid-nonce' ? 'invalid-nonce' : wp_create_nonce('woocommerce-register')];
+    if ($case !== 'register-missing') { $_POST += asfw_forms_proof($case === 'register-wrong-context' ? 'woocommerce:checkout' : 'woocommerce:register', 'asfw_register'); }
+    WC_Form_Handler::process_registration();
+    $after = asfw_forms_counts();
+    if ($case === 'register-valid') {
+        asfw_forms_check($after['users'] === $before['users'] + 1 && $after['orders'] === $before['orders'] && wc_notice_count('error') === 0, 'real account registration accepts one proof without a checkout proof');
+    } elseif ($case === 'register-invalid-nonce') {
+        asfw_forms_check($after === $before, 'invalid account nonce creates no customer');
+        $_POST['woocommerce-register-nonce'] = wp_create_nonce('woocommerce-register');
+        WC_Form_Handler::process_registration();
+        asfw_forms_check(asfw_forms_counts()['users'] === $before['users'] + 1 && wc_notice_count('error') === 0, 'invalid nonce did not consume valid account proof');
+    } elseif ($case === 'register-retry') {
+        asfw_forms_check($after === $before && wc_notice_count('error') > 0, 'invalid signup data creates no customer after verification');
+        wc_clear_notices(); $_POST['email'] = 'account@example.invalid';
+        WC_Form_Handler::process_registration();
+        asfw_forms_check(asfw_forms_counts() === $before && wc_notice_count('error') > 0, 'a consumed signup proof cannot be reused after validation failure');
+        wc_clear_notices(); $_POST = array_replace($_POST, asfw_forms_proof('woocommerce:register', 'asfw_register'));
+        WC_Form_Handler::process_registration();
+        asfw_forms_check(asfw_forms_counts()['users'] === $before['users'] + 1 && wc_notice_count('error') === 0, 'corrected signup succeeds with a renewed proof');
+    } else {
+        asfw_forms_check($after === $before && wc_notice_count('error') > 0, 'real account registration rejects missing or checkout-context proof before customer creation');
+    }
+} elseif (str_starts_with($case, 'classic-')) {
+    ob_start(); ASFW_WooCommerce_Checkout::render_classic(); $markup = (string)ob_get_clean();
+    if (ASFW_WooCommerce_Checkout::requires_protection()) { asfw_forms_check_widget($markup, 'woocommerce:checkout', 'asfw_checkout'); }
+    else { asfw_forms_check($markup === '', 'disabled and authenticated classic checkout do not render a required widget'); }
     $_POST = asfw_forms_fields();
-    if ($case !== 'classic-missing') { $_POST += asfw_forms_proof(); }
+    if (in_array($case, ['classic-guest', 'classic-guest-missing'], true)) { unset($_POST['createaccount']); }
+    if (!in_array($case, ['classic-missing', 'classic-guest-missing', 'classic-disabled', 'classic-logged-in'], true)) { $_POST += asfw_forms_proof(); }
     if ($case === 'classic-preflight') {
         $gateway = getenv('ASFW_REVOLUT_ROOT');
         if ($gateway && is_file($gateway . '/includes/class-wc-revolut-validate-checkout.php')) {
@@ -167,20 +228,30 @@ if (str_starts_with($case, 'classic-')) {
     }
     $response = asfw_forms_classic();
     $after = asfw_forms_counts();
-    if ($case === 'classic-missing') {
-        asfw_forms_check(($response['result'] ?? '') === 'failure' && str_contains($response['messages'] ?? '', 'spam verification'), 'actual classic checkout rejects missing proof: ' . wp_json_encode($response));
+    if (in_array($case, ['classic-missing', 'classic-guest-missing'], true)) {
+        asfw_forms_check(($response['result'] ?? '') === 'failure' && str_contains($response['messages'] ?? '', 'spam verification'), 'actual classic checkout rejects missing proof', $response);
         asfw_forms_check($after === $before, 'rejected classic checkout creates no user or order');
     } else {
         asfw_forms_check(($response['result'] ?? '') === 'success', 'actual classic checkout accepts verified proof');
-        asfw_forms_check($after['users'] === $before['users'] + 1 && $after['orders'] === $before['orders'] + 1, 'verified classic checkout creates exactly one customer and order');
+        $new_customer = !in_array($case, ['classic-guest', 'classic-logged-in'], true);
+        asfw_forms_check($after['users'] === $before['users'] + (int)$new_customer && $after['orders'] === $before['orders'] + 1, 'classic checkout preserves the requested guest or customer account outcome');
     }
 } else {
     Automattic\WooCommerce\Blocks\Package::init();
     do_action('woocommerce_blocks_loaded');
     ASFW_WooCommerce_Checkout::register_schema();
     do_action('rest_api_init', rest_get_server());
+    Automattic\WooCommerce\Blocks\Package::container()->get(Automattic\WooCommerce\Blocks\AssetsController::class)->register_assets();
+    ASFW_WooCommerce_Checkout::render_blocks('<div>Checkout fixture</div>');
+    if (ASFW_WooCommerce_Checkout::requires_protection()) {
+        $localized = wp_scripts()->get_data('asfw-checkout-blocks', 'data');
+        if (!is_string($localized) || !preg_match('/var ASFW_CHECKOUT = (\{.+\});/s', $localized, $matches)) { throw new RuntimeException('Missing actual Blocks adapter configuration.'); }
+        $config = json_decode($matches[1], true, 512, JSON_THROW_ON_ERROR);
+        asfw_forms_check_widget($config['markup'], 'woocommerce:checkout', 'asfw_checkout');
+    } else {
+        asfw_forms_check(!wp_script_is('asfw-checkout-blocks', 'enqueued'), 'disabled and authenticated Blocks checkout do not enqueue a required widget');
+    }
     if ($case === 'store-schema') {
-        Automattic\WooCommerce\Blocks\Package::container()->get(Automattic\WooCommerce\Blocks\AssetsController::class)->register_assets();
         asfw_forms_check(ASFW_WooCommerce_Checkout::supports_blocks(), 'tested WooCommerce registers every required Blocks adapter capability');
         $routes = rest_get_server()->get_routes();
         $registered = false;
@@ -190,22 +261,26 @@ if (str_starts_with($case, 'classic-')) {
         }
         asfw_forms_check($registered, 'real Store API schema accepts the registered proof namespace');
     } else {
-        $proof = in_array($case, ['store-missing', 'store-missing-mixed-case'], true) ? [] : asfw_forms_proof($case === 'store-wrong-context' ? 'woocommerce:register' : 'woocommerce:checkout');
+        $proof = in_array($case, ['store-missing', 'store-missing-mixed-case', 'store-guest-missing', 'store-disabled', 'store-logged-in'], true) ? [] : asfw_forms_proof($case === 'store-wrong-context' ? 'woocommerce:register' : 'woocommerce:checkout');
         $route = $case === 'store-missing-mixed-case' ? '/wc/store/v1/CHECKOUT' : '/wc/store/v1/checkout';
-        $response = asfw_forms_store($proof, $case === 'store-invalid-nonce' ? 'invalid-nonce' : '', $route);
+        $response = asfw_forms_store($proof, $case === 'store-invalid-nonce' ? 'invalid-nonce' : '', $route, !in_array($case, ['store-guest', 'store-guest-missing', 'store-logged-in'], true));
         $data = $response->get_data(); $after = asfw_forms_counts();
         if ($case === 'store-valid-replay') {
-            asfw_forms_check($response->get_status() === 200, 'real Store API dispatch accepts JSON proof: ' . wp_json_encode($data));
+            asfw_forms_check($response->get_status() === 200, 'real Store API dispatch accepts JSON proof', $data);
             asfw_forms_check($after['users'] === $before['users'] + 1 && $after['orders'] === $before['orders'] + 1, 'verified Store API creates exactly one customer and order');
             wp_set_current_user(0); WC()->customer = new WC_Customer(0, true);
             $replay = asfw_forms_store($proof);
             asfw_forms_check($replay->get_status() === 422 && ($replay->get_data()['code'] ?? '') === 'asfw_checkout_verification', 'real Store API rejects replay before provider mutation');
             asfw_forms_check(asfw_forms_counts() === $after, 'replay creates no additional user or order');
+        } elseif (in_array($case, ['store-guest', 'store-disabled', 'store-logged-in'], true)) {
+            asfw_forms_check($response->get_status() === 200, 'real Store API preserves guest, disabled and authenticated checkout', $data);
+            $new_customer = $case === 'store-disabled';
+            asfw_forms_check($after['users'] === $before['users'] + (int)$new_customer && $after['orders'] === $before['orders'] + 1, 'Store API checkout preserves the requested guest or customer account outcome');
         } elseif ($case === 'store-invalid-nonce') {
             asfw_forms_check($response->get_status() === 403 && ($data['code'] ?? '') === 'woocommerce_rest_invalid_nonce', 'Store API still enforces its callback-internal nonce after proof');
             asfw_forms_check($after === $before, 'invalid Store API nonce creates no user or order');
         } else {
-            asfw_forms_check($response->get_status() === 422 && ($data['code'] ?? '') === 'asfw_checkout_verification', 'real Store API rejects missing or wrong-context proof: ' . wp_json_encode(['status' => $response->get_status(), 'data' => $data]));
+            asfw_forms_check($response->get_status() === 422 && ($data['code'] ?? '') === 'asfw_checkout_verification', 'real Store API rejects missing or wrong-context proof', ['status' => $response->get_status(), 'data' => $data]);
             asfw_forms_check($after === $before, 'rejected Store API request creates no user or order');
         }
     }

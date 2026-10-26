@@ -270,12 +270,24 @@ bash scripts/test-form-coverage.sh
 
 The core and database images are pinned. It creates an internal network and disposable
 database, intercepts mail/external requests, and exercises real WooCommerce 11.2.1
-classic dispatch, Revolut validation-only preflight and Store API schema/dispatch.
-It asserts missing/wrong/replayed proofs and invalid nonces create no extra users or
-orders, and a verified request creates exactly one of each. Resource labels/IDs fence
+classic dispatch, Revolut validation-only preflight, Store API schema/dispatch and
+the native account-registration handler. Each case runs in visible manual, visible
+automatic and invisible presentation with both CPT and HPOS storage. Actual rendered
+markup and Blocks configuration must match the server's context, field and mode.
+Both account-registration and checkout placements are enabled together to catch
+unrendered or double-proof requirements.
+
+Missing/wrong/replayed proofs and invalid nonces create no extra users or orders.
+Verified checkout preserves guest checkout or creates exactly one customer when
+requested; signed-in and disabled-protection checkout need no browser proof.
+Account signup rejects checkout-context proof and succeeds with a renewed proof
+after invalid signup data. Resource labels/IDs fence
 cleanup; diagnostics are retained at the reported temporary log path. Revolut is
 optional for generic consumers but required when certifying that gateway's preflight.
-The fast browser adapter test uses the real ASFW widget with documented Woo interfaces;
+The browser tests exercise all three presentations for Blocks synchronization and
+payment-error recovery, classic checkout submission/error renewal and native account
+signup, including a fresh rendered form after server validation fails. They use the
+real ASFW widget with documented Woo interfaces;
 it does not replace this real provider lifecycle fixture or an enabled-wallet rehearsal.
 
 After foundation updates run:
