@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Anti Spam for WordPress 0.11.0\n"
+"Project-Id-Version: Anti Spam for WordPress 0.11.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/anti-spam-for-wordpress\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-24T18:14:09+00:00\n"
+"POT-Creation-Date: 2026-10-26T06:30:55+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: anti-spam-for-wordpress\n"
@@ -217,7 +217,7 @@ msgstr ""
 #: includes/class-asfw-verifier.php:264
 #: includes/class-asfw-verifier.php:279
 #: includes/class-asfw-verifier.php:288
-#: includes/class-asfw-verifier.php:364
+#: includes/class-asfw-verifier.php:370
 #: integrations/elementor/class-elementor-form-antispamwidget-field.php:72
 #: integrations/formidable/class-antispamwidgetfieldtype.php:49
 msgid "Verification failed."
@@ -1258,6 +1258,7 @@ msgid "Math challenge is not enabled for this context."
 msgstr ""
 
 #: integrations/class-asfw-comment-requests.php:41
+#: integrations/class-asfw-contact-form-7.php:63
 #: integrations/class-asfw-multisite-signup.php:68
 #: integrations/forminator.php:39
 #: integrations/gravityforms/class-asfw-gfforms-field.php:75
@@ -1287,7 +1288,7 @@ msgstr ""
 msgid "Spam protection"
 msgstr ""
 
-#: integrations/class-asfw-woocommerce-checkout.php:200
+#: integrations/class-asfw-woocommerce-checkout.php:201
 msgid "Please complete spam verification before placing your order."
 msgstr ""
 

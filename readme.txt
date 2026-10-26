@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.11.0
-Stable tag: 0.11.0
+Version: 0.11.1
+Stable tag: 0.11.1
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 7.1
@@ -242,6 +242,10 @@ It reads the current submitted form's saved template, not posted context fields.
 5. Floating UI example
 
 == Changelog ==
+
+= 0.11.1 =
+* Update - fix: close form validation gaps and preserve extension contracts.
+
 
 = 0.11.0 =
 * Add - Separate opt-in anonymous classic and Blocks/Store API checkout protection, including account creation, retries and gateway preflight isolation.
