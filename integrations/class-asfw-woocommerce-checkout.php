@@ -140,9 +140,10 @@ final class ASFW_WooCommerce_Checkout {
 	 */
 	public static function validate_store_api( $response, $request, $route = '', $handler = array() ) {
 		unset( $route, $handler );
+		// WordPress REST routes are case-insensitive; equivalent paths need the same policy.
 		if ( null !== $response || ! self::requires_protection() || ! $request instanceof WP_REST_Request
 			|| 'POST' !== $request->get_method()
-			|| 1 !== preg_match( '#^/wc/store/(?:v[0-9]+/)?checkout/?$#', $request->get_route() ) ) {
+			|| 1 !== preg_match( '#^/wc/store/(?:v[0-9]+/)?checkout/?$#i', $request->get_route() ) ) {
 			return $response;
 		}
 

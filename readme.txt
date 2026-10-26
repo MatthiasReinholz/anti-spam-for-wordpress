@@ -231,7 +231,7 @@ No. Render a context-bound widget and call `asfw_verify_submission()` with unsla
 
 = How does Contact Form 7 shortcode mode select its policy? =
 
-It reads the current submitted form's saved template, not posted context fields. Exactly one effective widget is required. Legacy bare shortcodes and explicit context/name attributes are supported; escaped literals are ignored. Automatic mode uses the fixed contact-form-7 context.
+It reads the current submitted form's saved template, not posted context fields. Exactly one effective widget is required. Legacy bare shortcodes and explicit context/name attributes are supported; escaped literals are ignored. Automatic mode uses the fixed contact-form-7 context. Both modes verify during Contact Form 7 validation, including subscriber-only forms and paths that skip spam checks or mail. Failed verification returns the standard validation failure response.
 
 == Screenshots ==
 

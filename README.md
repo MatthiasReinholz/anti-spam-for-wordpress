@@ -35,6 +35,12 @@ If you enable Bunny Shield, the module observes repeated abuse locally first, th
 
 If you place the widget manually with `[anti_spam_widget]` while the **Custom HTML** integration is disabled, pass `mode="captcha"` or `mode="shortcode"` explicitly so the shortcode still renders.
 
+Contact Form 7 protection runs during provider validation in both automatic and
+shortcode modes. It also covers subscriber-only forms and paths that skip spam
+checks or mail delivery. Custom clients must handle validation failures and renew
+proofs before retrying. See the [coverage matrix](docs/form-coverage.md) for each
+integration's enforcement boundary.
+
 ### Native comments and comment APIs
 
 Proof-of-work protection for native WordPress comment forms is enabled by default under **Protection Placements -> Comments**. It applies to anonymous and logged-in browser submissions, including wpDiscuz forms when they use the WordPress fallback policy.
@@ -321,13 +327,19 @@ apply_filters('asfw_client_binding_components', array $components, string $bindi
 do_action('asfw_rate_limited', string $type, string $context, array $state)
 ```
 
-**`asfw_verify_result`** — Fires after every verification attempt.
+**`asfw_verify_result`** — Fires after shared proof verification. Rejections before that stage, such as explicit-field optional guard failures, can return before this action.
 
 ```php
-do_action('asfw_verify_result', bool $success, true|WP_Error $result, string|null $context, string $field_name, string|null $resolved_context, array $submission)
+do_action('asfw_verify_result', bool $success, true|WP_Error $result, string|null $context, string $field_name, string|null $resolved_context, array $submission, bool $is_explicit_submission)
 ```
 
-The optional sixth argument contains unslashed submitted fields for in-process analysis. Existing listeners accepting fewer arguments remain supported. Do not persist raw fields or credentials.
+The optional sixth argument contains unslashed submitted fields for in-process analysis.
+The seventh argument is `true` for parsed-field verification and `false` for legacy
+posted verification. Third-party parsed-field emitters must pass `true`; older
+emitters retain legacy analysis dispatch. Existing listeners accepting fewer
+arguments remain supported. Do not persist raw fields or credentials. See the
+[extension contract](docs/development.md#context-and-extension-contracts) for subclass
+methods and transport isolation.
 
 **`asfw_submission_verified`** — Fires only after complete successful proof verification, never for kill-switch bypass. Applications can use this request-local signal to gate a dependent action without consuming a proof twice. It is not a durable authorization token.
 

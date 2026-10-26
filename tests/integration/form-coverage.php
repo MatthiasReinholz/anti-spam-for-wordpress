@@ -6,7 +6,7 @@ if (getenv('ASFW_FORM_COVERAGE_DISPOSABLE') !== 'true') {
     throw new RuntimeException('Use scripts/test-form-coverage.sh with its disposable database.');
 }
 if ($argc === 1) {
-    foreach (['classic-missing', 'classic-valid', 'classic-preflight', 'store-missing', 'store-wrong-context', 'store-valid-replay', 'store-invalid-nonce', 'store-schema'] as $case) {
+    foreach (['classic-missing', 'classic-valid', 'classic-preflight', 'store-missing', 'store-missing-mixed-case', 'store-wrong-context', 'store-valid-replay', 'store-invalid-nonce', 'store-schema'] as $case) {
         $process = proc_open([PHP_BINARY, __FILE__, $case], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
         if (!is_resource($process)) { throw new RuntimeException('Could not start isolated form fixture request.'); }
         $output = stream_get_contents($pipes[1]);
@@ -134,8 +134,8 @@ function asfw_forms_classic(): array {
     if (!is_array($decoded)) { throw new RuntimeException('Checkout did not return JSON: ' . $body); }
     return $decoded;
 }
-function asfw_forms_store(array $proof, string $nonce = ''): WP_REST_Response {
-    $request = new WP_REST_Request('POST', '/wc/store/v1/checkout');
+function asfw_forms_store(array $proof, string $nonce = '', string $route = '/wc/store/v1/checkout'): WP_REST_Response {
+    $request = new WP_REST_Request('POST', $route);
     $request->set_header('Content-Type', 'application/json');
     $request->set_header('Nonce', $nonce ?: wp_create_nonce('wc_store_api'));
     $request->set_body(wp_json_encode([
@@ -190,8 +190,9 @@ if (str_starts_with($case, 'classic-')) {
         }
         asfw_forms_check($registered, 'real Store API schema accepts the registered proof namespace');
     } else {
-        $proof = $case === 'store-missing' ? [] : asfw_forms_proof($case === 'store-wrong-context' ? 'woocommerce:register' : 'woocommerce:checkout');
-        $response = asfw_forms_store($proof, $case === 'store-invalid-nonce' ? 'invalid-nonce' : '');
+        $proof = in_array($case, ['store-missing', 'store-missing-mixed-case'], true) ? [] : asfw_forms_proof($case === 'store-wrong-context' ? 'woocommerce:register' : 'woocommerce:checkout');
+        $route = $case === 'store-missing-mixed-case' ? '/wc/store/v1/CHECKOUT' : '/wc/store/v1/checkout';
+        $response = asfw_forms_store($proof, $case === 'store-invalid-nonce' ? 'invalid-nonce' : '', $route);
         $data = $response->get_data(); $after = asfw_forms_counts();
         if ($case === 'store-valid-replay') {
             asfw_forms_check($response->get_status() === 200, 'real Store API dispatch accepts JSON proof: ' . wp_json_encode($data));

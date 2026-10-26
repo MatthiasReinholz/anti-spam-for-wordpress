@@ -4,6 +4,12 @@ All notable changes to this project should be documented in this file.
 
 The format follows a simple Keep a Changelog-style layout with one section per released version and concise bullet points for user-visible changes.
 
+## Unreleased
+
+- Match WooCommerce Store API checkout routes with WordPress's case-insensitive dispatch rules, preventing alternate route capitalization from skipping verification.
+- Verify Contact Form 7 through its validation lifecycle, including subscriber-only forms and submissions that skip the provider's spam checks or mail delivery.
+- Preserve legacy analysis method signatures and verifier extension dispatch while keeping explicit-field analysis isolated from request globals.
+
 ## [0.11.0] - 2026-10-24
 
 - Add separate anonymous WooCommerce checkout protection for classic checkout and Checkout Blocks / Store API, including account creation, with retry handling and gateway preflight isolation.
