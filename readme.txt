@@ -248,7 +248,7 @@ It reads the current submitted form's saved template, not posted context fields.
 * Fix - Verify Contact Form 7 during validation, including subscriber-only forms and skipped spam/mail paths.
 * Fix - Restore legacy extension signatures and native verifier dispatch; isolate explicit-field analysis from request globals.
 * Fix - Require a resolved context and active protection before emitting successful-verification signals.
-* Docs - Update coverage, extension contracts and upgrade guidance; add real-provider and legacy subclass regressions.
+* Update - Coverage, extension contracts and upgrade guidance; add real-provider and legacy subclass regressions.
 
 = 0.11.0 =
 * Add - Separate opt-in anonymous classic and Blocks/Store API checkout protection, including account creation, retries and gateway preflight isolation.
