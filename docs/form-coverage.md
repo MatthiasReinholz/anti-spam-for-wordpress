@@ -63,6 +63,15 @@ contract, not a claim that every historical Woo release is supported. Unsupporte
 configured Blocks runtimes must surface an actionable error rather than bypass
 server verification. Validate each additional express/headless client before use.
 
+Classic checkout, Checkout Blocks and the native account signup form support
+visible manual, visible automatic and invisible presentation. Both placements can
+be enabled together: signup uses `woocommerce:register` / `asfw_register`, while
+account creation during checkout uses `woocommerce:checkout` / `asfw_checkout`.
+The shared renderer accepts invisible presentation through the context-aware
+`asfw_widget_attrs` filter; see the [configuration example](../README.md#visible-and-invisible-presentation).
+Invisible verification prepares automatically, preserves the same server proof
+checks and exposes an accessible error/retry control on failure.
+
 ## Acceptance and rollback
 
 The real CPT/HPOS fixture is `scripts/test-form-coverage.sh`; supply reviewed Woo and

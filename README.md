@@ -420,7 +420,26 @@ page rules, form serialization, reset/reconnection, automatic submission,
 translations, narrow containers and accessibility presentation modes. CI runs Chromium, Firefox and WebKit;
 set `ASFW_BROWSER=firefox` or `ASFW_BROWSER=webkit` to select a local engine.
 
-### Invisible presentation for custom forms
+### Visible and invisible presentation
+
+Native WooCommerce signup, classic checkout and Checkout Blocks support visible
+manual, visible automatic and invisible verification. Account registration and
+checkout have separate placements, contexts and fields, so account creation during
+checkout requires the checkout proof once. Their enabled combination is covered by
+real-provider regression tests with both CPT and HPOS storage.
+
+Visible widgets use the configured automatic-verification setting, including manual
+activation. Choose invisible presentation for the required contexts with the same
+renderer filter used by custom forms:
+
+```php
+add_filter( 'asfw_widget_attrs', function ( $attrs, $mode, $language, $name, $context ) {
+    if ( in_array( $context, array( 'woocommerce:checkout', 'woocommerce:register' ), true ) ) {
+        $attrs['presentation'] = 'invisible';
+    }
+    return $attrs;
+}, 10, 5 );
+```
 
 Custom integrations can select `presentation="invisible"` through the
 `render_widget()` / `get_widget_attrs()` presentation overrides or the

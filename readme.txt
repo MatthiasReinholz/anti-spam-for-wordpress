@@ -217,13 +217,15 @@ The Bunny Shield integration is disabled by default. When enabled, it runs in dr
 
 = How does proof-of-work differ from a CAPTCHA? =
 
-Instead of asking the user to solve a visual puzzle, the widget asks the browser to perform a small computational task (hashing). This runs automatically and is invisible to the user.
+The browser performs a small computational task (hashing). A visible widget supports manual or automatic activation. Invisible presentation solves in the background and exposes an accessible error/retry control if verification fails.
 
 = Does comment protection affect integrations that create comments through code? =
 
 Native browser comment forms are protected by default, including logged-in submissions. Direct programmatic `wp_new_comment()` calls remain available. Core REST comments require verification for ordinary signed-in customers as well as guests admitted by WordPress; authorized moderators are exempt. Non-moderator remote XML-RPC/AJAX comments also require verification. You can disable the native Comments placement from the plugin settings if needed.
 
 Native WooCommerce product reviews also use the Comments protection. WooCommerce login protection covers account, checkout, and embedded login forms. WooCommerce registration protection covers the account registration form. The separate guest-checkout placement covers anonymous classic checkout and Checkout Blocks / Store API, including account creation. It avoids consuming proofs during payment-gateway validation-only preflights. Programmatic customer creation remains unaffected. Headless and express clients must supply the documented extension proof fields; validate enabled gateways before activating checkout protection.
+
+The native signup and both checkout integrations support visible manual, visible automatic and invisible verification. Invisible presentation is selected per context through the documented asfw_widget_attrs filter. Account signup and checkout use separate proofs; creating an account during checkout requires its checkout proof once. See the repository's presentation configuration and commerce coverage guide.
 
 = Are custom JSON forms protected automatically? =
 
