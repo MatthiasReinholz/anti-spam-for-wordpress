@@ -4,11 +4,13 @@ All notable changes to this project should be documented in this file.
 
 The format follows a simple Keep a Changelog-style layout with one section per released version and concise bullet points for user-visible changes.
 
-## Unreleased
+## [0.11.1] - 2026-10-26
 
 - Match WooCommerce Store API checkout routes with WordPress's case-insensitive dispatch rules, preventing alternate route capitalization from skipping verification.
 - Verify Contact Form 7 through its validation lifecycle, including subscriber-only forms and submissions that skip the provider's spam checks or mail delivery.
 - Preserve legacy analysis method signatures and verifier extension dispatch while keeping explicit-field analysis isolated from request globals.
+- Require a resolved context before emitting successful-verification signals, including when emergency protection settings change during a result hook.
+- Update coverage, extension and upgrade documentation; add real-provider and legacy subclass regression tests.
 
 ## [0.11.0] - 2026-10-24
 

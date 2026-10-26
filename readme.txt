@@ -3,8 +3,8 @@ Contributors: matthiasreinholz
 Tags: spam, anti-spam, captcha, proof-of-work, privacy
 Author: Matthias Reinholz
 Author URI: https://matthiasreinholz.com
-Version: 0.11.0
-Stable tag: 0.11.0
+Version: 0.11.1
+Stable tag: 0.11.1
 Requires at least: 6.4
 Requires PHP: 8.0
 Tested up to: 7.1
@@ -242,6 +242,13 @@ It reads the current submitted form's saved template, not posted context fields.
 5. Floating UI example
 
 == Changelog ==
+
+= 0.11.1 =
+* Fix - Enforce checkout verification for all route capitalization accepted by WordPress.
+* Fix - Verify Contact Form 7 during validation, including subscriber-only forms and skipped spam/mail paths.
+* Fix - Restore legacy extension signatures and native verifier dispatch; isolate explicit-field analysis from request globals.
+* Fix - Require a resolved context and active protection before emitting successful-verification signals.
+* Update - Coverage, extension contracts and upgrade guidance; add real-provider and legacy subclass regressions.
 
 = 0.11.0 =
 * Add - Separate opt-in anonymous classic and Blocks/Store API checkout protection, including account creation, retries and gateway preflight isolation.
@@ -532,6 +539,9 @@ It reads the current submitted form's saved template, not posted context fields.
 * Replaced the shortcode with `[anti_spam_widget]`.
 
 == Upgrade Notice ==
+
+= 0.11.1 =
+Hardens configured checkout and Contact Form 7 protection. CF7 verification failures now use its standard validation failure response, including subscriber-only forms. No settings migration is required; refresh form assets and test custom clients.
 
 = 0.11.0 =
 Checkout protection is opt-in. Configured protection now covers native multisite signup and non-moderator REST comments; manual CF7 checks saved widget policy. Review custom/headless clients and refresh cached form assets. See the upgrade guide before enabling new placements.
