@@ -1,6 +1,7 @@
 # Form coverage implementation and rollout
 
-Version 0.11.0 provides the integrations below. Installing a release and enabling
+Version 0.11.0 introduced the integrations below; 0.11.1 hardens checkout route
+matching and Contact Form 7 validation. Installing a release and enabling
 site policies are separate steps: activation alone does not enable every
 placement. Verify each configured public form after deployment.
 
@@ -32,10 +33,10 @@ placement. Verify each configured public form after deployment.
 | Native multisite user/site signup | Same placement; `wordpress:multisite-register` at native signup dispatcher stages; fresh proof per form |
 | WooCommerce account register | Existing registration placement and `woocommerce:register`; no URL-only gate |
 | Classic guest checkout | Separate checkout placement; `woocommerce:checkout` / `asfw_checkout` at the actual authorized checkout dispatch |
-| Checkout Blocks / Store API | Same guest policy; parsed extension fields checked before POST checkout callback, including batch requests |
+| Checkout Blocks / Store API | Same guest policy; parsed extension fields checked before POST checkout callback, including batch requests and case-insensitive route aliases |
 | Account login/reset | Separate existing placements; verify every rendered account/modal/checkout login surface |
-| CF7 automatic | Fixed server-owned `contact-form-7` context |
-| CF7 shortcode | Exactly one saved effective widget; derive context/name with the same defaults and filters as rendering |
+| CF7 automatic | Fixed server-owned `contact-form-7` context; provider validation also covers subscriber-only and skipped spam/mail paths |
+| CF7 shortcode | Same validation boundary; exactly one saved effective widget; derive context/name with the same defaults and filters as rendering |
 | Native comments | Existing comment placement and actual browser submission markers |
 | Core REST comments | Same comment policy; ordinary authenticated customers require JSON/body proof; moderators exempt |
 | Direct programmatic creation | No blanket browser challenge on user/comment insertion APIs |
@@ -67,10 +68,14 @@ server verification. Validate each additional express/headless client before use
 The real CPT/HPOS fixture is `scripts/test-form-coverage.sh`; supply reviewed Woo and
 gateway plugin directories as documented in [development](development.md#real-commerce-regression).
 It complements the fast PHPUnit/browser tests and is part of checkout release review.
+The CF7 counterpart is `scripts/test-contact-form-coverage.sh`, with reviewed provider
+source supplied through `ASFW_CF7_SOURCE`; see the
+[provider lifecycle test](development.md#real-contact-form-7-regression).
 
 Exercise missing, malformed, wrong-context, expired, replayed and valid proofs;
 normal and JSON transports; ordinary authenticated and moderation clients; both
-multisite signup stages; existing-user site signup; classic/Blocks and enabled
+multisite signup stages; existing-user site signup; CF7 subscriber-only and skipped
+spam/mail paths; mixed-case checkout routes; classic/Blocks and enabled
 payment/express flows; validation/preflight/payment failure and retry; and cached
 or already-open forms. Verify rejection precedes account creation, email or final
 order submission. Run mutation tests only in disposable databases with mail and

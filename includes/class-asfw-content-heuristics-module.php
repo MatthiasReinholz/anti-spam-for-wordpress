@@ -23,7 +23,7 @@ class ASFW_Content_Heuristics_Module {
 	}
 
 	public function register_hooks() {
-		add_action( 'asfw_verify_result', array( $this, 'inspect_submission' ), 20, 6 );
+		add_action( 'asfw_verify_result', array( $this, 'handle_verify_result' ), 20, 7 );
 	}
 
 	public function is_enabled( $context = null ) {
@@ -44,9 +44,12 @@ class ASFW_Content_Heuristics_Module {
 		return is_array( $terms ) ? $terms : array();
 	}
 
-	protected function collect_candidate_text( $submission = null ) {
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Legacy analysis normalizes form transport once.
-		$submission = is_array( $submission ) ? $submission : asfw_unslash_submission( $_POST );
+	protected function collect_candidate_text() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Legacy analysis reads its form transport.
+		return $this->collect_candidate_fields( asfw_unslash_submission( $_POST ) );
+	}
+
+	protected function collect_candidate_fields( array $submission ) {
 		$candidates = array();
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- This is read-only heuristic analysis after verification.
 		foreach ( $submission as $key => $value ) {
@@ -68,10 +71,18 @@ class ASFW_Content_Heuristics_Module {
 		return $candidates;
 	}
 
-	public function analyze_submission( $context = null, $submission = null ) {
+	public function analyze_submission( $context = null ) {
+		return $this->analyze_candidates( $context, $this->collect_candidate_text() );
+	}
+
+	/** Analyze parsed fields without invoking legacy transport overrides. */
+	public function analyze_fields( $context, array $submission ) {
+		return $this->analyze_candidates( $context, $this->collect_candidate_fields( $submission ) );
+	}
+
+	private function analyze_candidates( $context, array $candidates ) {
 		$context           = ASFW_Feature_Registry::normalize_context( $context );
 		$terms             = $this->get_heuristic_terms();
-		$candidates        = $this->collect_candidate_text( $submission );
 		$score             = 0;
 		$reasons           = array();
 		$matches           = array();
@@ -130,31 +141,46 @@ class ASFW_Content_Heuristics_Module {
 		);
 	}
 
-	public function inspect_submission( $success, $result, $context, $field_name, $resolved_context = null, $submission = null ) {
-		$event_context = ASFW_Feature_Registry::normalize_context( '' !== trim( (string) $resolved_context ) ? $resolved_context : $context );
+	/** Dispatch native transport through the established overridable methods. */
+	public function handle_verify_result( $success, $result, $context, $field_name, $resolved_context = null, $submission = null, $is_explicit_submission = false ) {
+		if ( true === $is_explicit_submission ) {
+			if ( is_array( $submission ) ) {
+				$this->inspect_fields( $success, $result, $context, $field_name, $resolved_context, $submission );
+			}
+			return;
+		}
+		$this->inspect_submission( $success, $result, $context, $field_name, $resolved_context );
+	}
 
+	public function inspect_submission( $success, $result, $context, $field_name, $resolved_context = null ) {
+		$event_context = ASFW_Feature_Registry::normalize_context( '' !== trim( (string) $resolved_context ) ? $resolved_context : $context );
 		if ( ! $success || ! $this->is_enabled( $event_context ) ) {
 			return;
 		}
+		$this->record_analysis( $this->analyze_submission( $event_context ), $event_context, $field_name );
+	}
 
-			$analysis = $this->analyze_submission( $event_context, $submission );
-		if ( $analysis['score'] < $analysis['threshold'] ) {
+	public function inspect_fields( $success, $result, $context, $field_name, $resolved_context, array $submission ) {
+		$event_context = ASFW_Feature_Registry::normalize_context( '' !== trim( (string) $resolved_context ) ? $resolved_context : $context );
+		if ( ! $success || ! $this->is_enabled( $event_context ) ) {
 			return;
 		}
-		if ( ! ASFW_Feature_Registry::is_enabled( 'event_logging', $event_context ) ) {
+		$this->record_analysis( $this->analyze_fields( $event_context, $submission ), $event_context, $field_name );
+	}
+
+	private function record_analysis( array $analysis, $event_context, $field_name ) {
+		if ( $analysis['score'] < $analysis['threshold'] || ! ASFW_Feature_Registry::is_enabled( 'event_logging', $event_context ) ) {
 			return;
 		}
-
-			$this->store->record_event(
-				'heuristic_flagged',
-				array(
-					'event_status'  => 'flagged',
-					'event_context' => $event_context,
-					'module_name'   => 'content-heuristics',
-					'details'       => $analysis + array( 'field_name' => sanitize_key( (string) $field_name ) ),
-				)
-			);
-
+		$this->store->record_event(
+			'heuristic_flagged',
+			array(
+				'event_status'  => 'flagged',
+				'event_context' => $event_context,
+				'module_name'   => 'content-heuristics',
+				'details'       => $analysis + array( 'field_name' => sanitize_key( (string) $field_name ) ),
+			)
+		);
 		do_action( 'asfw_content_heuristics_flagged', $analysis, $event_context, $field_name );
 	}
 }

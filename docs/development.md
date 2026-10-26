@@ -162,6 +162,21 @@ consent. It never fires for a kill-switch bypass. Bind any dependent action to i
 actual submitted identity and nonce, and do not replay or persist this signal as an
 authorization credential. Existing `asfw_verify_result` listeners may accept a sixth
 argument containing unslashed fields for in-process analysis; never log that array.
+The seventh argument, `$is_explicit_submission`, is `true` for the parsed-field API
+and `false` for legacy posted verification. Third-party emitters that provide parsed
+fields must also pass `true`; older four-, five- and six-argument emitters retain
+legacy analysis dispatch.
+
+Subclass extensions keep the original posted-form method signatures and dispatch:
+the verifier's `validate_request()`, `resolve_expected_context()` and
+`validate_submission_guards()`, plus the analysis modules' existing methods.
+For explicit fields, extend `ASFW_Content_Heuristics_Module::analyze_fields()` or
+`collect_candidate_fields()`, and
+`ASFW_Disposable_Email_Module::analyze_submission( $context, $fields )`.
+The modules' `handle_verify_result()` adapters select the appropriate transport;
+`inspect_fields()` and `log_fields_result()` process parsed data without reading
+`$_POST`. Keep overrides transport-specific and preserve the documented unslashed
+input contract.
 
 The public widget emits a bubbling `asfw:state-change` event with only `{ state }`.
 Proof values remain in the owning form fields and are not included in the event.
@@ -171,10 +186,19 @@ submission; manual widgets retain their explicit verification control. Completio
 error recovery renew proofs outside WooCommerce validation observers.
 
 The native checkout adapter protects the actual classic dispatch and Store API POST
-checkout callback, including batch dispatch, after WordPress route permissions. WooCommerce may perform additional Store nonce checks inside its callback; clients must renew a consumed proof after those errors. Gateway preflight
+checkout callback, including batch dispatch and case-insensitive route aliases,
+after WordPress route permissions. WooCommerce may perform additional Store nonce
+checks inside its callback; clients must renew a consumed proof after those errors. Gateway preflight
 validation must not consume proofs. All public headless/express checkout clients must
 supply the same `extensions['anti-spam-for-wordpress']` guard fields. Existing-order
 payment routes and administrative/service customer creation are distinct operations.
+
+Contact Form 7 verification runs late in `wpcf7_validate` after other validation has
+succeeded. This boundary covers subscriber-only forms and paths that skip spam
+checks or mail, before provider side effects. Invalid proof produces the standard
+`validation_failed` result. The provider's spam hook is not an enforcement boundary
+because CF7 can bypass it for authorized subscribers. A failed earlier validation
+does not consume a proof; completion handlers renew proofs after the response.
 
 ## AJAX and cached pages
 
@@ -213,6 +237,22 @@ Extensions should emit minimal structured event details. Arrays, objects, JSON s
 ## Validation
 
 The existing `tests/wp-plugin-base/` suite uses WordPress stubs and runs through the managed PHPUnit bootstrap. It covers service and integration contracts, failures, migrations, policy, and 205-site pagination. It does not prove MySQL concurrency or object-cache behavior.
+
+### Real Contact Form 7 regression
+
+Run the actual provider lifecycle in a temporary WordPress/MariaDB fixture:
+
+```bash
+ASFW_CF7_SOURCE=/path/to/reviewed/contact-form-7 \
+bash scripts/test-contact-form-coverage.sh
+```
+
+The reviewed fixture uses Contact Form 7 6.2.2 with WordPress 7.1.3 / PHP 8.4.
+It covers subscriber-only automatic and shortcode forms, skipped spam/mail paths,
+earlier validation errors, context filters, single-use proofs, disabled protection
+and emergency bypass. Mail and outbound requests are intercepted. Containers and
+the internal network carry ownership labels; the database uses disposable storage.
+Supply reviewed provider source explicitly; no live database or mail service is used.
 
 The separate `scripts/test-wordpress-integration.sh` harness starts an isolated real WordPress multisite environment, uses independent PHP workers sharing a database, and verifies consumption races, quotas, lifecycle, schema failures, and uninstall. Before storage mutations, a real browser verifies core admin controls, authenticated REST, settings save/reload/restoration, Events, and Analytics. Every run checks both database-only behavior and an actual Redis object cache, verified across independent PHP processes. CI tests the advertised minimum WordPress 6.4 on PHP 8.3 and the reviewed current WordPress 7.1.2 / PHP 8.3. Set `ASFW_WP_VERSION` and `ASFW_PHP_VERSION` to reproduce either pair locally. Core downloads are version-specific and checksum-verified. It never uses the stub bootstrap. Docker is required.
 

@@ -139,7 +139,20 @@ final class WooCommerceCheckoutTest extends AsfwPluginTestCase
 
     public static function unprotectedRoutes(): array
     {
-        return [['GET', '/wc/store/v1/checkout'], ['PATCH', '/wc/store/v1/checkout'], ['POST', '/wc/store/v1/cart/update-customer'], ['POST', '/wc/v3/customers'], ['POST', '/wc/store/v1/checkout/123'], ['POST', '/custom/wc/store/v1/checkout']];
+        return [['GET', '/wc/store/v1/checkout'], ['PATCH', '/wc/store/v1/checkout'], ['POST', '/wc/store/v1/cart/update-customer'], ['POST', '/wc/v3/customers'], ['POST', '/wc/store/v1/checkout/123'], ['POST', '/WC/StOrE/V1/ChEcKoUt/123'], ['POST', '/custom/wc/store/v1/checkout']];
+    }
+
+    /** @dataProvider mixedCaseCheckoutRoutes */
+    public function test_case_insensitive_checkout_routes_require_proof(string $route): void
+    {
+        $result = ASFW_WooCommerce_Checkout::validate_store_api(null, new AsfwCheckoutRequest([], 'POST', $route));
+        self::assertInstanceOf(WP_Error::class, $result);
+        self::assertSame('asfw_checkout_verification', $result->get_error_code());
+    }
+
+    public static function mixedCaseCheckoutRoutes(): array
+    {
+        return [['/wc/store/v1/CHECKOUT'], ['/WC/StOrE/V1/ChEcKoUt/'], ['/wc/store/ChEcKoUt']];
     }
 
     public function test_unversioned_store_api_alias_is_also_guarded(): void

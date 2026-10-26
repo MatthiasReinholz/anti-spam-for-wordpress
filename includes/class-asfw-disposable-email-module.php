@@ -34,7 +34,7 @@ class ASFW_Disposable_Email_Module {
 	}
 
 	public function register_hooks() {
-		add_action( 'asfw_verify_result', array( $this, 'log_verify_result' ), 15, 6 );
+		add_action( 'asfw_verify_result', array( $this, 'handle_verify_result' ), 15, 7 );
 	}
 
 	public function is_enabled( $context = null ) {
@@ -240,21 +240,34 @@ class ASFW_Disposable_Email_Module {
 		return true;
 	}
 
-	public function log_verify_result( $success, $result, $context, $field_name, $resolved_context = null, $submission = null ) {
-		$event_context = '' !== trim( (string) $resolved_context ) ? $resolved_context : $context;
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Logging uses the just-verified submission to record privacy-preserving spam signals.
-		$analysis = $this->analyze_submission( $event_context, $submission );
+	/** Explicit parsed fields never fall back to the native request globals. */
+	public function handle_verify_result( $success, $result, $context, $field_name, $resolved_context = null, $submission = null, $is_explicit_submission = false ) {
+		if ( true === $is_explicit_submission ) {
+			if ( is_array( $submission ) ) {
+				$this->log_fields_result( $success, $result, $context, $field_name, $resolved_context, $submission );
+			}
+			return;
+		}
+		$this->log_verify_result( $success, $result, $context, $field_name, $resolved_context );
+	}
 
+	public function log_verify_result( $success, $result, $context, $field_name, $resolved_context = null ) {
+		$event_context = '' !== trim( (string) $resolved_context ) ? $resolved_context : $context;
+		$this->record_verification_analysis( $success, $result, $this->analyze_submission( $event_context ), $field_name );
+	}
+
+	public function log_fields_result( $success, $result, $context, $field_name, $resolved_context, array $submission ) {
+		$event_context = '' !== trim( (string) $resolved_context ) ? $resolved_context : $context;
+		$this->record_verification_analysis( $success, $result, $this->analyze_submission( $event_context, $submission ), $field_name );
+	}
+
+	private function record_verification_analysis( $success, $result, array $analysis, $field_name ) {
 		if ( empty( $analysis['hit'] ) ) {
 			return;
 		}
-
-		if ( ! $success ) {
-			if ( ! ( $result instanceof WP_Error && 'asfw_disposable_email_blocked' === $result->get_error_code() ) ) {
-				return;
-			}
+		if ( ! $success && ! ( $result instanceof WP_Error && 'asfw_disposable_email_blocked' === $result->get_error_code() ) ) {
+			return;
 		}
-
 		$this->record_disposable_email_hit( $analysis, $field_name );
 	}
 

@@ -293,16 +293,18 @@ if ( ! class_exists( 'ASFW_Verifier', false ) ) {
 
 		public function validate_request( $payload, $hmac_key = null, $context = null, $field_name = 'asfw', &$resolved_context = null ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Legacy form verification.
-			return $this->validate_fields_request( $payload, $hmac_key, $context, $field_name, $resolved_context, asfw_unslash_submission( $_POST ) );
+			return $this->validate_fields_request( $payload, $hmac_key, $context, $field_name, $resolved_context, asfw_unslash_submission( $_POST ), false );
 		}
 
-		private function validate_fields_request( $payload, $hmac_key, $context, $field_name, &$resolved_context, array $submission ) {
+		private function validate_fields_request( $payload, $hmac_key, $context, $field_name, &$resolved_context, array $submission, $is_explicit_submission ) {
 			$resolved_context = null;
 			if ( $this->options_service()->is_kill_switch_enabled() ) {
 				return true;
 			}
 
-			$context = $this->resolve_fields_context( $context, $field_name, $submission );
+			$context = $is_explicit_submission
+				? $this->resolve_fields_context( $context, $field_name, $submission )
+				: $this->resolve_expected_context( $context, $field_name );
 			if ( $context instanceof WP_Error ) {
 				$fallback_context = $this->context_helper_service()->normalize_context( 'form:' . sanitize_key( (string) $field_name ) );
 				if ( '' === $fallback_context ) {
@@ -315,7 +317,9 @@ if ( ! class_exists( 'ASFW_Verifier', false ) ) {
 
 			$resolved_context = $context;
 
-			$guard_result = $this->validate_fields_guards( $context, $field_name, $submission );
+			$guard_result = $is_explicit_submission
+				? $this->validate_fields_guards( $context, $field_name, $submission )
+				: $this->validate_submission_guards( $context, $field_name );
 			if ( $guard_result instanceof WP_Error ) {
 				return $guard_result;
 			}
@@ -334,19 +338,21 @@ if ( ! class_exists( 'ASFW_Verifier', false ) ) {
 
 		public function verify( $payload, $hmac_key = null, $context = null, $field_name = 'asfw' ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Legacy form verification.
-			return $this->verify_fields( $payload, $hmac_key, $context, $field_name, asfw_unslash_submission( $_POST ) );
+			return $this->verify_fields( $payload, $hmac_key, $context, $field_name, asfw_unslash_submission( $_POST ), false );
 		}
 
 		public function verify_submission( array $submission, $context, $field_name = 'asfw' ) {
 			if ( $this->options_service()->is_kill_switch_enabled() || ! is_string( $context ) || '' === trim( $context ) || asfw_validate_context_guard_fields( $context, $submission ) instanceof WP_Error ) {
 				return false;
 			}
-			return $this->verify_fields( asfw_submission_value( $submission, $field_name, false ), null, $context, $field_name, $submission );
+			return $this->verify_fields( asfw_submission_value( $submission, $field_name, false ), null, $context, $field_name, $submission, true );
 		}
 
-		private function verify_fields( $payload, $hmac_key, $context, $field_name, array $submission ) {
+		private function verify_fields( $payload, $hmac_key, $context, $field_name, array $submission, $is_explicit_submission ) {
 			$resolved_context = null;
-			$result           = $this->validate_fields_request( $payload, $hmac_key, $context, $field_name, $resolved_context, $submission );
+			$result           = $is_explicit_submission
+				? $this->validate_fields_request( $payload, $hmac_key, $context, $field_name, $resolved_context, $submission, true )
+				: $this->validate_request( $payload, $hmac_key, $context, $field_name, $resolved_context );
 			$success          = ! ( $result instanceof WP_Error );
 
 			if ( $success && class_exists( 'ASFW_Control_Plane', false ) ) {
@@ -367,9 +373,9 @@ if ( ! class_exists( 'ASFW_Verifier', false ) ) {
 				}
 			}
 
-			do_action( 'asfw_verify_result', $success, $result, $context, $field_name, $resolved_context, $submission );
+			do_action( 'asfw_verify_result', $success, $result, $context, $field_name, $resolved_context, $submission, $is_explicit_submission );
 
-			if ( $success && ! $this->options_service()->is_kill_switch_enabled() ) {
+			if ( $success && is_string( $resolved_context ) && '' !== trim( $resolved_context ) && ! $this->options_service()->is_kill_switch_enabled() ) {
 				/** A request-local signal; never contains proof, email or other submitted values. */
 				do_action( 'asfw_submission_verified', $resolved_context, $field_name );
 			}

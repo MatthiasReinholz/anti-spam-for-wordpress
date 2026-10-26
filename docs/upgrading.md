@@ -1,6 +1,16 @@
 # Updating an existing installation
 
-Version 0.11.0 preserves existing settings, event data and the challenge storage format. It adds opt-in checkout protection and extends configured enforcement to native multisite signup, REST comments and saved-template CF7 policy; review the coverage changes below. Sites skipping older releases also need the platform, client-IP, quota and legacy-setting checks in this guide.
+Version 0.11.1 preserves existing settings, event data and the challenge storage format. It hardens the form coverage introduced in 0.11.0; review the coverage changes below. Sites skipping older releases also need the platform, client-IP, quota and legacy-setting checks in this guide.
+
+## Updating from 0.11.0
+
+Update configured checkout protection to cover every route capitalization accepted
+by WordPress. Contact Form 7 protection now runs during provider validation, including
+subscriber-only forms and paths that skip spam checks or mail. Missing or invalid
+verification returns CF7's standard validation failure response; custom clients
+should handle that response and renew their proof before retrying. No settings or
+template migration is required. Test authenticated subscriber/customer submissions
+as well as anonymous ones, and refresh cached form assets after deployment.
 
 ## Before updating
 
